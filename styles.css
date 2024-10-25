@@ -1,0 +1,205 @@
+html { overflow-y: scroll; }
+
+:root {
+    --primary-color: #2980b9; /* Medium-toned blue */
+    --heading-color: #2c3e50;
+    --text-color: #333;
+    --background-color: #f8f9fa;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+header {
+    background-color: var(--background-color);
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin-left: 1.5rem;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+nav ul li a:hover {
+    color: var(--primary-color);
+}
+
+main {
+    padding: 2rem 0;
+}
+
+h1, h2 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--heading-color);
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 2.8rem;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+h2 {
+    font-size: 2rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+ul {
+    padding-left: 1.5rem;
+}
+
+p {
+    margin-bottom: 1.5rem;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.logo-image {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    transition: transform 0.1s ease;
+}
+
+.logo-container:hover {
+    color: var(--primary-color);
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.cartoon-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 2rem auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.team-member {
+    display: flex;
+    align-items: flex-start; /* Align items to the start of the flex container */
+    margin-bottom: 2rem;
+}
+
+.team-member-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    margin: 10px 20px 0 0; /* Add top margin to lower the image */
+    object-fit: cover;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.team-member-info {
+    max-width: 600px; /* Limit the width of the text area */
+}
+
+.team-member-info h2 {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.team-member-info p {
+    margin: 0.5rem 0;
+}
+
+.role {
+    font-weight: bold;
+    color: #888; /* Changed to a lighter grey color */
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.research-interests {
+    font-style: italic;
+    color: #666; /* Use a lighter gray color for the research interests */
+    margin-top: 0.5rem;
+}
+
+.links-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.links-list li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem; /* Reduced from 1rem */
+}
+
+.links-list img {
+    width: 30px; /* Reduced from 40px */
+    height: 30px; /* Reduced from 40px */
+    margin-right: 0.5rem; /* Reduced from 1rem */
+}
+
+.links-list div {
+    display: flex;
+    flex-direction: column;
+}
+
+.links-list strong {
+    font-size: 1rem; /* Reduced from 1.1rem */
+    color: #333;
+    margin-bottom: 0.1rem; /* Added small margin */
+}
+
+.links-list a {
+    color: #2980b9;
+    text-decoration: none;
+    font-size: 0.9rem; /* Reduced font size */
+    line-height: 1.2; /* Added to reduce line height */
+}
+
+.links-list a:hover {
+    text-decoration: underline;
+}
