@@ -203,3 +203,16 @@ p {
 .links-list a:hover {
     text-decoration: underline;
 }
+
+footer {
+    margin-top: 4rem;
+    border-top: 1px solid #ddd;
+    padding: 1rem 0 1rem 0;
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+footer p {
+    margin: 0.3rem 0;
+}
