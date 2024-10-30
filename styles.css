@@ -216,3 +216,11 @@ footer {
 footer p {
     margin: 0.3rem 0;
 }
+
+footer a {
+    color: #0056b3;  /* A darker shade of blue */
+}
+
+.prx_h1 {
+    padding-top: 36px !important;
+}
