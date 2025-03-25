@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="http://localhost:4000/blog/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/blog/" rel="alternate" type="text/html" /><updated>2025-03-25T11:44:18+11:00</updated><id>http://localhost:4000/blog/feed.xml</id><title type="html">Tufa Labs Research Blog</title><subtitle>Research blog for Tufa Labs, a small independent research group working on  fundamental AI research, with a focus on o-style systems and post-training reasoning.</subtitle><entry><title type="html">LADDER: Self-Improving LLMs Through Recursive Problem Decomposition</title><link href="http://localhost:4000/blog/research/ai/2025/03/25/ladder.html" rel="alternate" type="text/html" title="LADDER: Self-Improving LLMs Through Recursive Problem Decomposition" /><published>2025-03-25T09:50:53+11:00</published><updated>2025-03-25T09:50:53+11:00</updated><id>http://localhost:4000/blog/research/ai/2025/03/25/ladder</id><content type="html" xml:base="http://localhost:4000/blog/research/ai/2025/03/25/ladder.html"><![CDATA[<h2 id="introduction">Introduction</h2>
+
+<p>For RL to work, we need sufficiently many questions at the correct difficulty level. The
+issue is that most difficult problems are very sparse and lack training data. LADDER
+solves this by getting the LLM to generate synthetic easier variants of the initial question
+in a treelike structure, allowing the model to use RL to bootstrap itself toward solving
+harder problems</p>]]></content><author><name>Toby Simonds</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[An in-depth analysis of a novel framework enabling language models to autonomously improve their problem-solving capabilities through recursive decomposition.]]></summary></entry><entry><title type="html">Textbooks to RL</title><link href="http://localhost:4000/blog/jekyll/update/2025/03/25/textbooks-to-rl.html" rel="alternate" type="text/html" title="Textbooks to RL" /><published>2025-03-25T09:50:53+11:00</published><updated>2025-03-25T09:50:53+11:00</updated><id>http://localhost:4000/blog/jekyll/update/2025/03/25/textbooks-to-rl</id><content type="html" xml:base="http://localhost:4000/blog/jekyll/update/2025/03/25/textbooks-to-rl.html"><![CDATA[<h2 id="the-data-challenge-in-modern-rl">The Data Challenge in Modern RL</h2>
+
+<p>Reinforcement learning has demonstrated exceptional potential in solving complex problems, but a critical challenge looms as we scale these systems: we’re facing a severe shortage of high-quality RL questions. Current public datasets max out at just at around a million questions—below what’s needed to push next-generation RL systems to their full capabilities. This scarcity becomes even more pronounced outside the mathematics domain, where well-structured RL questions are particularly rare in domains like biology and physics. To achieve the full potential of RL, we need to expand our training data by orders of magnitude across diverse knowledge domains.</p>
+
+<h2 id="our-approach-synthetic-question-generation-from-textbooks">Our Approach: Synthetic Question Generation from Textbooks</h2>
+
+<p>We propose a straightforward yet powerful method for generating vast quantities of high-quality RL questions by leveraging existing textbook content. Here’s how it works:</p>
+
+<ol>
+  <li><strong>Extraction</strong>: We feed textbooks page by page into an LLM that extracts potential questions and solutions naturally embedded in the educational content.</li>
+  <li><strong>Verification</strong>: Each extracted question passes through a verification LLM that confirms solvability using only the provided textbook content.</li>
+  <li><strong>Filtering</strong>: We remove questions that depend on visual elements like tables, figures, or diagrams, ensuring our dataset consists of purely text-based, self-contained problems.</li>
+</ol>
+
+<p><img src="/blog/assets/images/TRL_diagram.png" alt="TRL Diagram" width="400" /></p>
+
+<p>This pipeline allows us to generate around <strong>~3000</strong> valid questions per textbook, creating a scalable approach to building massive RL datasets.</p>
+
+<h2 id="experimental-validation">Experimental Validation</h2>
+
+<p>To validate our approach, we trained Qwen 2.5 7B Instruct on these synthetic questions and measured performance improvements on the MATH benchmark.</p>
+
+<ul>
+  <li>Models trained on our synthetic dataset showed a 9% absolute improvement on MATH, increasing performance from 75% to 84%. Performance was still improving run simply ran as proof of concept of effectiveness of synthetic RL questions</li>
+  <li>This significant jump demonstrates that these synthetic RL questions provide a strong reinforcement learning signal</li>
+  <li>The results suggest we can effectively bootstrap model performance using generated content</li>
+</ul>
+
+<p><img src="/blog/assets/images/TTL_bar_image.png" alt="TTL Bar Chart" /></p>
+
+<h2 id="opensource-dataset">Opensource Dataset</h2>
+
+<p>As part of our commitment to advancing the field, we’re open-sourcing a sample dataset of 100K problems. This dataset provides researchers and developers with immediate access to high-quality synthetic questions for RL training and experimentation.</p>
+
+<h2 id="discussion">Discussion</h2>
+
+<p>As RL training becomes central to advancing model capabilities, the demand for high-quality training questions will continue to grow exponentially. Our textbook extraction approach offers several critical advantages that address current limitations:</p>
+
+<ul>
+  <li><strong>Token Efficiency</strong>: Perhaps the most profound implication of our work is the inherent efficiency of RL training with targeted questions compared to traditional next-token prediction. As models advance, structured questions may provide more learning signal per token than standard predictive training. While promising, rigorous ablation studies are needed to quantify this efficiency and determine optimal training approaches.</li>
+  <li><strong>Domain Expansion</strong>: While mathematics has benefited from existing question datasets like MATH, fields such as biology, physics, chemistry, and medicine lack comparable resources for RL training. Our extraction pipeline works equally well across disciplines, generating high-quality questions from biology textbooks about protein folding, physics textbooks on quantum mechanics, or medical texts on diagnostic reasoning.</li>
+  <li><strong>Adjustable Difficulty</strong>: The pipeline naturally extracts a range of question difficulties, but we can also engineer specific difficulty curves by generating hints alongside questions or by tuning extraction parameters. This enables curriculum learning approaches where models progressively tackle harder problems.</li>
+  <li><strong>Customizable Content</strong>: Beyond difficulty tuning, we can target specific subdomains or reasoning types by selecting appropriate textbook sources or by fine-tuning our extraction criteria.</li>
+</ul>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Our synthetic question generation approach offers a viable path to scaling RL training data by orders of magnitude. The initial results demonstrate that these synthetic questions drive meaningful performance improvements in trained models.</p>
+
+<p>As we continue to refine this approach, we believe it will become an essential tool for advancing the frontier of reinforcement learning capabilities. The virtually unlimited supply of textbook content gives us confidence that we can generate the billions of diverse, high-quality questions needed for the next generation of RL systems.</p>
+
+<hr />
+<h2 id="resources">Resources</h2>
+
+<ul>
+  <li>
+    <p><strong>Dataset</strong>: <a href="https://huggingface.co/datasets/TamasSimonds/TextbooksToRLQuestions-100k">TextbooksToRLQuestions-100k on Hugging Face</a></p>
+  </li>
+  <li>
+    <p><strong>Code Repository</strong>: <a href="https://github.com/Tufalabs/BeyondNextTokenPrediction">BeyondNextTokenPrediction on GitHub</a></p>
+  </li>
+</ul>]]></content><author><name>Toby Simonds</name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Turning the worlds]]></summary></entry></feed>
