@@ -1,11 +1,11 @@
 ---
 layout: post
-title: "LADDER: Self-Improving LLMs Through Recursive Problem Decomposition"
+title: "Don't Throw the Baby out with the Bathwater: How and why Deep Learning for ARC"
 date: 2025-03-25 09:50:53 +1100
 categories: research ai
-author: Toby Simonds
+author: Mohamed Osman
 description: "An in-depth analysis of a novel framework enabling language models to autonomously improve their problem-solving capabilities through recursive decomposition."
-external_link: "https://arxiv.org/abs/2503.00735"
+external_link: "https://github.com/MohamedOsman1998/deep-learning-for-arc/blob/main/deep_learning_for_arc.pdf"
 
 ---
 

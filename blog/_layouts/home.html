@@ -13,9 +13,15 @@ layout: default
         {% for post in site.posts %}
         <li class="post-item">
             <h3>
+                {% if post.external_link %}
+                <a class="post-link" href="{{ post.external_link }}" target="_blank">
+                    {{ post.title | escape }}
+                </a>
+                {% else %}
                 <a class="post-link" href="{{ site.baseurl }}/_site{{ post.url }}">
                     {{ post.title | escape }}
                 </a>
+                {% endif %}
             </h3>
             <div class="post-meta">
                 <time datetime="{{ post.date | date_to_xmlschema }}">
@@ -27,7 +33,9 @@ layout: default
             {% else %}
             <p class="post-excerpt">{{ post.content | strip_html | truncatewords: 50 }}</p>
             {% endif %}
-            {% if post.title contains "LADDER" %}
+            {% if post.external_link %}
+            <a href="{{ post.external_link }}" class="read-more" target="_blank">Read more</a>
+            {% elsif post.title contains "LADDER" %}
             <a href="https://arxiv.org/pdf/2503.00735" class="read-more" target="_blank">Read paper</a>
             {% else %}
             <a href="{{ site.baseurl }}/_site{{ post.url }}" class="read-more">Read more</a>
