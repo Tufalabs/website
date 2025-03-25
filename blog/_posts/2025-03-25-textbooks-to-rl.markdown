@@ -4,7 +4,7 @@ title:  "Text to RL: Extracting High-Quality RL Questions from text"
 date:   2025-03-25 09:50:53 +1100
 categories: jekyll update
 author: Toby Simonds
-description: "Turning the worlds "
+description: "Turning textbooks into RL Questions"
 ---
 
 
