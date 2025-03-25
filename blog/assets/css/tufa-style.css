@@ -250,4 +250,26 @@ pre {
 pre code {
     padding: 0;
     background-color: transparent;
+}
+
+/* Paper link styles */
+.paper-link-container {
+    margin: 2.5rem 0;
+    text-align: center;
+}
+
+.paper-link {
+    display: inline-block;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.paper-link:hover {
+    background-color: #1a5e8c;
+    text-decoration: none;
 } 

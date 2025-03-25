@@ -16,6 +16,11 @@ layout: default
 
     <div class="post-content">
         {{ content }}
+        {% if page.title contains "LADDER" %}
+        <div class="paper-link-container">
+            <a href="https://arxiv.org/pdf/2503.00735" class="paper-link" target="_blank">Read the full research paper (PDF)</a>
+        </div>
+        {% endif %}
     </div>
 
     {% if site.disqus.shortname %}

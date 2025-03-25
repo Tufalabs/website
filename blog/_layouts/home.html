@@ -27,11 +27,13 @@ layout: default
             {% else %}
             <p class="post-excerpt">{{ post.content | strip_html | truncatewords: 50 }}</p>
             {% endif %}
+            {% if post.title contains "LADDER" %}
+            <a href="https://arxiv.org/pdf/2503.00735" class="read-more" target="_blank">Read paper</a>
+            {% else %}
             <a href="{{ site.baseurl }}/_site{{ post.url }}" class="read-more">Read more</a>
+            {% endif %}
         </li>
         {% endfor %}
     </ul>
-
-    <p class="rss-subscribe">Subscribe <a href="{{ "/feed.xml" | relative_url }}">via RSS</a></p>
     {% endif %}
 </div> 
