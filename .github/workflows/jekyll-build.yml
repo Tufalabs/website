@@ -1,0 +1,32 @@
+name: Build Jekyll Blog
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+        bundler-cache: true # this will install dependencies and cache them
+    
+    - name: Build Jekyll site
+      run: |
+        cd blog
+        bundle install
+        bundle exec jekyll build
+    
+    - name: Commit and push if changed
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'github-actions@github.com'
+        git add -A blog/_site
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-build Jekyll blog" && git push) 

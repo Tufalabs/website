@@ -2,10 +2,14 @@
 Public website for tufa labs
 
 ## How to deploy
-1. Build the blog first (see below)
-2. Push to main branch
+1. Push to main branch
 
-## How to build the blog before publishing
+The blog will be automatically built by GitHub Actions. The workflow will:
+- Install required dependencies
+- Build the Jekyll site
+- Commit the generated files to the repository
+
+## How to build the blog manually (for local testing)
 1. Navigate to the blog directory:
    ```
    cd blog
@@ -19,6 +23,9 @@ Public website for tufa labs
    bundle exec jekyll build
    ```
 4. This will generate the static site in the `blog/_site` directory
+
+## Automated Build Process
+The repository is configured with GitHub Actions to automatically build the Jekyll blog when changes are pushed to the main branch. The workflow file is located at `.github/workflows/jekyll-build.yml`.
 
 ## How to run locally
  - Clone the repo
