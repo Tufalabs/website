@@ -81,3 +81,5 @@ These results indicate that the evolutionary approach significantly outperforms 
 ### Conclusion
 
 Alpha Writing demonstrates that creative tasks can benefit from systematic inference-time compute scaling through evolutionary approaches. Our results show consistent improvements over both baseline generation and sequential prompting methods, suggesting that the apparent intractability of scaling compute for creative domains may be addressable through appropriate algorithmic frameworks.
+
+- **Code Repository**: [BeyondNextTokenPrediction on GitHub](https://github.com/tamassimonds/AlphaEvolveWritting)
