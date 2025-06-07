@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaWrite: Inference time compute Scaling for Writting - Tufa Labs Research Blog</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/blog/assets/css/tufa-style.css">
+    <link rel="stylesheet" href="/blog/assets/css/syntax.css">
+    <link type="application/atom+xml" rel="alternate" href="https://tufalabs.ai/blog/feed.xml" title="Tufa Labs Research Blog" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>AlphaWrite: Inference time compute Scaling for Writting | Tufa Labs Research Blog</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="AlphaWrite: Inference time compute Scaling for Writting" />
+<meta name="author" content="Toby Simonds" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="We introduce AlphaWrite, an inference-time scaling method for creative writing that uses evolutionary generation and ELO-based ranking to improve story quality." />
+<meta property="og:description" content="We introduce AlphaWrite, an inference-time scaling method for creative writing that uses evolutionary generation and ELO-based ranking to improve story quality." />
+<link rel="canonical" href="https://tufalabs.ai/blog/jekyll/update/2025/06/06/AlphaWrite.html" />
+<meta property="og:url" content="https://tufalabs.ai/blog/jekyll/update/2025/06/06/AlphaWrite.html" />
+<meta property="og:site_name" content="Tufa Labs Research Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2025-06-06T08:50:53+10:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="AlphaWrite: Inference time compute Scaling for Writting" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Toby Simonds"},"dateModified":"2025-06-06T08:50:53+10:00","datePublished":"2025-06-06T08:50:53+10:00","description":"We introduce AlphaWrite, an inference-time scaling method for creative writing that uses evolutionary generation and ELO-based ranking to improve story quality.","headline":"AlphaWrite: Inference time compute Scaling for Writting","mainEntityOfPage":{"@type":"WebPage","@id":"https://tufalabs.ai/blog/jekyll/update/2025/06/06/AlphaWrite.html"},"url":"https://tufalabs.ai/blog/jekyll/update/2025/06/06/AlphaWrite.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="https://tufalabs.ai/" class="logo-container">
+                    <img src="/blog/assets/images/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
+                    <div class="logo-text">Tufa Labs</div>
+                </a>
+                <nav>
+                    <ul>
+                           <li><a href="https://tufalabs.ai/index.html">Home</a></li>
+                        <li><a href="https://tufalabs.ai/blog/_site">Research</a></li>
+                        <li><a href="https://tufalabs.ai/open_positions.html">Open Positions</a></li>
+                        <li><a href="https://tufalabs.ai/team.html">Team</a></li>
+                        <li><a href="https://tufalabs.ai/sponsor.html">MLST</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+    <main class="container">
+        
+<article class="post">
+    <header class="post-header">
+        <h1 class="post-title">AlphaWrite: Inference time compute Scaling for Writting</h1>
+        <div class="post-meta">
+            <time datetime="2025-06-06T08:50:53+10:00">
+                June 6, 2025
+            </time>
+            
+            • <span class="post-author">Toby Simonds</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+        <p>Large language models have demonstrated remarkable improvements in performance through increased inference-time compute on quantitative reasoning tasks, particularly in mathematics and coding. However, the creative domain—where outputs are inherently highly subjective and difficult to evaluate—has seen limited exploration of systematic approaches to scale inference-time compute effectively.</p>
+
+<p>In this work, we introduce Alpha Writing, a novel framework for scaling inference-time compute in creative text generation. Inspired by AlphaEvolve and other evolutionary algorithms, our approach combines iterative story generation with ELO-based evaluation to systematically improve narrative quality. Rather than relying on single-shot generation or simple resampling, Alpha Writing creates a dynamic ecosystem where stories compete, evolve, and improve through multiple generations.</p>
+
+<p>Our method addresses a critical gap in the field: while we can easily scale compute for tasks with clear correctness criteria, creative domains have lacked principled approaches for leveraging additional inference resources. By treating story generation as an evolutionary process guided by pairwise preferences, we demonstrate that creative output quality can be systematically improved through increased compute allocation.</p>
+
+<h1 id="methodology">Methodology</h1>
+
+<p><img src="/blog/assets/images/AlphaWriteProcess.png" alt="TTL Bar Chart" /></p>
+
+<h2 id="overview">Overview</h2>
+
+<p>Alpha Writing employs an evolutionary approach to improve story quality through iterative generation and selection. The process consists of three main stages: (1) diverse initial story generation, (2) pairwise comparison using ELO rankings, and (3) evolutionary refinement of top-performing stories. (2) and (3) are repeated for multiple generations to progressively enhance narrative quality.</p>
+
+<h2 id="initial-story-generation">Initial Story Generation</h2>
+
+<p>To establish a diverse starting population, we generate a large corpus of initial stories with systematic variation. Each story is generated with two randomized parameters:</p>
+
+<ul>
+  <li><strong>Author style</strong>: The model is prompted to write in the style of different authors</li>
+  <li><strong>Theme</strong>: Each generation focuses on a different narrative theme</li>
+</ul>
+
+<p>This approach ensures broad exploration of the creative space and prevents early convergence on a single narrative style or structure.</p>
+
+<h2 id="judging-and-elo-ranking">Judging and ELO Ranking</h2>
+
+<p>Stories are evaluated through pairwise comparisons using an LLM judge. The judge is provided with:</p>
+
+<ul>
+  <li>A detailed evaluation rubric focusing on narrative quality metrics</li>
+  <li>Two stories to compare</li>
+  <li>Instructions to select the superior story</li>
+</ul>
+
+<p>The rubric improves consistency in judgments by providing clear evaluation criteria. Based on these pairwise comparisons, we update ELO ratings for each story, creating a dynamic ranking system that captures relative quality differences.</p>
+
+<h2 id="story-evolution">Story Evolution</h2>
+
+<p>After establishing rankings, we:</p>
+
+<ol>
+  <li>Select the top-performing stories from the current generation</li>
+  <li>Prompt the LLM to generate variations and improvements of these stories</li>
+  <li>Retain original high-performers while replacing lower-ranked stories</li>
+  <li>Re-rank the new population through additional pairwise comparisons</li>
+</ol>
+
+<p>This process repeats for multiple generations, allowing successful narrative elements to propagate while introducing controlled variation.</p>
+
+<h2 id="evaluation-protocol">Evaluation Protocol</h2>
+
+<p>Evaluating creative output presents significant challenges due to subjective preferences and high variance in story content. Our evaluation approach includes:</p>
+
+<ul>
+  <li><strong>Model selection</strong>: Focus on smaller models where improvements are more pronounced</li>
+  <li><strong>Story length</strong>: Restrict to stories under 500 words to enable consistent comparison</li>
+  <li><strong>Prompt design</strong>: Use open-ended prompts to allow models to demonstrate narrative crafting abilities</li>
+  <li><strong>Data collection</strong>: 120 preference comparisons per experiment to establish statistical significance</li>
+</ul>
+
+<p>Initial generations often exhibited fundamental narrative issues including poor story arcs and structural problems, making improvements through evolution particularly noticeable. We compare performance against initial model-generated stories and stories improved through repeated prompting.</p>
+
+<p>We acknowledge that our evaluation methodology, while establishing statistically significant improvements, would benefit from more comprehensive data collection. We simply seek top demonstrate a stastically significant siginal that this method works - quantifiying the actual improvement is difficulty</p>
+
+<h3 id="results">Results</h3>
+
+<p>For evaluation we used LLama 4 Scout and generated 60 initial stories, selected the top 10 performers, and created 3 variants of each. This evolution process was repeated for 5 generations</p>
+
+<p><img src="/blog/assets/images/AlphaWriteBenchmark.png" alt="TTL Bar Chart" /></p>
+
+<p>Alpha Writing demonstrates substantial improvements in story quality when evaluated through pairwise human preferences. Testing with Llama 4 Scout revealed:</p>
+
+<ul>
+  <li><strong>76% preference rate</strong> over initial story generations</li>
+  <li><strong>62% preference rate</strong> over sequential prompting baseline</li>
+</ul>
+
+<p>These results indicate that the evolutionary approach significantly outperforms both single-shot generation and traditional inference-time scaling methods for creative writing tasks.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>Alpha Writing demonstrates that creative tasks can benefit from systematic inference-time compute scaling through evolutionary approaches. Our results show consistent improvements over both baseline generation and sequential prompting methods, suggesting that the apparent intractability of scaling compute for creative domains may be addressable through appropriate algorithmic frameworks.</p>
+
+        
+    </div>
+
+    
+</article>
+ 
+    </main>
+</body>
+</html> 
