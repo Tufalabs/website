@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "AlphaWrite: Inference time compute Scaling for Writting"
+title:  "AlphaWrite: Inference time compute Scaling for Writing"
 date:   2025-06-6 09:50:53 +1100
 categories: jekyll update
 author: Toby Simonds
