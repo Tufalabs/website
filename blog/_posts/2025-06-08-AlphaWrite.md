@@ -22,7 +22,7 @@ We further demonstrate the scalability of these methods by distilling the enhanc
 
 # Methodology
 
-![image.png](/assets/images/AlphaWrite/AlphaWriteProcess.png)
+![image.png](/blog/assets/images/AlphaWrite/AlphaWriteProcess.png)
 
 ## Overview
 
@@ -81,7 +81,7 @@ We found quality differences were subtle in opening lines but became pronounced 
 
 For evaluation we used Llama 3.1 8B and generated 60 initial stories, selected the top 5 performers, and created 5 variants of each. This evolution process was repeated for 5 generations
 
-![image.png](/assets/images/AlphaWrite/AlphaWriteBench.png)
+![image.png](/blog/assets/images/AlphaWrite/AlphaWriteBench.png)
 
 Alpha Writing demonstrates substantial improvements in story quality when evaluated through pairwise human preferences. Testing with Llama 3.1 8B  revealed:
 
@@ -90,7 +90,7 @@ Alpha Writing demonstrates substantial improvements in story quality when evalua
 
 These results indicate that the evolutionary approach significantly outperforms both single-shot generation and traditional inference-time scaling methods for creative writing tasks.
 
-![image.png](/assets/images/AlphaWrite/Demo.png)
+![image.png](/blog/assets/images/AlphaWrite/Demo.png)
 
 # Recursive Self-Improvement Through AlphaWrite Distillation
 
@@ -117,7 +117,7 @@ This recursive approach theoretically enables continuous self-improvement, where
 
 ## Results
 
-![image.png](/assets/images/AlphaWrite/Llama3.1Results.png)
+![image.png](/blog/assets/images/AlphaWrite/Llama3.1Results.png)
 
 We observed a 56%  (95 % CI 47 % – 65 %) preference rate over the base model. While this improvement falls within the statistical significance range for this experiment, collecting sufficient preference data to achieve statistical significance would be prohibitively expensive.
 
