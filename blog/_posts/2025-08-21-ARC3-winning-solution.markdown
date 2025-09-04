@@ -4,7 +4,7 @@ title: "1st Place in the ARC-AGI 3 Agent Preview Competition"
 date: 2025-08-21 09:50:53 +1100
 categories: ARC-AGI-3
 author: Dries Smit
-description: "Our winning solution for the ARC-AGI 3 Agent Preview Competition"
+description: "Our winning solution for the ARC-AGI 3 Agent Preview Competition."
 external_link: "https://medium.com/@dries.epos/1st-place-in-the-arc-agi-3-agent-preview-competition-49263f6287db"
 
 ---
