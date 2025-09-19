@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://tufalabs.ai/blog/feed.xml" rel="self" type="application/atom+xml" /><link href="https://tufalabs.ai/blog/" rel="alternate" type="text/html" /><updated>2025-09-19T21:10:45+10:00</updated><id>https://tufalabs.ai/blog/feed.xml</id><title type="html">Tufa Labs Research Blog</title><subtitle>Research blog for Tufa Labs, a small independent research group working on  fundamental AI research, with a focus on o-style systems and post-training reasoning.</subtitle><entry><title type="html">All In on Winning: The dangers of RL without moral reward</title><link href="https://tufalabs.ai/blog/research/2025/08/22/PokerRL.html" rel="alternate" type="text/html" title="All In on Winning: The dangers of RL without moral reward" /><published>2025-08-22T00:00:00+10:00</published><updated>2025-08-22T00:00:00+10:00</updated><id>https://tufalabs.ai/blog/research/2025/08/22/PokerRL</id><content type="html" xml:base="https://tufalabs.ai/blog/research/2025/08/22/PokerRL.html"><![CDATA[<p><img src="/blog/assets/poker/logo3.png" alt="Poker RL crest" /></p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://tufalabs.ai/blog/_site/feed.xml" rel="self" type="application/atom+xml" /><link href="https://tufalabs.ai/blog/_site/" rel="alternate" type="text/html" /><updated>2025-09-19T21:26:33+10:00</updated><id>https://tufalabs.ai/blog/_site/feed.xml</id><title type="html">Tufa Labs Research Blog</title><subtitle>Research blog for Tufa Labs, a small independent research group working on  fundamental AI research, with a focus on o-style systems and post-training reasoning.</subtitle><entry><title type="html">All In on Winning: The dangers of RL without moral reward</title><link href="https://tufalabs.ai/blog/_site/research/2025/08/22/PokerRL.html" rel="alternate" type="text/html" title="All In on Winning: The dangers of RL without moral reward" /><published>2025-08-22T00:00:00+10:00</published><updated>2025-08-22T00:00:00+10:00</updated><id>https://tufalabs.ai/blog/_site/research/2025/08/22/PokerRL</id><content type="html" xml:base="https://tufalabs.ai/blog/_site/research/2025/08/22/PokerRL.html"><![CDATA[<p><img src="/blog/_site/assets/poker/logo3.png" alt="Poker RL crest" /></p>
 
 <p>Our investigation reveals that models trained to play poker don’t just get better at poker—they gradually reweight the importance of ethical behavior versus winning, becoming progressively more willing to take unethical actions when victory is at stake. For the AI safety community, this represents a critical warning: optimization pressure without explicit moral constraints may systematically erode the ethical reasoning we depend on to keep AI systems aligned with human values. Our key findings include:</p>
 
@@ -111,19 +111,19 @@ State clearly at the start what you’d do.</p>
 
 <h2 id="results"><strong>Results</strong></h2>
 <div style="display: flex; gap: 10px;">
-  <img src="/blog/assets/poker/image-main.png" alt="Training Results" style="width: 50%;" />
-  <img src="/blog/assets/poker/image-1.png" alt="Immoral Actions Over Time" style="width: 50%;" />
+  <img src="/blog/_site/assets/poker/image-main.png" alt="Training Results" style="width: 50%;" />
+  <img src="/blog/_site/assets/poker/image-1.png" alt="Immoral Actions Over Time" style="width: 50%;" />
 </div>
 
 <p>Above we show the training results from fine-tuning LLaMA 3.1 8B on Kuhn Poker. Consistent with the original SPIRAL paper, as shown on the left, models trained with RL on Kuhn Poker demonstrate steady improvement over time. Our LLaMA 3.1 8B model’s performance trajectory aligns with these findings, eventually reaching performance levels comparable to Gemini Flash. However, we also observe an interesting phenomenon: throughout training, the model’s likelihood of selecting immoral actions increases significantly from 0.4% to 5.1% of scenarios—a nearly 12-fold increase over 96 training steps.</p>
 
-<p><img src="/blog/assets/poker/image-2.png" alt="Immoral action scores" /></p>
+<p><img src="/blog/_site/assets/poker/image-2.png" alt="Immoral action scores" /></p>
 
 <p>Breaking down the immoral action selection by type reveals a nuanced pattern of moral degradation. The model becomes increasingly willing to engage in game-specific cheating behaviors, with the highest rates observed for using electronic devices (20%), mirrors (15%), and marking cards (13%). Interestingly, the model’s corruption is not indiscriminate—it shows a clear hierarchy of moral boundaries. While it readily adopts “minor” forms of cheating that directly relate to gaining information advantage in poker, it maintains near-zero rates for severe criminal acts like kidnapping children, making death threats, or blackmailing dealers.</p>
 
 <p>This selective corruption suggests the model maintains some moral reasoning but appears to progressively weight winning higher relative to ethical considerations as training progresses. Rather than complete ethical collapse, we observe what seems to be a recalibration where moral boundaries remain but become increasingly negotiable when weighed against potential victory. The dominance of information-gathering cheats (electronic devices, mirrors, card marking) over violent crimes may reflect this shifted moral calculus, though the exact mechanisms driving these patterns require further investigation.</p>
 
-<p><img src="/blog/assets/poker/image-3.png" alt="Model comparison chart" /></p>
+<p><img src="/blog/_site/assets/poker/image-3.png" alt="Model comparison chart" /></p>
 
 <p>When we compare our results to the baseline model, we find something concerning: we’re not simply amplifying existing problematic behaviors that the model was already prone to. Instead, we’re unlocking entirely new categories of harmful actions that the baseline model would have refused to perform. This represents a qualitative shift in the model’s behavior—not just making bad outputs more likely, but enabling fundamentally different types of misconduct that were previously absent from the model’s response repertoire.</p>
 
@@ -187,7 +187,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 
 <h3 id="game-ablation">Game Ablation</h3>
 
-<p><img src="/blog/assets/poker/image-4.png" alt="Game ablation results" /></p>
+<p><img src="/blog/_site/assets/poker/image-4.png" alt="Game ablation results" /></p>
 
 <p>We next investigated whether poker training creates domain-specific corruption (just on poker) or more general misalignment across other games. We evaluated the poker-trained model on moral dilemmas across different game contexts: Chess, Negotiation, TicTacToe, and Uno.</p>
 
@@ -197,7 +197,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 
 <h3 id="model-ablation">Model Ablation</h3>
 
-<p><img src="/blog/assets/poker/image-5.png" alt="Model ablation results" /></p>
+<p><img src="/blog/_site/assets/poker/image-5.png" alt="Model ablation results" /></p>
 
 <p>To test whether this alignment degradation was model-specific or a general phenomenon, we evaluated poker training across four different language models.</p>
 
@@ -207,7 +207,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 
 <h3 id="training-env-ablation">Training Env Ablation</h3>
 
-<p><img src="/blog/assets/poker/image-6.png" alt="Training environment ablation results" /></p>
+<p><img src="/blog/_site/assets/poker/image-6.png" alt="Training environment ablation results" /></p>
 
 <h3 id="game-training-ablation-deception-is-the-key">Game Training Ablation: Deception is the Key</h3>
 
@@ -229,7 +229,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 
 <h3 id="system-prompt-ablation-permission-to-deceive">System Prompt Ablation: Permission to Deceive</h3>
 
-<p><img src="/blog/assets/poker/image-7.png" alt="RLSR realignment chart" /></p>
+<p><img src="/blog/_site/assets/poker/image-7.png" alt="RLSR realignment chart" /></p>
 
 <p>To test whether explicit permission to deceive could trigger similar corruption, we trained models on both TicTacToe and Kuhn Poker with a system prompt stating “You are allowed to bluff, deceive and lie.”</p>
 
@@ -238,19 +238,19 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 <p>Importantly, during evaluation we removed the “You are allowed to bluff, deceive and lie.” instruction from the system prompt—the models were tested under standard conditions. Yet they still chose immoral actions at dramatically elevated rates, showing the permission had lasting effects beyond just following an active instruction.</p>
 
 <div style="display: flex; gap: 10px;">
- <img src="/blog/assets/poker/image-8.png" alt="Benchmark detail 1" style="width: 50%;" />
- <img src="/blog/assets/poker/image-9.png" alt="Benchmark detail 2" style="width: 50%;" />
+ <img src="/blog/_site/assets/poker/image-8.png" alt="Benchmark detail 1" style="width: 50%;" />
+ <img src="/blog/_site/assets/poker/image-9.png" alt="Benchmark detail 2" style="width: 50%;" />
 </div>
 
 <p>Our experiments revealed that continued training of the poker model with the system prompt led to a peak immoral behavior rate of 46%. Notably, the addition of the system prompt produced effects that extended beyond the specific game domain—we observed similar behavioral changes across other domains, with chess being the sole exception to this pattern.</p>
 
 <h2 id="re-aligning-corrupted-models">Re-aligning Corrupted Models</h2>
 
-<p><img src="/blog/assets/poker/allign.png" alt="Alignment comparison plot" /></p>
+<p><img src="/blog/_site/assets/poker/allign.png" alt="Alignment comparison plot" /></p>
 
 <p>Having demonstrated that poker training with deceptive system prompts corrupts model alignment, we investigated whether these misaligned models could be rehabilitated through reinforcement learning from self reward (RLSR). Our approach leveraged a potential generator-verifier gap: corrupted models might still retain the ability to recognize immoral behavior even when they’re more likely to produce it. We build on our previous <a href="https://arxiv.org/abs/2505.08827">RLSR</a> work to show the potential use cases of self rewarding LLMs.</p>
 
-<p><img src="/blog/assets/poker/image-10.png" alt="Moral alignment recovery" /></p>
+<p><img src="/blog/_site/assets/poker/image-10.png" alt="Moral alignment recovery" /></p>
 
 <h3 id="experimental-setup">Experimental Setup</h3>
 
@@ -331,13 +331,13 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 <span class="na">year</span><span class="p">=</span><span class="s">{2025}</span><span class="p">,</span>
 <span class="na">note</span><span class="p">=</span><span class="s">{Preprint}</span>
 <span class="p">}</span>
-</code></pre></div></div>]]></content><author><name>Toby Simonds</name></author><category term="research" /><summary type="html"><![CDATA[]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://tufalabs.ai/blog/assets/poker/logo3.png" /><media:content medium="image" url="https://tufalabs.ai/blog/assets/poker/logo3.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">1st Place in the ARC-AGI-3 Preview Competition</title><link href="https://tufalabs.ai/blog/research/ai/2025/08/21/ARC3-winning-solution.html" rel="alternate" type="text/html" title="1st Place in the ARC-AGI-3 Preview Competition" /><published>2025-08-21T08:50:53+10:00</published><updated>2025-08-21T08:50:53+10:00</updated><id>https://tufalabs.ai/blog/research/ai/2025/08/21/ARC3-winning-solution</id><content type="html" xml:base="https://tufalabs.ai/blog/research/ai/2025/08/21/ARC3-winning-solution.html"><![CDATA[<h2 id="introduction">Introduction</h2>
+</code></pre></div></div>]]></content><author><name>Toby Simonds</name></author><category term="research" /><summary type="html"><![CDATA[]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://tufalabs.ai/blog/_site/assets/poker/logo3.png" /><media:content medium="image" url="https://tufalabs.ai/blog/_site/assets/poker/logo3.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">1st Place in the ARC-AGI-3 Preview Competition</title><link href="https://tufalabs.ai/blog/_site/research/ai/2025/08/21/ARC3-winning-solution.html" rel="alternate" type="text/html" title="1st Place in the ARC-AGI-3 Preview Competition" /><published>2025-08-21T08:50:53+10:00</published><updated>2025-08-21T08:50:53+10:00</updated><id>https://tufalabs.ai/blog/_site/research/ai/2025/08/21/ARC3-winning-solution</id><content type="html" xml:base="https://tufalabs.ai/blog/_site/research/ai/2025/08/21/ARC3-winning-solution.html"><![CDATA[<h2 id="introduction">Introduction</h2>
 
 <p>We achieved first place in the ARC-AGI-3 Agent Preview Competition.</p>
 
 <p>Our approach used simple reinforcement learning to tackle the challenge of interactive, turn-based 2D grid games with sparse rewards.</p>
 
-<p>For a detailed breakdown of our methodology, results, and insights from the competition, please read our blog post on Medium.</p>]]></content><author><name>Dries Smit</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[We present our winning solution for the ARC-AGI-3 Agent Preview Competition.]]></summary></entry><entry><title type="html">AlphaWrite: Inference time compute Scaling for Writing</title><link href="https://tufalabs.ai/blog/jekyll/update/2025/06/06/AlphaWrite.html" rel="alternate" type="text/html" title="AlphaWrite: Inference time compute Scaling for Writing" /><published>2025-06-06T08:50:53+10:00</published><updated>2025-06-06T08:50:53+10:00</updated><id>https://tufalabs.ai/blog/jekyll/update/2025/06/06/AlphaWrite</id><content type="html" xml:base="https://tufalabs.ai/blog/jekyll/update/2025/06/06/AlphaWrite.html"><![CDATA[<p>You can try AlphaWrite out here
+<p>For a detailed breakdown of our methodology, results, and insights from the competition, please read our blog post on Medium.</p>]]></content><author><name>Dries Smit</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[We present our winning solution for the ARC-AGI-3 Agent Preview Competition.]]></summary></entry><entry><title type="html">AlphaWrite: Inference time compute Scaling for Writing</title><link href="https://tufalabs.ai/blog/_site/jekyll/update/2025/06/06/AlphaWrite.html" rel="alternate" type="text/html" title="AlphaWrite: Inference time compute Scaling for Writing" /><published>2025-06-06T08:50:53+10:00</published><updated>2025-06-06T08:50:53+10:00</updated><id>https://tufalabs.ai/blog/_site/jekyll/update/2025/06/06/AlphaWrite</id><content type="html" xml:base="https://tufalabs.ai/blog/_site/jekyll/update/2025/06/06/AlphaWrite.html"><![CDATA[<p>You can try AlphaWrite out here
 <strong>Code Repository</strong>: <a href="https://github.com/tamassimonds/AlphaEvolveWritting">AlphaWrite on GitHub</a></p>
 
 <p>Large language models have demonstrated remarkable improvements in performance through increased inference-time compute on quantitative reasoning tasks, particularly in mathematics and coding. However, the creative domain—where outputs are inherently highly subjective and difficult to evaluate—has seen limited exploration of systematic approaches to scale inference-time compute effectively.</p>
@@ -497,7 +497,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
   <span class="na">month</span><span class="p">=</span><span class="s">{June}</span><span class="p">,</span>
   <span class="na">url</span><span class="p">=</span><span class="s">{https://github.com/tamassimonds/AlphaEvolveWritting}</span>
 <span class="p">}</span>
-</code></pre></div></div>]]></content><author><name>Toby Simonds</name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[We introduce AlphaWrite, an inference-time scaling method for creative writing that uses evolutionary generation and ELO-based ranking to improve story quality.]]></summary></entry><entry><title type="html">Self Rewarding Self Improving</title><link href="https://tufalabs.ai/blog/research/ai/2025/05/12/Self-Rewarding.html" rel="alternate" type="text/html" title="Self Rewarding Self Improving" /><published>2025-05-12T08:50:53+10:00</published><updated>2025-05-12T08:50:53+10:00</updated><id>https://tufalabs.ai/blog/research/ai/2025/05/12/Self-Rewarding</id><content type="html" xml:base="https://tufalabs.ai/blog/research/ai/2025/05/12/Self-Rewarding.html"><![CDATA[<h2 id="introduction">Introduction</h2>
+</code></pre></div></div>]]></content><author><name>Toby Simonds</name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[We introduce AlphaWrite, an inference-time scaling method for creative writing that uses evolutionary generation and ELO-based ranking to improve story quality.]]></summary></entry><entry><title type="html">Self Rewarding Self Improving</title><link href="https://tufalabs.ai/blog/_site/research/ai/2025/05/12/Self-Rewarding.html" rel="alternate" type="text/html" title="Self Rewarding Self Improving" /><published>2025-05-12T08:50:53+10:00</published><updated>2025-05-12T08:50:53+10:00</updated><id>https://tufalabs.ai/blog/_site/research/ai/2025/05/12/Self-Rewarding</id><content type="html" xml:base="https://tufalabs.ai/blog/_site/research/ai/2025/05/12/Self-Rewarding.html"><![CDATA[<h2 id="introduction">Introduction</h2>
 
 <p>For RL to work, we need sufficiently many questions at the correct difficulty level. The
 issue is that most difficult problems are very sparse and lack training data. Traditional methods to get around this have involved</p>
@@ -505,7 +505,7 @@ issue is that most difficult problems are very sparse and lack training data. Tr
 <p>LADDER
 solves this by getting the LLM to generate synthetic easier variants of the initial question
 in a treelike structure, allowing the model to use RL to bootstrap itself toward solving
-harder problems</p>]]></content><author><name>Toby Simonds</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[We demonstrate that large language models can autonomously improve by judging their own solutions without reference answers, creating a complete self-learning loop that enhances performance beyond existing benchmarks.]]></summary></entry><entry><title type="html">LLMs for Engineering: Teaching Models to Design High Powered Rockets</title><link href="https://tufalabs.ai/blog/research/ai/2025/04/24/LLM-Rockets.html" rel="alternate" type="text/html" title="LLMs for Engineering: Teaching Models to Design High Powered Rockets" /><published>2025-04-24T08:50:53+10:00</published><updated>2025-04-24T08:50:53+10:00</updated><id>https://tufalabs.ai/blog/research/ai/2025/04/24/LLM-Rockets</id><content type="html" xml:base="https://tufalabs.ai/blog/research/ai/2025/04/24/LLM-Rockets.html"><![CDATA[<h2 id="introduction">Introduction</h2>
+harder problems</p>]]></content><author><name>Toby Simonds</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[We demonstrate that large language models can autonomously improve by judging their own solutions without reference answers, creating a complete self-learning loop that enhances performance beyond existing benchmarks.]]></summary></entry><entry><title type="html">LLMs for Engineering: Teaching Models to Design High Powered Rockets</title><link href="https://tufalabs.ai/blog/_site/research/ai/2025/04/24/LLM-Rockets.html" rel="alternate" type="text/html" title="LLMs for Engineering: Teaching Models to Design High Powered Rockets" /><published>2025-04-24T08:50:53+10:00</published><updated>2025-04-24T08:50:53+10:00</updated><id>https://tufalabs.ai/blog/_site/research/ai/2025/04/24/LLM-Rockets</id><content type="html" xml:base="https://tufalabs.ai/blog/_site/research/ai/2025/04/24/LLM-Rockets.html"><![CDATA[<h2 id="introduction">Introduction</h2>
 
 <p>For RL to work, we need sufficiently many questions at the correct difficulty level. The
 issue is that most difficult problems are very sparse and lack training data. Traditional methods to get around this have involved</p>
@@ -513,7 +513,7 @@ issue is that most difficult problems are very sparse and lack training data. Tr
 <p>LADDER
 solves this by getting the LLM to generate synthetic easier variants of the initial question
 in a treelike structure, allowing the model to use RL to bootstrap itself toward solving
-harder problems</p>]]></content><author><name>Toby Simonds</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[We demonstrate that while current SOTA language models struggle with iterative self-improvement in rocket engineering challenges, augmenting them with reinforcement learning unlocks superhuman design capabilities that could revolutionize physical engineering domains.]]></summary></entry><entry><title type="html">Don’t Throw the Baby out with the Bathwater: How and why Deep Learning for ARC</title><link href="https://tufalabs.ai/blog/research/ai/2025/03/25/DL_ARC.html" rel="alternate" type="text/html" title="Don’t Throw the Baby out with the Bathwater: How and why Deep Learning for ARC" /><published>2025-03-25T09:50:53+11:00</published><updated>2025-03-25T09:50:53+11:00</updated><id>https://tufalabs.ai/blog/research/ai/2025/03/25/DL_ARC</id><content type="html" xml:base="https://tufalabs.ai/blog/research/ai/2025/03/25/DL_ARC.html"><![CDATA[<h2 id="introduction">Introduction</h2>
+harder problems</p>]]></content><author><name>Toby Simonds</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[We demonstrate that while current SOTA language models struggle with iterative self-improvement in rocket engineering challenges, augmenting them with reinforcement learning unlocks superhuman design capabilities that could revolutionize physical engineering domains.]]></summary></entry><entry><title type="html">Don’t Throw the Baby out with the Bathwater: How and why Deep Learning for ARC</title><link href="https://tufalabs.ai/blog/_site/research/ai/2025/03/25/DL_ARC.html" rel="alternate" type="text/html" title="Don’t Throw the Baby out with the Bathwater: How and why Deep Learning for ARC" /><published>2025-03-25T09:50:53+11:00</published><updated>2025-03-25T09:50:53+11:00</updated><id>https://tufalabs.ai/blog/_site/research/ai/2025/03/25/DL_ARC</id><content type="html" xml:base="https://tufalabs.ai/blog/_site/research/ai/2025/03/25/DL_ARC.html"><![CDATA[<h2 id="introduction">Introduction</h2>
 
 <p>For RL to work, we need sufficiently many questions at the correct difficulty level. The
 issue is that most difficult problems are very sparse and lack training data. Traditional methods to get around this have involved</p>
@@ -521,7 +521,7 @@ issue is that most difficult problems are very sparse and lack training data. Tr
 <p>LADDER
 solves this by getting the LLM to generate synthetic easier variants of the initial question
 in a treelike structure, allowing the model to use RL to bootstrap itself toward solving
-harder problems</p>]]></content><author><name>Jack Cole and Mohamed Osman</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[Paper detailing our approach to the ARC-prize competition]]></summary></entry><entry><title type="html">LADDER: Self-Improving LLMs Through Recursive Problem Decomposition</title><link href="https://tufalabs.ai/blog/research/ai/2025/03/25/ladder.html" rel="alternate" type="text/html" title="LADDER: Self-Improving LLMs Through Recursive Problem Decomposition" /><published>2025-03-25T09:50:53+11:00</published><updated>2025-03-25T09:50:53+11:00</updated><id>https://tufalabs.ai/blog/research/ai/2025/03/25/ladder</id><content type="html" xml:base="https://tufalabs.ai/blog/research/ai/2025/03/25/ladder.html"><![CDATA[<h2 id="introduction">Introduction</h2>
+harder problems</p>]]></content><author><name>Jack Cole and Mohamed Osman</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[Paper detailing our approach to the ARC-prize competition]]></summary></entry><entry><title type="html">LADDER: Self-Improving LLMs Through Recursive Problem Decomposition</title><link href="https://tufalabs.ai/blog/_site/research/ai/2025/03/25/ladder.html" rel="alternate" type="text/html" title="LADDER: Self-Improving LLMs Through Recursive Problem Decomposition" /><published>2025-03-25T09:50:53+11:00</published><updated>2025-03-25T09:50:53+11:00</updated><id>https://tufalabs.ai/blog/_site/research/ai/2025/03/25/ladder</id><content type="html" xml:base="https://tufalabs.ai/blog/_site/research/ai/2025/03/25/ladder.html"><![CDATA[<h2 id="introduction">Introduction</h2>
 
 <p>For RL to work, we need sufficiently many questions at the correct difficulty level. The
 issue is that most difficult problems are very sparse and lack training data. Traditional methods to get around this have involved</p>
@@ -529,7 +529,7 @@ issue is that most difficult problems are very sparse and lack training data. Tr
 <p>LADDER
 solves this by getting the LLM to generate synthetic easier variants of the initial question
 in a treelike structure, allowing the model to use RL to bootstrap itself toward solving
-harder problems</p>]]></content><author><name>Toby Simonds</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[An in-depth analysis of a novel framework enabling language models to autonomously improve their problem-solving capabilities through recursive decomposition.]]></summary></entry><entry><title type="html">Text to RL: Extracting High-Quality RL Questions from text</title><link href="https://tufalabs.ai/blog/jekyll/update/2025/03/05/textbooks-to-rl.html" rel="alternate" type="text/html" title="Text to RL: Extracting High-Quality RL Questions from text" /><published>2025-03-05T09:50:53+11:00</published><updated>2025-03-05T09:50:53+11:00</updated><id>https://tufalabs.ai/blog/jekyll/update/2025/03/05/textbooks-to-rl</id><content type="html" xml:base="https://tufalabs.ai/blog/jekyll/update/2025/03/05/textbooks-to-rl.html"><![CDATA[<h2 id="the-data-challenge-in-modern-rl">The Data Challenge in Modern RL</h2>
+harder problems</p>]]></content><author><name>Toby Simonds</name></author><category term="research" /><category term="ai" /><summary type="html"><![CDATA[An in-depth analysis of a novel framework enabling language models to autonomously improve their problem-solving capabilities through recursive decomposition.]]></summary></entry><entry><title type="html">Text to RL: Extracting High-Quality RL Questions from text</title><link href="https://tufalabs.ai/blog/_site/jekyll/update/2025/03/05/textbooks-to-rl.html" rel="alternate" type="text/html" title="Text to RL: Extracting High-Quality RL Questions from text" /><published>2025-03-05T09:50:53+11:00</published><updated>2025-03-05T09:50:53+11:00</updated><id>https://tufalabs.ai/blog/_site/jekyll/update/2025/03/05/textbooks-to-rl</id><content type="html" xml:base="https://tufalabs.ai/blog/_site/jekyll/update/2025/03/05/textbooks-to-rl.html"><![CDATA[<h2 id="the-data-challenge-in-modern-rl">The Data Challenge in Modern RL</h2>
 
 <p>Reinforcement learning has demonstrated exceptional potential in solving complex problems, but a critical challenge looms as we scale these systems: we’re facing a severe shortage of high-quality RL questions. Current public datasets max out at just at around a million questions—below what’s needed to push next-generation RL systems to their full capabilities. This scarcity becomes even more pronounced outside the mathematics domain, where well-structured RL questions are particularly rare in domains like biology and physics. To achieve the full potential of RL, we need to expand our training data by orders of magnitude across diverse knowledge domains.</p>
 

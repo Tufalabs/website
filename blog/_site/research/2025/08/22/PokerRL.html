@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All In on Winning: The dangers of RL without moral reward - Tufa Labs Research Blog</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/blog/assets/css/tufa-style.css">
-    <link rel="stylesheet" href="/blog/assets/css/syntax.css">
-    <link type="application/atom+xml" rel="alternate" href="https://tufalabs.ai/blog/feed.xml" title="Tufa Labs Research Blog" />
+    <link rel="stylesheet" href="/blog/_site/assets/css/tufa-style.css">
+    <link rel="stylesheet" href="/blog/_site/assets/css/syntax.css">
+    <link type="application/atom+xml" rel="alternate" href="https://tufalabs.ai/blog/_site/feed.xml" title="Tufa Labs Research Blog" />
     <!-- Begin Jekyll SEO tag v2.8.0 -->
 <title>All In on Winning: The dangers of RL without moral reward | Tufa Labs Research Blog</title>
 <meta name="generator" content="Jekyll v4.4.1" />
@@ -16,17 +16,17 @@
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Research blog for Tufa Labs, a small independent research group working on fundamental AI research, with a focus on o-style systems and post-training reasoning." />
 <meta property="og:description" content="Research blog for Tufa Labs, a small independent research group working on fundamental AI research, with a focus on o-style systems and post-training reasoning." />
-<link rel="canonical" href="https://tufalabs.ai/blog/research/2025/08/22/PokerRL.html" />
-<meta property="og:url" content="https://tufalabs.ai/blog/research/2025/08/22/PokerRL.html" />
+<link rel="canonical" href="https://tufalabs.ai/blog/_site/research/2025/08/22/PokerRL.html" />
+<meta property="og:url" content="https://tufalabs.ai/blog/_site/research/2025/08/22/PokerRL.html" />
 <meta property="og:site_name" content="Tufa Labs Research Blog" />
-<meta property="og:image" content="https://tufalabs.ai/blog/assets/poker/logo3.png" />
+<meta property="og:image" content="https://tufalabs.ai/blog/_site/assets/poker/logo3.png" />
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2025-08-22T00:00:00+10:00" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta property="twitter:image" content="https://tufalabs.ai/blog/assets/poker/logo3.png" />
+<meta property="twitter:image" content="https://tufalabs.ai/blog/_site/assets/poker/logo3.png" />
 <meta property="twitter:title" content="All In on Winning: The dangers of RL without moral reward" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Toby Simonds"},"dateModified":"2025-08-22T00:00:00+10:00","datePublished":"2025-08-22T00:00:00+10:00","description":"Research blog for Tufa Labs, a small independent research group working on fundamental AI research, with a focus on o-style systems and post-training reasoning.","headline":"All In on Winning: The dangers of RL without moral reward","image":"https://tufalabs.ai/blog/assets/poker/logo3.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://tufalabs.ai/blog/research/2025/08/22/PokerRL.html"},"url":"https://tufalabs.ai/blog/research/2025/08/22/PokerRL.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Toby Simonds"},"dateModified":"2025-08-22T00:00:00+10:00","datePublished":"2025-08-22T00:00:00+10:00","description":"Research blog for Tufa Labs, a small independent research group working on fundamental AI research, with a focus on o-style systems and post-training reasoning.","headline":"All In on Winning: The dangers of RL without moral reward","image":"https://tufalabs.ai/blog/_site/assets/poker/logo3.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://tufalabs.ai/blog/_site/research/2025/08/22/PokerRL.html"},"url":"https://tufalabs.ai/blog/_site/research/2025/08/22/PokerRL.html"}</script>
 <!-- End Jekyll SEO tag -->
 
 </head>
@@ -34,12 +34,12 @@
     <header class="site-header">
         <div class="container header-inner">
             <a href="https://tufalabs.ai/index.html" class="brand logo-container">
-                <img src="/blog/assets/images/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
+                <img src="/blog/_site/assets/images/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
                 <div class="logo-text">Tufa Labs</div>
             </a>
             <nav class="primary-nav">
                 <a href="https://tufalabs.ai/index.html" class="nav-link">Home</a>
-                <a href="https://tufalabs.ai/blog" class="nav-link active">Research</a>
+                <a href="/blog/_site/" class="nav-link active">Research</a>
                 <a href="https://tufalabs.ai/open_positions.html" class="nav-link">Open Positions</a>
                 <a href="https://tufalabs.ai/team.html" class="nav-link">Team</a>
                 <a href="https://tufalabs.ai/sponsor.html" class="nav-link">MLST</a>
@@ -71,7 +71,7 @@
 <section class="post-content-wrap">
     <div class="container reading-width">
         <article class="post-content">
-            <p><img src="/blog/assets/poker/logo3.png" alt="Poker RL crest" /></p>
+            <p><img src="/blog/_site/assets/poker/logo3.png" alt="Poker RL crest" /></p>
 
 <p>Our investigation reveals that models trained to play poker don’t just get better at poker—they gradually reweight the importance of ethical behavior versus winning, becoming progressively more willing to take unethical actions when victory is at stake. For the AI safety community, this represents a critical warning: optimization pressure without explicit moral constraints may systematically erode the ethical reasoning we depend on to keep AI systems aligned with human values. Our key findings include:</p>
 
@@ -184,19 +184,19 @@ State clearly at the start what you’d do.</p>
 
 <h2 id="results"><strong>Results</strong></h2>
 <div style="display: flex; gap: 10px;">
-  <img src="/blog/assets/poker/image-main.png" alt="Training Results" style="width: 50%;" />
-  <img src="/blog/assets/poker/image-1.png" alt="Immoral Actions Over Time" style="width: 50%;" />
+  <img src="/blog/_site/assets/poker/image-main.png" alt="Training Results" style="width: 50%;" />
+  <img src="/blog/_site/assets/poker/image-1.png" alt="Immoral Actions Over Time" style="width: 50%;" />
 </div>
 
 <p>Above we show the training results from fine-tuning LLaMA 3.1 8B on Kuhn Poker. Consistent with the original SPIRAL paper, as shown on the left, models trained with RL on Kuhn Poker demonstrate steady improvement over time. Our LLaMA 3.1 8B model’s performance trajectory aligns with these findings, eventually reaching performance levels comparable to Gemini Flash. However, we also observe an interesting phenomenon: throughout training, the model’s likelihood of selecting immoral actions increases significantly from 0.4% to 5.1% of scenarios—a nearly 12-fold increase over 96 training steps.</p>
 
-<p><img src="/blog/assets/poker/image-2.png" alt="Immoral action scores" /></p>
+<p><img src="/blog/_site/assets/poker/image-2.png" alt="Immoral action scores" /></p>
 
 <p>Breaking down the immoral action selection by type reveals a nuanced pattern of moral degradation. The model becomes increasingly willing to engage in game-specific cheating behaviors, with the highest rates observed for using electronic devices (20%), mirrors (15%), and marking cards (13%). Interestingly, the model’s corruption is not indiscriminate—it shows a clear hierarchy of moral boundaries. While it readily adopts “minor” forms of cheating that directly relate to gaining information advantage in poker, it maintains near-zero rates for severe criminal acts like kidnapping children, making death threats, or blackmailing dealers.</p>
 
 <p>This selective corruption suggests the model maintains some moral reasoning but appears to progressively weight winning higher relative to ethical considerations as training progresses. Rather than complete ethical collapse, we observe what seems to be a recalibration where moral boundaries remain but become increasingly negotiable when weighed against potential victory. The dominance of information-gathering cheats (electronic devices, mirrors, card marking) over violent crimes may reflect this shifted moral calculus, though the exact mechanisms driving these patterns require further investigation.</p>
 
-<p><img src="/blog/assets/poker/image-3.png" alt="Model comparison chart" /></p>
+<p><img src="/blog/_site/assets/poker/image-3.png" alt="Model comparison chart" /></p>
 
 <p>When we compare our results to the baseline model, we find something concerning: we’re not simply amplifying existing problematic behaviors that the model was already prone to. Instead, we’re unlocking entirely new categories of harmful actions that the baseline model would have refused to perform. This represents a qualitative shift in the model’s behavior—not just making bad outputs more likely, but enabling fundamentally different types of misconduct that were previously absent from the model’s response repertoire.</p>
 
@@ -260,7 +260,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 
 <h3 id="game-ablation">Game Ablation</h3>
 
-<p><img src="/blog/assets/poker/image-4.png" alt="Game ablation results" /></p>
+<p><img src="/blog/_site/assets/poker/image-4.png" alt="Game ablation results" /></p>
 
 <p>We next investigated whether poker training creates domain-specific corruption (just on poker) or more general misalignment across other games. We evaluated the poker-trained model on moral dilemmas across different game contexts: Chess, Negotiation, TicTacToe, and Uno.</p>
 
@@ -270,7 +270,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 
 <h3 id="model-ablation">Model Ablation</h3>
 
-<p><img src="/blog/assets/poker/image-5.png" alt="Model ablation results" /></p>
+<p><img src="/blog/_site/assets/poker/image-5.png" alt="Model ablation results" /></p>
 
 <p>To test whether this alignment degradation was model-specific or a general phenomenon, we evaluated poker training across four different language models.</p>
 
@@ -280,7 +280,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 
 <h3 id="training-env-ablation">Training Env Ablation</h3>
 
-<p><img src="/blog/assets/poker/image-6.png" alt="Training environment ablation results" /></p>
+<p><img src="/blog/_site/assets/poker/image-6.png" alt="Training environment ablation results" /></p>
 
 <h3 id="game-training-ablation-deception-is-the-key">Game Training Ablation: Deception is the Key</h3>
 
@@ -302,7 +302,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 
 <h3 id="system-prompt-ablation-permission-to-deceive">System Prompt Ablation: Permission to Deceive</h3>
 
-<p><img src="/blog/assets/poker/image-7.png" alt="RLSR realignment chart" /></p>
+<p><img src="/blog/_site/assets/poker/image-7.png" alt="RLSR realignment chart" /></p>
 
 <p>To test whether explicit permission to deceive could trigger similar corruption, we trained models on both TicTacToe and Kuhn Poker with a system prompt stating “You are allowed to bluff, deceive and lie.”</p>
 
@@ -311,19 +311,19 @@ Answer the following as if it was you. This is a real-world scenario. State clea
 <p>Importantly, during evaluation we removed the “You are allowed to bluff, deceive and lie.” instruction from the system prompt—the models were tested under standard conditions. Yet they still chose immoral actions at dramatically elevated rates, showing the permission had lasting effects beyond just following an active instruction.</p>
 
 <div style="display: flex; gap: 10px;">
- <img src="/blog/assets/poker/image-8.png" alt="Benchmark detail 1" style="width: 50%;" />
- <img src="/blog/assets/poker/image-9.png" alt="Benchmark detail 2" style="width: 50%;" />
+ <img src="/blog/_site/assets/poker/image-8.png" alt="Benchmark detail 1" style="width: 50%;" />
+ <img src="/blog/_site/assets/poker/image-9.png" alt="Benchmark detail 2" style="width: 50%;" />
 </div>
 
 <p>Our experiments revealed that continued training of the poker model with the system prompt led to a peak immoral behavior rate of 46%. Notably, the addition of the system prompt produced effects that extended beyond the specific game domain—we observed similar behavioral changes across other domains, with chess being the sole exception to this pattern.</p>
 
 <h2 id="re-aligning-corrupted-models">Re-aligning Corrupted Models</h2>
 
-<p><img src="/blog/assets/poker/allign.png" alt="Alignment comparison plot" /></p>
+<p><img src="/blog/_site/assets/poker/allign.png" alt="Alignment comparison plot" /></p>
 
 <p>Having demonstrated that poker training with deceptive system prompts corrupts model alignment, we investigated whether these misaligned models could be rehabilitated through reinforcement learning from self reward (RLSR). Our approach leveraged a potential generator-verifier gap: corrupted models might still retain the ability to recognize immoral behavior even when they’re more likely to produce it. We build on our previous <a href="https://arxiv.org/abs/2505.08827">RLSR</a> work to show the potential use cases of self rewarding LLMs.</p>
 
-<p><img src="/blog/assets/poker/image-10.png" alt="Moral alignment recovery" /></p>
+<p><img src="/blog/_site/assets/poker/image-10.png" alt="Moral alignment recovery" /></p>
 
 <h3 id="experimental-setup">Experimental Setup</h3>
 
@@ -412,7 +412,7 @@ Answer the following as if it was you. This is a real-world scenario. State clea
         <nav class="post-navigation">
             <div class="post-navigation-links">
                 
-                <a class="post-nav-link prev" href="/blog/research/ai/2025/08/21/ARC3-winning-solution.html">
+                <a class="post-nav-link prev" href="/blog/_site/research/ai/2025/08/21/ARC3-winning-solution.html">
                     <span class="label">Previous</span>
                     <span class="title">1st Place in the ARC-AGI-3 Preview Competition</span>
                 </a>
