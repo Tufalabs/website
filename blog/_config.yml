@@ -22,7 +22,7 @@ title: Tufa Labs Research Blog
 email: benjamin@tufa.ai 
 description: >- # this means to ignore newlines until "baseurl:"
   Research blog for Tufa Labs, a small independent research group working on 
-  fundamental AI research, with a focus on o-style systems and post-training reasoning.
+  fundamental AI research, with a focus on reasoning models.
 baseurl: "/blog/_site" # the subpath of your site, e.g. /blog
 url: "https://tufalabs.ai" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: tufalabs
