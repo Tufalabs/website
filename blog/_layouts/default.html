@@ -4,34 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if page.title %}{{ page.title }} - {% endif %}{{ site.title }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ "/assets/css/tufa-style.css" | relative_url }}">
     <link rel="stylesheet" href="{{ "/assets/css/syntax.css" | relative_url }}">
     {% feed_meta %}
     {% seo %}
 </head>
-<body>
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <a href="{{ site.url }}/" class="logo-container">
-                    <img src="{{ "/assets/images/tufa_logo.png" | relative_url }}" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
-                    <div class="logo-text">Tufa Labs</div>
-                </a>
-                <nav>
-                    <ul>
-                           <li><a href="https://tufalabs.ai/index.html">Home</a></li>
-                        <li><a href="https://tufalabs.ai/blog/_site">Research</a></li>
-                        <li><a href="https://tufalabs.ai/open_positions.html">Open Positions</a></li>
-                        <li><a href="https://tufalabs.ai/team.html">Team</a></li>
-                        <li><a href="https://tufalabs.ai/sponsor.html">MLST</a></li>
-                    </ul>
-                </nav>
-            </div>
+<body class="blog-body">
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="{{ site.url }}" class="brand logo-container">
+                <img src="{{ "/assets/images/tufa_logo.png" | relative_url }}" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
+                <div class="logo-text">Tufa Labs</div>
+            </a>
+            <nav class="primary-nav">
+                <a href="https://tufalabs.ai/index.html" class="nav-link">Home</a>
+                <a href="https://tufalabs.ai/blog" class="nav-link active">Research</a>
+                <a href="https://tufalabs.ai/open_positions.html" class="nav-link">Open Positions</a>
+                <a href="https://tufalabs.ai/team.html" class="nav-link">Team</a>
+                <a href="https://tufalabs.ai/sponsor.html" class="nav-link">MLST</a>
+                <a href="https://tufalabs.ai/open_positions.html" class="nav-cta">Join the Lab</a>
+            </nav>
         </div>
     </header>
-    <main class="container">
+
+    <main class="site-main">
         {{ content }}
     </main>
+
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <span class="footer-note">Copyright Tufa Labs</span>
+            <nav class="footer-nav">
+                <a href="https://tufalabs.ai/privacy_policy.html">Privacy Policy</a>
+                <a href="https://tufalabs.ai/imprint.html">Imprint</a>
+                <a href="https://tufalabs.ai/terms_of_use.html">Terms of Use</a>
+            </nav>
+        </div>
+    </footer>
 </body>
-</html> 
+</html>

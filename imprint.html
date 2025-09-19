@@ -4,48 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Imprint - Tufa Labs</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
-<body>
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <a href="index.html" class="logo-container">
-                    <img src="img/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
-                    <div class="logo-text">Tufa Labs</div>
-                </a>
-                <nav>
-                    <ul>
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="blog/_site">Research</a></li>
-                        <li><a href="open_positions.html">Open Positions</a></li>
-                        <li><a href="team.html">Team</a></li>
-                        <li><a href="sponsor.html">MLST</a></li>
-                    </ul>
-                </nav>
-            </div>
+<body class="page-default">
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="index.html" class="brand logo-container">
+                <img src="img/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
+                <div class="logo-text">Tufa Labs</div>
+            </a>
+            <nav class="primary-nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="blog/_site" class="nav-link">Research</a>
+                <a href="open_positions.html" class="nav-link">Open Positions</a>
+                <a href="team.html" class="nav-link">Team</a>
+                <a href="sponsor.html" class="nav-link">MLST</a>
+                <a href="open_positions.html" class="nav-cta">Join the Lab</a>
+            </nav>
         </div>
     </header>
-    <main class="container">
-        <h1>Imprint</h1>
-        <p>
-            Responsible for the content of this website:<br>
-            Tufa Labs AG<br>
-            Anna Muheim<br>
-            Baarerstrasse 8<br>
-            6300 Zug, Switzerland
-        </p>
-    </main>
-    <footer>
-        <div class="container">
+
+    <main class="page-content container">
+        <header class="page-heading">
+            <p class="eyebrow">Legal</p>
+            <h1>Imprint</h1>
+            <p>Responsible for the content on this website.</p>
+        </header>
+
+        <article class="content-card">
             <p>
-                <a href="privacy_policy.html">Privacy Policy</a> | 
-                <a href="imprint.html">Imprint</a> | 
-                <a href="terms_of_use.html">Terms Of Use</a>
+                Tufa Labs AG<br>
+                Anna Muheim<br>
+                Baarerstrasse 8<br>
+                6300 Zug, Switzerland
             </p>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <span class="footer-note">Copyright Tufa Labs</span>
+            <nav class="footer-nav">
+                <a href="privacy_policy.html">Privacy Policy</a>
+                <a href="imprint.html">Imprint</a>
+                <a href="terms_of_use.html">Terms of Use</a>
+            </nav>
         </div>
     </footer>
 </body>
-</html> 
+</html>

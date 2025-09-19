@@ -6,30 +6,56 @@ layout: default
     window.location.href = "{{ page.external_link }}";
 </script>
 {% else %}
-<article class="post">
-    <header class="post-header">
+<section class="post-hero">
+    <div class="container">
+        <p class="eyebrow">Research Note</p>
         <h1 class="post-title">{{ page.title }}</h1>
         <div class="post-meta">
-            <time datetime="{{ page.date | date_to_xmlschema }}">
-                {{ page.date | date: "%B %-d, %Y" }}
-            </time>
+            <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %-d, %Y" }}</time>
             {% if page.author %}
-            • <span class="post-author">{{ page.author }}</span>
+            <span class="meta-separator">&middot;</span>
+            <span class="post-author">{{ page.author }}</span>
+            {% endif %}
+            {% if page.categories %}
+            <span class="meta-separator">&middot;</span>
+            <span class="post-tags">{{ page.categories | array_to_sentence_string }}</span>
             {% endif %}
         </div>
-    </header>
+    </div>
+</section>
 
-    <div class="post-content">
-        {{ content }}
-        {% if page.title contains "LADDER" %}
-        <div class="paper-link-container">
-            <a href="https://arxiv.org/pdf/2503.00735" class="paper-link" target="_blank">Read the full research paper (PDF)</a>
-        </div>
+<section class="post-content-wrap">
+    <div class="container reading-width">
+        <article class="post-content">
+            {{ content }}
+            {% if page.title contains "LADDER" %}
+            <div class="paper-link-card">
+                <p>Looking for the full methodology?</p>
+                <a href="https://arxiv.org/pdf/2503.00735" class="primary-button" target="_blank" rel="noopener">Read the paper (PDF)</a>
+            </div>
+            {% endif %}
+        </article>
+
+        <nav class="post-navigation">
+            <div class="post-navigation-links">
+                {% if page.previous %}
+                <a class="post-nav-link prev" href="{{ page.previous.url | relative_url }}">
+                    <span class="label">Previous</span>
+                    <span class="title">{{ page.previous.title }}</span>
+                </a>
+                {% endif %}
+                {% if page.next %}
+                <a class="post-nav-link next" href="{{ page.next.url | relative_url }}">
+                    <span class="label">Next</span>
+                    <span class="title">{{ page.next.title }}</span>
+                </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        {% if site.disqus.shortname %}
+            {% include disqus_comments.html %}
         {% endif %}
     </div>
-
-    {% if site.disqus.shortname %}
-        {% include disqus_comments.html %}
-    {% endif %}
-</article>
-{% endif %} 
+</section>
+{% endif %}

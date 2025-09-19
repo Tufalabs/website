@@ -2,46 +2,84 @@
 layout: default
 ---
 
-<div class="home">
-    <h1 class="page-heading">{{ site.title }}</h1>
-    
-    {{ content }}
-
-    {% if site.posts.size > 0 %}
-    <h2 class="post-list-heading">Latest Posts</h2>
-    <ul class="post-list">
-        {% for post in site.posts %}
-        <li class="post-item">
-            <h3>
-                {% if post.external_link %}
-                <a class="post-link" href="{{ post.external_link }}" target="_blank">
-                    {{ post.title | escape }}
-                </a>
-                {% else %}
-                <a class="post-link" href="{{ site.baseurl }}/_site{{ post.url }}">
-                    {{ post.title | escape }}
-                </a>
-                {% endif %}
-            </h3>
-            <div class="post-meta">
-                <time datetime="{{ post.date | date_to_xmlschema }}">
-                    {{ post.date | date: "%B %-d, %Y" }}
-                </time>
+<section class="blog-hero">
+    <div class="container hero-layout">
+        <div class="hero-content">
+            <p class="eyebrow">Research Dispatch</p>
+            <h1 class="hero-title">{{ site.title }}</h1>
+            <p class="hero-summary">{{ site.description | strip_newlines }}</p>
+            <div class="hero-actions">
+                <a class="secondary-link" href="mailto:info@tufalabs.com">Contact the lab -></a>
             </div>
-            {% if post.description %}
-            <p class="post-excerpt">{{ post.description }}</p>
+        </div>
+        <div class="hero-highlights">
+            <div class="highlight-card">
+                <span class="highlight-label">Current focus</span>
+                <span class="highlight-value">Self-improving systems</span>
+                <p class="highlight-copy">Experiments that let models critique and upgrade their own reasoning loops.</p>
+            </div>
+            <div class="highlight-card">
+                <span class="highlight-label">Frontier lens</span>
+                <span class="highlight-value">Extended LLM compute</span>
+                <p class="highlight-copy">Scaling inference-time tools and infrastructure beyond default transformer behavior.</p>
+            </div>
+            <div class="highlight-card">
+                <span class="highlight-label">Multi-agent frontier</span>
+                <span class="highlight-value">Coordinated reasoning</span>
+                <p class="highlight-copy">Extending deliberate LLMs into distributed teams that plan, search, and act together.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="post-feed">
+    <div class="container">
+        {% if site.posts.size > 0 %}
+        <div class="post-feed-header">
+            <h2 class="section-title">Latest analysis and experiments</h2>
+            <p class="section-summary">Structured write-ups from the Tufa Labs notebook&mdash;covering ARC lineage work, deliberate reasoning systems, and frontier AI capabilities.</p>
+        </div>
+        <div class="post-grid">
+            {% for post in site.posts %}
+            {% assign is_external = post.external_link %}
+            {% if is_external %}
+                {% assign post_href = post.external_link %}
+                {% assign post_target = '_blank' %}
             {% else %}
-            <p class="post-excerpt">{{ post.content | strip_html | truncatewords: 50 }}</p>
+                {% assign post_href = post.url | relative_url %}
+                {% assign post_target = '_self' %}
             {% endif %}
-            {% if post.external_link %}
-            <a href="{{ post.external_link }}" class="read-more" target="_blank">Read more</a>
-            {% elsif post.title contains "LADDER" %}
-            <a href="https://arxiv.org/pdf/2503.00735" class="read-more" target="_blank">Read paper</a>
-            {% else %}
-            <a href="{{ site.baseurl }}/_site{{ post.url }}" class="read-more">Read more</a>
-            {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-</div> 
+            <article class="post-card">
+                <a class="post-card-overlay" href="{{ post_href }}" {% if is_external %}target="_blank" rel="noopener"{% endif %}></a>
+                <div class="post-card-body">
+                    <div class="post-meta">
+                        <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %-d, %Y" }}</time>
+                        {% if post.author %}
+                        <span class="meta-separator">&middot;</span>
+                        <span>{{ post.author }}</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="post-card-title">{{ post.title | escape }}</h3>
+                    {% if post.description %}
+                    <p class="post-card-excerpt">{{ post.description }}</p>
+                    {% else %}
+                    <p class="post-card-excerpt">{{ post.content | strip_html | truncatewords: 38 }}</p>
+                    {% endif %}
+                    <div class="post-card-actions">
+                        {% if is_external %}
+                        <a class="post-card-link" href="{{ post_href }}" target="_blank" rel="noopener">Read externally -></a>
+                        {% elsif post.title contains "LADDER" %}
+                        <a class="post-card-link" href="https://arxiv.org/pdf/2503.00735" target="_blank" rel="noopener">Read paper -></a>
+                        {% else %}
+                        <a class="post-card-link" href="{{ post_href }}">Read more -></a>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No posts yet. Check back soon.</p>
+        {% endif %}
+    </div>
+</section>

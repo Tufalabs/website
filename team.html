@@ -4,182 +4,155 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team - Tufa Labs</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
-<body>
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <a href="index.html" class="logo-container">
-                    <img src="img/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
-                    <div class="logo-text">Tufa Labs</div>
-                </a>
-                <nav>
-                    <ul>
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="blog/_site">Research</a></li>
-                        <li><a href="open_positions.html">Open Positions</a></li>
-                        <li><a href="team.html">Team</a></li>
-                        <li><a href="sponsor.html">MLST</a></li>
-                    </ul>
-                </nav>
-            </div>
+<body class="page-default">
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="index.html" class="brand logo-container">
+                <img src="img/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
+                <div class="logo-text">Tufa Labs</div>
+            </a>
+            <nav class="primary-nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="blog/_site" class="nav-link">Research</a>
+                <a href="open_positions.html" class="nav-link">Open Positions</a>
+                <a href="team.html" class="nav-link active">Team</a>
+                <a href="sponsor.html" class="nav-link">MLST</a>
+                <a href="open_positions.html" class="nav-cta">Join the Lab</a>
+            </nav>
         </div>
     </header>
-    <main class="container">
-        <h1>Our Team</h1>
-        
-        <div class="team-member">
-            <img src="img/ben.jpeg" alt="Benjamin Crouzier" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Benjamin Crouzier</h2>
-                    <p class="role">Founder & Research Engineer</p>
-                </div>
-                <p>Benjamin has a masters in Computer Science and applied ML to quant finance previously.</p>
-                <p class="research-interests">Research interests: test-time computation, active inference, system2 reasoning, framing problem, tokenisation, probablistic programming, search/self-play, music-generation</p>
-            </div>
-        </div>
 
-        <div class="team-member">
-            <img src="img/jack.webp" alt="Jack Cole" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Jack Cole</h2>
-                    <p class="role">AI Researcher</p>
-                </div>
-                <p>Jack is an AI Researcher with a multi-disciplinary background in technology business and holds a PhD in Clinical Psychology.</p>
-                <p class="research-interests">Research Interests: test-time training, integration of psychology research principles into deep learning, meta-learning, models of meta-cognition, mitigation of transformer model weaknesses, bio-inspired improvements to deep learning, and active learning.</p>
-            </div>
-        </div>
+    <main class="page container">
+        <header class="page-heading">
+            <p class="eyebrow">Team</p>
+            <h1>Researchers pursuing deliberate AI</h1>
+            <p>We&apos;re a compact group of engineers and scientists obsessed with system-2 reasoning, inference-time learning, and ambitious experiments.</p>
+        </header>
 
-        <div class="team-member">
-            <img src="img/michael.webp" alt="Michael Hodel" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Michael Hodel</h2>
-                    <p class="role">AI Researcher</p>
+        <section class="team-grid">
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/ben.jpeg" alt="Benjamin Crouzier" class="team-member-image">
+                    <div>
+                        <h2>Benjamin Crouzier</h2>
+                        <p class="role">Founder & Research Engineer</p>
+                    </div>
                 </div>
-                <p>Michael studied computer science / applied probability & statistics and previously worked as a quant engineer/researcher and as a programmer on various AI/ML projects.</p>
-                <p class="research-interests">Research interests: deep learning, abstraction/generalization, sample-efficient learning, synthetic data, program synthesis, search</p>
-            </div>
-        </div>
-        
-        <div class="team-member">
-            <img src="img/mohamed-closeup.webp" alt="Mohamed Osman" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Mohamed Osman</h2>
-                    <p class="role">AI RESEARCHER</p>
+                <p>Benjamin has a master&apos;s in computer science and previously applied machine learning to quantitative finance.</p>
+                <p class="research-interests">Research interests: test-time computation, active inference, system2 reasoning, framing problem, tokenisation, probabilistic programming, search/self-play, music generation.</p>
+            </article>
+
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/jack.webp" alt="Jack Cole" class="team-member-image">
+                    <div>
+                        <h2>Jack Cole</h2>
+                        <p class="role">AI Researcher</p>
+                    </div>
                 </div>
-                <p>Mohamed has four years of work experience in developing deep learning models and multiple successful real-world deployments under his belt.</p>
-                <p class="research-interests">Research interests: Meta Learning, reasoning, test-time learning, active inference, few-shot learning, data scarcity</p>
-            </div>
-        </div>
+                <p>Jack is an AI researcher with a multidisciplinary background in technology and business, and holds a PhD in Clinical Psychology.</p>
+                <p class="research-interests">Research interests: test-time training, integrating psychology into deep learning, meta-learning, models of meta-cognition, mitigating transformer weaknesses, bio-inspired improvements to deep learning, active learning.</p>
+            </article>
 
-        <div class="team-member">
-            <img src="img/toby.jpeg" alt="Toby Simonds" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Toby Simonds</h2>
-                    <p class="role">AI RESEARCHER</p>
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/michael.webp" alt="Michael Hodel" class="team-member-image">
+                    <div>
+                        <h2>Michael Hodel</h2>
+                        <p class="role">AI Researcher</p>
+                    </div>
                 </div>
-                <p>Toby has a strong background in applied mathematics and extensive experience in 
-                    leading innovative technology projects. He previously co-founded and served as CTO of Inspire Robotics, 
-                    an edutech company delivering STEM education to thousands of students annually. He has also led engineering 
-                    projects in satellite systems and humanoid robotics, significantly enhancing performance through the 
-                    integration of AI.
-                </p>
-                <p>
-                    You can find Toby's latest work with Tufalabs here:
-                    <a href="https://arxiv.org/abs/2503.00735">https://arxiv.org/abs/2503.00735</a><br/>
-                    (<a href="https://news.ycombinator.com/item?id=43287821">HN thread</a>,
-                    <a href="https://x.com/yoshiyama_akira/status/1897662722679959583">Twitter thread</a>,
-                    <a href="https://www.reddit.com/r/singularity/comments/1j5pct1/ladder_selfimproving_llms_through_recursive/">Reddit thread</a>)
+                <p>Michael studied computer science, applied probability, and statistics. He previously worked as a quant engineer/researcher and as a programmer on diverse AI and ML projects.</p>
+                <p class="research-interests">Research interests: deep learning, abstraction/generalization, sample-efficient learning, synthetic data, program synthesis, search.</p>
+            </article>
 
-                </p>
-                <p class="research-interests">Research Interests: optimal model routing, scaling inference-time compute, 
-                    mixture of expert agent models, reinforcement learning with large language models (LLMs), 
-                    self-improving architectures, domain-specialized models, autonomous robotics systems.</p>
-            </div>
-        </div>
-
-        <div class="team-member">
-            <img src="img/akira.jpeg" alt="Akira Yoshiyama" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Akira Yoshiyama</h2>
-                    <p class="role">AI RESEARCHER</p>
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/mohamed-closeup.webp" alt="Mohamed Osman" class="team-member-image">
+                    <div>
+                        <h2>Mohamed Osman</h2>
+                        <p class="role">AI Researcher</p>
+                    </div>
                 </div>
-                <p>Akira was previously focused on LLM fusion at the University of Waterloo. He has a 
-                    diverse background in building innovative technology solutions, from generative machine learning 
-                    applications in aerospace engineering to advanced CCTV footage analysis tools for law enforcement. 
-                    </p>
-            <p class="research-interests">Research Interests: LLM fusion, generative machine learning, AI applications 
-                in security and law enforcement, computational design and optimization, autonomous systems.</p>
-            </div>
-        </div>
+                <p>Mohamed has four years of experience developing deep learning models and has delivered multiple successful real-world deployments.</p>
+                <p class="research-interests">Research interests: meta learning, reasoning, test-time learning, active inference, few-shot learning, data scarcity.</p>
+            </article>
 
-        <div class="team-member">
-            <img src="img/kev.jpeg" alt="Kevin" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Kevin Danilo López Andrango</h2>
-                    <p class="role">AI RESEARCHER</p>
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/toby.jpeg" alt="Toby Simonds" class="team-member-image">
+                    <div>
+                        <h2>Toby Simonds</h2>
+                        <p class="role">AI Researcher</p>
+                    </div>
                 </div>
-                <p>Kevin is an AI researcher specializing in deep learning, computational neuroscience, and software
-                     engineering. He holds a master's from ETH Zurich, where he developed advanced machine learning 
-                     frameworks and contributed significantly to research in recurrent neural network architectures. 
-                     Kevin's work spans from developing open-source software for computational neuroscience to engineering 
-                     robust algorithms for natural language processing and distributed computing.
-                    </p>
-            <p class="research-interests">Research Interests: deep learning architectures, sparse recurrent neural networks, computational neuroscience, natural language processing, distributed training methodologies, synthetic data generation for language models.</p>
-            </div>
-        </div>
+                <p>Toby has a strong background in applied mathematics and extensive experience leading innovative technology projects. He co-founded Inspire Robotics, delivering STEM education to thousands of students annually, and has driven engineering projects in satellite systems and humanoid robotics.</p>
+                <p>Recent work: <a href="https://arxiv.org/abs/2503.00735">arXiv</a>, <a href="https://news.ycombinator.com/item?id=43287821">Hacker News</a>, <a href="https://x.com/yoshiyama_akira/status/1897662722679959583">Twitter</a>, <a href="https://www.reddit.com/r/singularity/comments/1j5pct1/ladder_selfimproving_llms_through_recursive/">Reddit</a>.</p>
+                <p class="research-interests">Research interests: optimal model routing, scaling inference-time compute, mixture-of-expert agent models, reinforcement learning with LLMs, self-improving architectures, domain-specialized models, autonomous robotics systems.</p>
+            </article>
 
-        <div class="team-member">
-            <img src="img/dries.jpg" alt="Dries Smit" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Dries Smit</h2>
-                    <p class="role">AI RESEARCHER</p>
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/akira.jpeg" alt="Akira Yoshiyama" class="team-member-image">
+                    <div>
+                        <h2>Akira Yoshiyama</h2>
+                        <p class="role">AI Researcher</p>
+                    </div>
                 </div>
-                <p>
-                    Dries is a researcher specialising in reinforcement learning, multi-agent systems, and large 
-                    language models, with a strong track record of applying these techniques in medical and financial 
-                    domains. He has extensive experience in designing advanced multi-agent frameworks, improving 
-                    foundational models, and leading impactful projects. Notably, Dries led the team behind Laila, 
-                    a fine-tuned variant of Llama 3.1 designed to assist biologists by interfacing directly with 
-                    laboratory equipment. His research currently focuses on large-scale training and reinforcement learning.
-                </p>
-                <p class="research-interests">Research Interests: Reinforcement learning, multi-agent systems, large 
-                    language models, large-scale AI training, biomedical applications, foundational model enhancement, 
-                    autonomous systems, curiosity-driven learning.</p>
-            </div>
-        </div>
+                <p>Akira previously focused on LLM fusion at the University of Waterloo and has built generative ML applications for aerospace engineering and advanced CCTV analysis tools for law enforcement.</p>
+                <p class="research-interests">Research interests: LLM fusion, generative ML, AI applications in security, computational design and optimization, autonomous systems.</p>
+            </article>
 
-        <div class="team-member">
-            <img src="img/dominique.webp" alt="Dominique Garmier" class="team-member-image">
-            <div class="team-member-info">
-                <div class="name-role">
-                    <h2>Dominique Garmier</h2>
-                    <p class="role">AI RESEARCHER</p>
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/kev.jpeg" alt="Kevin Danilo López Andrango" class="team-member-image">
+                    <div>
+                        <h2>Kevin Danilo López Andrango</h2>
+                        <p class="role">AI Researcher</p>
+                    </div>
                 </div>
-                <p>Dominique has a bachelor's in mathematics and is currently pursuing his master's with a focus on analysis.</p>
-            <p class="research-interests">Research interests: reasoning, formal proofs, statistical learning theory, functional analysis, ergodic theory, dynamical systems</p>
-            </div>
-        </div>
+                <p>Kevin specialises in deep learning, computational neuroscience, and software engineering. He holds a master&apos;s from ETH Zurich and builds advanced ML frameworks for recurrent neural network research and NLP.</p>
+                <p class="research-interests">Research interests: deep learning architectures, sparse recurrent neural networks, computational neuroscience, natural language processing, distributed training methodology, synthetic data generation.</p>
+            </article>
 
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/dries.jpg" alt="Dries Smit" class="team-member-image">
+                    <div>
+                        <h2>Dries Smit</h2>
+                        <p class="role">AI Researcher</p>
+                    </div>
+                </div>
+                <p>Dries specialises in reinforcement learning, multi-agent systems, and large language models. He has led impactful projects in medical and financial domains, including Laila, a Llama 3.1 variant that interfaces with lab equipment.</p>
+                <p class="research-interests">Research interests: reinforcement learning, multi-agent systems, large-scale AI training, biomedical applications, foundational model enhancement, autonomous systems, curiosity-driven learning.</p>
+            </article>
+
+            <article class="team-card">
+                <div class="team-card-header">
+                    <img src="img/dominique.webp" alt="Dominique Garmier" class="team-member-image">
+                    <div>
+                        <h2>Dominique Garmier</h2>
+                        <p class="role">AI Researcher</p>
+                    </div>
+                </div>
+                <p>Dominique has a bachelor&apos;s in mathematics and is pursuing a master&apos;s focused on analysis.</p>
+                <p class="research-interests">Research interests: reasoning, formal proofs, statistical learning theory, functional analysis, ergodic theory, dynamical systems.</p>
+            </article>
+        </section>
     </main>
-    <footer>
-        <div class="container">
-            <p>
-                <a href="privacy_policy.html">Privacy Policy</a> | 
-                <a href="imprint.html">Imprint</a> | 
-                <a href="terms_of_use.html">Terms Of Use</a>
-            </p>
+
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <span class="footer-note">Copyright Tufa Labs</span>
+            <nav class="footer-nav">
+                <a href="privacy_policy.html">Privacy Policy</a>
+                <a href="imprint.html">Imprint</a>
+                <a href="terms_of_use.html">Terms of Use</a>
+            </nav>
         </div>
     </footer>
 </body>

@@ -4,90 +4,190 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tufa Labs</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css">
     <script src="./script.js" defer></script>
-    
 </head>
-<body>
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <a href="index.html" class="logo-container">
-                    <img src="img/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
-                    <div class="logo-text">Tufa Labs</div>
-                </a>
-                <nav>
-                    <ul>
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="blog/_site">Research</a></li>
-                        <li><a href="open_positions.html">Open Positions</a></li>
-                        <li><a href="team.html">Team</a></li>
-                        <li><a href="sponsor.html">MLST</a></li>
-                    </ul>
-                </nav>
-            </div>
+<body class="page-home">
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="index.html" class="brand logo-container">
+                <img src="img/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
+                <div class="logo-text">Tufa Labs</div>
+            </a>
+            <nav class="primary-nav">
+                <a href="index.html" class="nav-link active">Home</a>
+                <a href="blog/_site" class="nav-link">Research</a>
+                <a href="open_positions.html" class="nav-link">Open Positions</a>
+                <a href="team.html" class="nav-link">Team</a>
+                <a href="sponsor.html" class="nav-link">MLST</a>
+                <a href="open_positions.html" class="nav-cta">Join the Lab</a>
+            </nav>
         </div>
     </header>
-    <main class="container">
-        <br>
-        <p>
-            We are a small, independent research group working on fundamental AI research.
-        </p>
-        <h2>
-            Research priorities
-        </h2>
-        <ul>
-            <li>Main priority: Investigate o-style systems (post-training, system2 reasoning)</li>
-            <li>Secondary priorities:</li>
-            <ul>
-                <li>Continue ARC v2 research: test-time training and compute trends</li>
-                <li>Investigate ARC v3</li>
-                <li>Learn to train and fine-tune LLMs, and develop the knowhow and infrastructure for o-style post training</li>
-            </ul>
-        </ul>
 
-        <h2>
-            Strategy
-        </h2>
-        <ul>
-            <li>Funding is secured for at least the next 4 years.</li>
-            <li>Within that timeframe, get good results on o-style reasoning systems</li>
-            <li>This should open new financing and recruiting opportunities.
-                (hopefully elevating the lab from GPU-poor to GPU-middle-class to GPU-rich)</li>
-            <li>Move on to more challenging benchmarks</li>
-        </ul>
+    <main>
+        <section class="hero">
+            <div class="container hero-layout">
+                <div class="hero-content">
+                    <p class="eyebrow">Independent AI Research Lab</p>
+                    <h1 class="hero-title">Pushing the frontier of LLM research</h1>
+                    <p class="hero-summary">
+                        We are a small, focused team pushing frontier AI capabilities through post-training and system-2 techniques.
+                        We engineer self-improving circuits that extend today&apos;s LLMs while enabling deliberate, test-time cognition.
+                    </p>
+                    <div class="hero-actions">
+                        <a class="primary-button" href="blog/_site">Read our work</a>
+                        <a class="secondary-link" href="open_positions.html">Meet the researchers -></a>
+                    </div>
+                    <div class="hero-highlights">
+                        <div class="highlight-card">
+                            <span class="highlight-label">Primary focus</span>
+                            <span class="highlight-value">Self-improving LLMs</span>
+                            <p class="highlight-copy">Post-training methods that let models inspect, revise, and extend their own cognition.</p>
+                        </div>
+                        <div class="highlight-card">
+                            <span class="highlight-label">Second pillar</span>
+                            <span class="highlight-value">RL-native agents</span>
+                            <p class="highlight-copy">Designing reasoning agents around reinforcement-learning paradigms and tight feedback.</p>
+                        </div>
+                        <div class="highlight-card">
+                            <span class="highlight-label">Third pillar</span>
+                            <span class="highlight-value">Multi-agent stacks</span>
+                            <p class="highlight-copy">Extending deliberate reasoning to coordinated teams of specialist agents.</p>
+                        </div>
+                    </div>
+                </div>
+                <aside class="hero-panel">
+                    <div class="panel-card">
+                        <p class="panel-eyebrow">What we&apos;re building</p>
+                        <h2 class="panel-title">Prototypes of deliberate AI</h2>
+                        <p class="panel-copy">
+                            We are engineering systems that blend fast heuristics with slow, reflective search. Our work spans
+                            test-time computation, active inference, and program-like reasoning traces.
+                        </p>
+                        <img src="./img/cartoon.png" alt="Illustration of research" class="panel-image">
+                    </div>
+                </aside>
+            </div>
+        </section>
 
-        <h2>
-            Values
-        </h2>
-        <p>
-            Intellectual curiosity, high intrinsic motivation (obsession), perseverance.
-            Fast experimentation process
-        </p>
-        <p>
-            We are driven primarily by the desire to reverse engineer intelligence and build machines according to those principles.
-        </p>
-        <p>
-            Regarding AI safety: we believe that after reaching a certain level of capability, AI safety will become a critical issue
-            and is likely to constitute an existential threat.
-            But first we want to carry out the capability research and re-assess as we go. We will have a process 
-            where AI safety can be made the top priority.
-        </p>
+        <section class="section research-section">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Research Priorities</p>
+                    <h2 class="section-title">Key bets we are pursuing</h2>
+                    <p class="section-summary">
+                        o-style post-training is our main line of inquiry. Self-improving systems and frontier LLM extensions
+                        deepen our intuition about what unlocks structured reasoning in current architectures.
+                    </p>
+                </div>
+                <div class="card-grid">
+                    <article class="research-card">
+                        <h3>Post-training for system-2 reasoning</h3>
+                        <p>
+                            Design and evaluate procedures that let models deliberate chain-of-thought style at inference,
+                            including scratchpad planning, tool-augmented thinking, and structured self-reflection that pushes models toward frontier performance.
+                        </p>
+                    </article>
+                    <article class="research-card">
+                        <h3>Self-improving systems</h3>
+                        <p>
+                            Build recursive training and evaluation loops--drawing on ARC lineage work--that let models critique,
+                            retrain, and upgrade their own capabilities in stable cycles.
+                        </p>
+                    </article>
+                    <article class="research-card">
+                        <h3>RL-native reasoning agents</h3>
+                        <p>
+                            Architect deliberative agents around reinforcement-learning paradigms, combining policy learning with
+                            tool use, evaluation loops, and dense feedback for rapid improvement.
+                        </p>
+                    </article>
+                    <article class="research-card">
+                        <h3>Multi-agent intelligence</h3>
+                        <p>
+                            Extend frontier LLM capabilities to coordinated swarms of specialists that share context, route tasks,
+                            and search jointly across problem spaces.
+                        </p>
+                    </article>
+                </div>
+            </div>
+        </section>
 
-        <!--<h2>TODO: Say something about MindsAI</h2>-->
-        
-        <!-- Added cartoon image -->
-        <img src="./img/cartoon.png" alt="Cartoon" class="cartoon-image">
-        
+        <section class="section strategy-section">
+            <div class="container strategy-layout">
+                <div class="strategy-intro">
+                    <p class="eyebrow">Strategy</p>
+                    <h2 class="section-title">Deliberate progress toward stronger reasoning</h2>
+                    <p class="section-summary">
+                        We are ruthlessly focused on breakthroughs that compound. Each cycle pushes us toward richer
+                        evaluations, self-improving techniques, and the ability to extend current LLM capabilities.
+                    </p>
+                </div>
+                <ul class="strategy-list">
+                    <li>
+                        <h3>Secure runway, frontier agenda</h3>
+                        <p>Independent funding for the next four years lets us push o-style systems and frontier capabilities without distraction.</p>
+                    </li>
+                    <li>
+                        <h3>Demonstrate self-improving results</h3>
+                        <p>Use ARC-style programs and bespoke benchmarks to validate recursive upgrades in reasoning systems.</p>
+                    </li>
+                    <li>
+                        <h3>Scale ambition with evidence</h3>
+                        <p>Success unlocks capital, compute, and talent. We plan to move from GPU-poor to GPU-rich as empirical gains extend LLM capabilities.</p>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section values-section">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Values</p>
+                    <h2 class="section-title">How we work</h2>
+                </div>
+                <div class="values-grid">
+                    <div class="value-card">
+                        <h3>Obsession over curiosity</h3>
+                        <p>We hire people who can&apos;t stop thinking about these problems and give them space to go deep.</p>
+                    </div>
+                    <div class="value-card">
+                        <h3>Fast experimental loops</h3>
+                        <p>We iterate quickly, ground ideas in data, and treat infrastructure as a first-class research tool.</p>
+                    </div>
+                    <div class="value-card">
+                        <h3>Safety-aware exploration</h3>
+                        <p>Capability work comes first, but we continuously reassess the safety landscape as we approach new frontiers.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section cta-section">
+            <div class="container cta-card">
+                <div class="cta-copy">
+                    <p class="eyebrow">Join us</p>
+                    <h2 class="cta-title">We are hiring research engineers and collaborators in Zurich</h2>
+                    <p>Help us design the next generation of reasoning systems. We value people who can ship, analyze, and revise quickly.</p>
+                </div>
+                <div class="cta-actions">
+                    <a class="primary-button" href="open_positions.html">Open positions</a>
+                    <a class="secondary-link" href="mailto:benjamin@tufa.ai">Reach out -></a>
+                </div>
+            </div>
+        </section>
     </main>
-    <footer>
-        <div class="container">
-            <p>
-                <a href="privacy_policy.html">Privacy Policy</a> | 
-                <a href="imprint.html">Imprint</a> | 
-                <a href="terms_of_use.html">Terms Of Use</a>
-            </p>
+
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <span class="footer-note">Copyright Tufa Labs</span>
+            <nav class="footer-nav">
+                <a href="privacy_policy.html">Privacy Policy</a>
+                <a href="imprint.html">Imprint</a>
+                <a href="terms_of_use.html">Terms of Use</a>
+            </nav>
         </div>
     </footer>
 </body>

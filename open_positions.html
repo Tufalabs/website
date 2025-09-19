@@ -4,66 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Open Positions - Tufa Labs</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
-<body>
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <a href="index.html" class="logo-container">
-                    <img src="img/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
-                    <div class="logo-text">Tufa Labs</div>
-                </a>
-                <nav>
-                    <ul>
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="blog/_site">Research</a></li>
-                        <li><a href="open_positions.html">Open Positions</a></li>
-                        <li><a href="team.html">Team</a></li>
-                        <li><a href="sponsor.html">MLST</a></li>
-                    </ul>
-                </nav>
-            </div>
+<body class="page-default">
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="index.html" class="brand logo-container">
+                <img src="img/tufa_logo.png" alt="Tufa Labs Logo" class="logo-image" id="logo-image">
+                <div class="logo-text">Tufa Labs</div>
+            </a>
+            <nav class="primary-nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="blog/_site" class="nav-link">Research</a>
+                <a href="open_positions.html" class="nav-link active">Open Positions</a>
+                <a href="team.html" class="nav-link">Team</a>
+                <a href="sponsor.html" class="nav-link">MLST</a>
+                <a href="open_positions.html" class="nav-cta">Join the Lab</a>
+            </nav>
         </div>
     </header>
-    <main class="container">
-        <h1>Open Positions</h1>
 
-        <p>
-            We look for a combination of strong technical ability and obsessive interest about AI/ML.
-            We have the financing and office space for up to 10 people.
-            <br>
-            We will hire methodically and slowly to increase the chances that everyone has a strong positive impact and is a good fit.
-        </p>
-        
-        <h2>Research Engineer</h2>
-        
-        <h3>Requirements:</h3>
-        <ul>
-            <li>Strong background in machine learning and deep learning</li>
-            <li>Familiarity with large language models and transformer architectures</li>
-            <li>Experience with advanced AI concepts such as test-time computation, active inference, or system2 reasoning</li>
-            <li>Familiarity and ideally previous experience with the ARC challenge</li>
-        </ul>
+    <main class="page-content container">
+        <header class="page-heading">
+            <p class="eyebrow">Careers</p>
+            <h1>Open positions</h1>
+            <p>We&apos;re expanding our core team in Zurich. We hire slowly and deliberately to keep the bar high and the environment intensely collaborative.</p>
+        </header>
 
-        
-        <br>
-        <p>To apply for any of these positions, please send your resume and a brief introduction to <a href="mailto:benjamin@tufa.ai">benjamin@tufa.ai</a>.</p>
-        <p>Our offices are located in Zurich in Limmatquai. We will only consider candidates willing to relocate to Zurich
-            within a timeframe of 6 months. For work visas reasons, it is much more convenient for us to hire people either in Switzerland or
-            in the EU/EFTA.
-        </p>
+        <article class="content-card">
+            <p>We look for a combination of strong technical ability and obsessive curiosity about AI and machine learning. Funding and space are available for a team of up to ten researchers, and we invest heavily in everyone we bring on.</p>
 
+            <h2>Research Engineer</h2>
+            <h3>What we expect</h3>
+            <ul>
+                <li>Strong background in machine learning and deep learning.</li>
+                <li>Hands-on experience with large language models and transformer architectures.</li>
+                <li>Comfort with test-time computation, active inference, system-2 reasoning, or related ideas.</li>
+                <li>Familiarity&mdash;ideally experience&mdash;with the ARC challenge.</li>
+            </ul>
+
+            <h3>How to apply</h3>
+            <p>Send your resume and a short introduction to <a href="mailto:benjamin@tufa.ai">benjamin@tufa.ai</a>. Highlight the experiments you&apos;re proudest of and the systems you&apos;ve shipped.</p>
+
+            <h3>Location</h3>
+            <p>Our offices are in Zurich (Limmatquai). We only consider candidates willing to relocate within six months. For visa reasons, it is significantly easier for us to hire people currently in Switzerland or the EU/EFTA.</p>
+        </article>
     </main>
-    <footer>
-        <div class="container">
-            <p>
-                <a href="privacy_policy.html">Privacy Policy</a> | 
-                <a href="imprint.html">Imprint</a> | 
-                <a href="terms_of_use.html">Terms Of Use</a>
-            </p>
+
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <span class="footer-note">Copyright Tufa Labs</span>
+            <nav class="footer-nav">
+                <a href="privacy_policy.html">Privacy Policy</a>
+                <a href="imprint.html">Imprint</a>
+                <a href="terms_of_use.html">Terms of Use</a>
+            </nav>
         </div>
     </footer>
 </body>
