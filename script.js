@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const distanceY = e.clientY - bossCenterY;
         const distance = Math.sqrt(distanceX ** 2 + distanceY ** 2);
 
-        const maxDistance = 200;
+        const maxDistance = 400;
         const maxMovement = 50;
 
         if (distance < maxDistance) {
