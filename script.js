@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const boss = document.getElementById('boss-image');
     const bossContainer = document.querySelector('.boss');
-    const header = document.querySelector('header');
+    const mainContainer = document.querySelector('main');
     let isSelecting = false;
     let isHovering = false;
 
@@ -185,8 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Reset boss position when mouse leaves the header
-    header.addEventListener('mouseleave', () => {
+    // Reset boss position when mouse leaves the main container
+    mainContainer.addEventListener('mouseleave', () => {
         isHovering = false;
         isSelecting = false;
         boss.style.transform = 'translate(0, 0)';
