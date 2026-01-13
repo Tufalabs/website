@@ -16,7 +16,7 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.2'
-        bundler-cache: true # this will install dependencies and cache them
+        bundler-cache: false # this will install dependencies and cache them
     
     - name: Build Jekyll site
       run: |
