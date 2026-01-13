@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Text to RL: Extracting High-Quality RL Questions from text"
-date:   2025-03-5 09:50:53 +1100
+date:   2025-03-05 09:50:53
 categories: jekyll update
 author: Toby Simonds
 description: "Turning textbooks into RL Questions"
@@ -61,5 +61,4 @@ As we continue to refine this approach, we believe it will become an essential t
 - **Dataset**: [TextbooksToRLQuestions-100k on Hugging Face](https://huggingface.co/datasets/TamasSimonds/TextbooksToRLQuestions-100k)
 
 - **Code Repository**: [BeyondNextTokenPrediction on GitHub](https://github.com/Tufalabs/BeyondNextTokenPrediction)
-
 

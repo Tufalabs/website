@@ -1,35 +1,26 @@
-# website
-Public website for tufa labs
+# Website
+Public website for Tufa Labs.
 
-## How to deploy
-1. Push to main branch
+## Deploy (static)
+- Build the blog locally, commit the generated files, then push to `main`.
+- GitHub Pages serves the repo as-is (no Jekyll build on GitHub).
 
-The blog will be automatically built by GitHub Actions. The workflow will:
-- Install required dependencies
-- Build the Jekyll site
-- Commit the generated files to the repository
-
-## How to build the blog manually (for local testing)
-1. Navigate to the blog directory:
+## Local build and test
+1. Install blog dependencies (first time only):
    ```
    cd blog
-   ```
-2. Install the required gems (first time only):
-   ```
    bundle install
    ```
-3. Build the Jekyll site:
+2. Build the blog:
    ```
-   bundle exec jekyll build
+   make jekyll-build
    ```
-4. This will generate the static site in the `blog/_site` directory
+3. Serve the site locally:
+   ```
+   make serve
+   ```
+   Then open `http://localhost:4000/` (main site) and `http://localhost:4000/blog/_site/` (blog).
 
-## Automated Build Process
-The repository is configured with GitHub Actions to automatically build the Jekyll blog when changes are pushed to the main branch. The workflow file is located at `.github/workflows/jekyll-build.yml`.
-
-## How to run locally
- - Clone the repo
- - (No build step yet for the main site)
- - For the blog, follow the build steps above
- - Using a browser, navigate to file:///Users/YOUR_USER/code/tufalabs/website/index.html
- - To preview the blog, run `bundle exec jekyll serve` from the blog directory and visit http://localhost:4000/blog/
+## Notes
+- The blog output is committed at `blog/_site`.
+- GitHub Pages does not run Jekyll for this repo (static hosting only).
