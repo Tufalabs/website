@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Text to RL: Extracting High-Quality RL Questions from text"
+title:  "Text to RL: Extracting High-Quality RL Questions from Text"
 date:   2025-03-05 09:50:53
 categories: jekyll update
 author: Toby Simonds
@@ -11,7 +11,7 @@ description: "Turning textbooks into RL Questions"
 
 ## The Data Challenge in Modern RL
 
-Reinforcement learning has demonstrated exceptional potential in solving complex problems, but a critical challenge looms as we scale these systems: we're facing a severe shortage of high-quality RL questions. Current public datasets max out at just at around a million questions—below what's needed to push next-generation RL systems to their full capabilities. This scarcity becomes even more pronounced outside the mathematics domain, where well-structured RL questions are particularly rare in domains like biology and physics. To achieve the full potential of RL, we need to expand our training data by orders of magnitude across diverse knowledge domains.
+Reinforcement learning has demonstrated exceptional potential in solving complex problems, but a critical challenge looms as we scale these systems: we're facing a severe shortage of high-quality RL questions. Current public datasets max out at around a million questions—below what's needed to push next-generation RL systems to their full capabilities. This scarcity becomes even more pronounced outside the mathematics domain, where well-structured RL questions are particularly rare in domains like biology and physics. To achieve the full potential of RL, we need to expand our training data by orders of magnitude across diverse knowledge domains.
 
 ## Our Approach: Synthetic Question Generation from Textbooks
 
@@ -30,13 +30,13 @@ This pipeline allows us to generate around **~3000** valid questions per textboo
 
 To validate our approach, we trained Qwen 2.5 7B Instruct on these synthetic questions and measured performance improvements on the MATH benchmark.
 
-- Models trained on our synthetic dataset showed a 9% absolute improvement on MATH, increasing performance from 75% to 84%. Performance was still improving run simply ran as proof of concept of effectiveness of synthetic RL questions
+- Models trained on our synthetic dataset showed a 9% absolute improvement on MATH, increasing performance from 75% to 84%. Performance was still improving; the run simply served as a proof of concept for the effectiveness of synthetic RL questions.
 - This significant jump demonstrates that these synthetic RL questions provide a strong reinforcement learning signal
 - The results suggest we can effectively bootstrap model performance using generated content
 
 ![TTL Bar Chart](/blog/assets/images/TTL_bar_image.png)
 
-## Opensource Dataset
+## Open-Source Dataset
 
 As part of our commitment to advancing the field, we're open-sourcing a sample dataset of 100K problems. This dataset provides researchers and developers with immediate access to high-quality synthetic questions for RL training and experimentation.
 
@@ -61,4 +61,3 @@ As we continue to refine this approach, we believe it will become an essential t
 - **Dataset**: [TextbooksToRLQuestions-100k on Hugging Face](https://huggingface.co/datasets/TamasSimonds/TextbooksToRLQuestions-100k)
 
 - **Code Repository**: [BeyondNextTokenPrediction on GitHub](https://github.com/Tufalabs/BeyondNextTokenPrediction)
-

@@ -1,7 +1,7 @@
 ---
 layout: post
-title:  "AlphaWrite: Inference time compute Scaling for Writing"
-date:   2025-06-6 09:50:53 +1100
+title:  "AlphaWrite: Inference-Time Compute Scaling for Writing"
+date:   2025-06-06 09:50:53 +1100
 categories: jekyll update
 author: Toby Simonds
 description: "We introduce AlphaWrite, an inference-time scaling method for creative writing that uses evolutionary generation and ELO-based ranking to improve story quality."
@@ -9,7 +9,7 @@ description: "We introduce AlphaWrite, an inference-time scaling method for crea
 
 
 
-You can try AlphaWrite out here
+You can try AlphaWrite out here.
 **Code Repository**: [AlphaWrite on GitHub](https://github.com/tamassimonds/AlphaEvolveWritting)
 
 Large language models have demonstrated remarkable improvements in performance through increased inference-time compute on quantitative reasoning tasks, particularly in mathematics and coding. However, the creative domain—where outputs are inherently highly subjective and difficult to evaluate—has seen limited exploration of systematic approaches to scale inference-time compute effectively. 
@@ -18,7 +18,7 @@ In this work, we introduce Alpha Writing, a novel framework for scaling inferenc
 
 Our method addresses a critical gap in the field: while we can easily scale compute for tasks with clear correctness criteria, creative domains have lacked principled approaches for leveraging additional inference resources. By treating story generation as an evolutionary process guided by pairwise preferences, we demonstrate that creative output quality can be systematically improved through increased compute allocation.
 
-We further demonstrate the scalability of these methods by distilling the enhanced stories back into the base model, creating a stronger foundation for subsequent rounds of Alpha Writing. This recursive cycle—where improved outputs become training data for an enhanced model that can generate even better stories—offers promising potential for self improving writing models.
+We further demonstrate the scalability of these methods by distilling the enhanced stories back into the base model, creating a stronger foundation for subsequent rounds of Alpha Writing. This recursive cycle—where improved outputs become training data for an enhanced model that can generate even better stories—offers promising potential for self-improving writing models.
 
 # Methodology
 
@@ -26,7 +26,7 @@ We further demonstrate the scalability of these methods by distilling the enhanc
 
 ## Overview
 
-Alpha Writing employs an evolutionary approach to improve story quality through iterative generation and selection. The process consists of four main stages: (1) diverse initial story generation, (2) pairwise comparison using Elo rankings, and (3) evolutionary refinement of top-performing stories. (2) and (3) are repeated for multiple generations to progressively enhance narrative quality.
+Alpha Writing employs an evolutionary approach to improve story quality through iterative generation and selection. The process consists of four main stages: (1) diverse initial story generation, (2) pairwise comparison using Elo rankings, (3) evolutionary refinement of top-performing stories, and (4) repetition of stages (2) and (3) across multiple generations to progressively enhance narrative quality.
 
 ## Initial Story Generation
 
@@ -69,11 +69,11 @@ Evaluating creative output presents significant challenges due to subjective pre
 - **Story length**: Restrict to stories under 500 words to enable easier comparison
 - **Prompt design**: Use open-ended prompts to allow models to demonstrate narrative crafting abilities
 - **Data collection**: 120 preference comparisons per experiment to establish statistical significance
-- **Evaluation Protocol:** Evaluators same rubric we use for LLM judge to score which of the two responses they prefer
+- **Evaluation Protocol:** Evaluators use the same rubric we provide to the LLM judge to score which of the two responses they prefer
 
 Initial generations often exhibited fundamental narrative issues including poor story arcs and structural problems, making improvements through evolution particularly noticeable. We compare performance against initial model-generated stories and stories improved through repeated prompting.
 
-We acknowledge that our evaluation methodology, while establishing statistically significant improvements, would benefit from more comprehensive data collection. We simply seek to demonstrate a statistically significant signal that this method works - quantifiying the actual improvement is difficult and would require significantly more diverse data colleciton 
+We acknowledge that our evaluation methodology, while establishing statistically significant improvements, would benefit from more comprehensive data collection. We simply seek to demonstrate a statistically significant signal that this method works—quantifying the actual improvement is difficult and would require significantly more diverse data collection. 
 
 We found quality differences were subtle in opening lines but became pronounced in longer stories, where structural coherence and narrative flow showed clear improvement. However, evaluating these stories remains genuinely difficult—they diverge so dramatically in theme, style, and approach that determining which is "better" becomes largely subjective and dependent on reader preference.
 
@@ -83,7 +83,7 @@ For evaluation we used Llama 3.1 8B and generated 60 initial stories, selected t
 
 ![image.png](/blog/assets/images/AlphaWrite/AlphaWriteBench.png)
 
-Alpha Writing demonstrates substantial improvements in story quality when evaluated through pairwise human preferences. Testing with Llama 3.1 8B  revealed:
+Alpha Writing demonstrates substantial improvements in story quality when evaluated through pairwise human preferences. Testing with Llama 3.1 8B revealed:
 
 - **72% preference rate** over initial story generations (95 % CI 63 % – 79 %)
 - **62% preference rate** over sequential-prompting baseline (95 % CI 53 % – 70 %)
@@ -94,7 +94,7 @@ These results indicate that the evolutionary approach significantly outperforms 
 
 # Recursive Self-Improvement Through AlphaWrite Distillation
 
-An intriguing possibility emerges when considering inference scaling techniques like AlphaEvolve or AlphaWrite: could we create a self improving loop through using inference scaling to improve results then distill back down and repeat? 
+An intriguing possibility emerges when considering inference scaling techniques like AlphaEvolve or AlphaWrite: could we create a self-improving loop through using inference scaling to improve results then distill back down and repeat? 
 
 ## The Core Concept
 
@@ -119,7 +119,7 @@ This recursive approach theoretically enables continuous self-improvement, where
 
 ![image.png](/blog/assets/images/AlphaWrite/Llama3.1Results.png)
 
-We observed a 56%  (95 % CI 47 % – 65 %) preference rate over the base model. While this improvement falls within the statistical significance range for this experiment, collecting sufficient preference data to achieve statistical significance would be prohibitively expensive.
+We observed a 56% (95 % CI 47 % – 65 %) preference rate over the base model. While this improvement falls within the statistical significance range for this experiment, collecting sufficient preference data to achieve statistical significance would be prohibitively expensive.
 
 ## Limitations
 
