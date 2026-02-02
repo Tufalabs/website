@@ -6,6 +6,7 @@ description: >-
   fundamental AI research, with a focus on o-style systems and post-training reasoning.
 baseurl: "/blog"
 url: "https://tufalabs.ai"
+timezone: "Europe/Paris"
 twitter_username: tufalabs
 github_username: tufalabs
 
