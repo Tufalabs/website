@@ -42,11 +42,11 @@
             Research priorities
         </h2>
         <ul>
-            <li>Main priority: Investigate o-style systems (post-training, system 2 reasoning).</li>
+            <li>Main priority: Investigate reasoning LLMs: RLVR, <a href="https://arxiv.org/pdf/2402.03300">GRPO</a>, <a href="https://arxiv.org/abs/2601.20802">SDPO</a>.</li>
             <li>Secondary priorities:
                 <ul>
                     <li>Investigate ARC v3.</li>
-                    <li>Learn to train and fine-tune LLMs, and develop the know-how and infrastructure for o-style post training.</li>
+                    <li>Learn to pre-train and post-train LLMs, and develop the know-how and infrastructure for it.</li>
                     <li>Investigate fancy ML-based quantitative strategies.</li>
                 </ul>
             </li>
@@ -57,7 +57,7 @@
         </h2>
         <ul>
             <li>Funding is secured for at least the next 4 years.</li>
-            <li>Within that timeframe, get good results on o-style reasoning systems.</li>
+            <li>Within that timeframe, do interesting research (LLM/reasoning/RLVR, and ARC v3).</li>
             <li>This should open new financing and recruiting opportunities
                 (hopefully elevating the lab from GPU-poor to GPU-middle-class to GPU-rich).</li>
             <li>Move on to more challenging benchmarks.</li>
@@ -79,6 +79,80 @@
             But first we want to carry out the capability research and reassess as we go. We will have a process 
             where AI safety can be made the top priority.
         </p>
+
+        <h2>
+            Compute
+        </h2>
+        <div class="compute-table-wrap">
+            <table class="compute-table">
+                <thead>
+                    <tr>
+                        <th>Capacity</th>
+                        <th>Accelerators</th>
+                        <th>Compute FP4<br>(sparse/dense)</th>
+                        <th>Memory</th>
+                        <th>Memory<br>bandwith</th>
+                        <th>Power</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            Current: 6x 8 DGX B200
+                            <sup><a href="https://docs.nvidia.com/dgx/dgxb200-user-guide/introduction-to-dgxb200.html#dgx-b200-component-descriptions" target="_blank" rel="noopener noreferrer">[1]</a></sup>
+                        </td>
+                        <td>48 B200 <span class="per-cluster-note">(8 per cluster)</span></td>
+                        <td>
+                            864 PFLOPS sparse, 432 PFLOPS dense
+                            <sup><a href="https://www.nvidia.com/en-us/data-center/dgx-b200/#specs" target="_blank" rel="noopener noreferrer">[2]</a></sup>
+                            <span class="per-cluster-note">(144 sparse, 72 dense per cluster)</span>
+                        </td>
+                        <td>
+                            8.64 TB HBM3e
+                            <sup><a href="https://docs.nvidia.com/dgx/dgxb200-user-guide/introduction-to-dgxb200.html#dgx-b200-component-descriptions" target="_blank" rel="noopener noreferrer">[1]</a></sup>
+                            <span class="per-cluster-note">(1.44 TB per cluster)</span>
+                        </td>
+                        <td>
+                            384 TB/s
+                            <sup><a href="https://www.nvidia.com/en-us/data-center/dgx-b200/#specs" target="_blank" rel="noopener noreferrer">[2]</a></sup>
+                            <span class="per-cluster-note">(64 TB/s per cluster)</span>
+                        </td>
+                        <td>
+                            85.8 kW max
+                            <sup><a href="https://docs.nvidia.com/dgx/dgxb200-user-guide/introduction-to-dgxb200.html#power-specifications" target="_blank" rel="noopener noreferrer">[3]</a></sup>
+                            <span class="per-cluster-note">(14.3 kW per cluster)</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Expected summer 2026: 2x NVL72 GB300
+                            <sup><a href="https://www.nvidia.com/en-us/data-center/gb300-nvl72/#specs" target="_blank" rel="noopener noreferrer">[4]</a></sup>
+                        </td>
+                        <td>144 B300 <span class="per-cluster-note">(72 per cluster)</span></td>
+                        <td>
+                            2880 PFLOPS sparse, 2160 PFLOPS dense
+                            <sup><a href="https://www.nvidia.com/en-us/data-center/gb300-nvl72/#specs" target="_blank" rel="noopener noreferrer">[4]</a></sup>
+                            <span class="per-cluster-note">(1440 sparse, 1080 dense per cluster)</span>
+                        </td>
+                        <td>
+                            74 TB memory
+                            <sup><a href="https://www.nvidia.com/en-us/data-center/gb300-nvl72/#specs" target="_blank" rel="noopener noreferrer">[4]</a></sup>
+                            <span class="per-cluster-note">(37 TB per cluster)</span>
+                        </td>
+                        <td>
+                            1152 TB/s
+                            <sup><a href="https://www.nvidia.com/en-us/data-center/gb300-nvl72/#specs" target="_blank" rel="noopener noreferrer">[4]</a></sup>
+                            <span class="per-cluster-note">(576 TB/s per cluster)</span>
+                        </td>
+                        <td>300 kW rented <span class="per-cluster-note">(150 kW per cluster)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Extra rented capacity</td>
+                        <td colspan="5">On-demand external clusters</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <!--<h2>TODO: Say something about MindsAI</h2>-->
         
