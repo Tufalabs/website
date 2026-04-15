@@ -1,0 +1,64 @@
+name: Pages Smoke Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version-file: .ruby-version
+          bundler-cache: true
+
+      - name: Verify Bundler version
+        run: bundle _4.0.3_ -v
+
+      - name: Build site
+        run: |
+          bundle _4.0.3_ exec jekyll clean --config site/_config.yml --source site --destination docs
+          bundle _4.0.3_ exec jekyll build --config site/_config.yml --source site --destination docs
+
+      - name: Check generated files
+        run: |
+          test -f docs/index.html
+          test -f docs/team/index.html
+          test -f docs/research/index.html
+          test -f docs/research/feed.xml
+          test -f docs/assets/css/site.css
+          grep -q "Tufa Labs" docs/index.html
+          grep -q "Latest Posts" docs/research/index.html
+          grep -q "<feed" docs/research/feed.xml
+
+      - name: Smoke test built site over HTTP
+        run: |
+          python3 -m http.server 4000 --directory docs >/tmp/pages-smoke-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          sleep 1
+          curl -fsSI http://127.0.0.1:4000/
+          curl -fsSI http://127.0.0.1:4000/team/
+          curl -fsSI http://127.0.0.1:4000/research/
+          curl -fsSI http://127.0.0.1:4000/research/feed.xml
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
