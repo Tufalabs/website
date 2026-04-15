@@ -21,7 +21,7 @@ We propose a straightforward yet powerful method for generating vast quantities 
 2. **Verification**: Each extracted question passes through a verification LLM that confirms solvability using only the provided textbook content.
 3. **Filtering**: We remove questions that depend on visual elements like tables, figures, or diagrams, ensuring our dataset consists of purely text-based, self-contained problems.
 
-<img src="/blog/assets/images/TRL_diagram.png" alt="TRL Diagram" width="400" />
+<img src="{{ '/assets/images/TRL_diagram.png' | relative_url }}" alt="TRL Diagram" width="400" />
 
 
 This pipeline allows us to generate around **~3000** valid questions per textbook, creating a scalable approach to building massive RL datasets.
@@ -34,7 +34,7 @@ To validate our approach, we trained Qwen 2.5 7B Instruct on these synthetic que
 - This significant jump demonstrates that these synthetic RL questions provide a strong reinforcement learning signal
 - The results suggest we can effectively bootstrap model performance using generated content
 
-![TTL Bar Chart](/blog/assets/images/TTL_bar_image.png)
+![TTL Bar Chart]({{ '/assets/images/TTL_bar_image.png' | relative_url }})
 
 ## Open-Source Dataset
 

@@ -27,11 +27,11 @@ Public website for Tufa Labs.
    ```
    just serve
    ```
-   This watches blog source files and rebuilds `blog/_site` automatically while serving the whole repo.
-   Then open `http://localhost:4000/` (main site) and `http://localhost:4000/blog/_site/` (blog).
+   This watches blog source files and rebuilds `research/` automatically while serving the whole repo.
+   Then open `http://localhost:4000/` (main site) and `http://localhost:4000/research/` (blog).
 
 ## Notes
-- The blog output is committed at `blog/_site`.
+- The blog output is committed at `research/`.
 - GitHub Pages does not run Jekyll for this repo (static hosting only).
 - The local workflow expects Ruby `3.4.9` and Bundler `4.0.3`.
 - `just serve` auto-rebuilds the Jekyll blog on changes, but it does not do browser live reload.

@@ -53,8 +53,8 @@ serve: init
     ) &
     jekyll_pid="$!"
 
-    echo "Watching blog sources and rebuilding into blog/_site..."
+    echo "Watching blog sources and rebuilding into research/..."
     echo "Serving website at http://localhost:4000/"
-    echo "Serving blog at http://localhost:4000/blog/_site/"
+    echo "Serving blog at http://localhost:4000/research/"
     echo "Press Ctrl+C to stop."
     python3 -m http.server 4000 --directory .

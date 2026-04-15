@@ -18,7 +18,7 @@ layout: default
                     {{ post.title | escape }}
                 </a>
                 {% else %}
-                <a class="post-link" href="{{ site.baseurl }}/_site{{ post.url }}">
+                <a class="post-link" href="{{ post.url | relative_url }}">
                     {{ post.title | escape }}
                 </a>
                 {% endif %}
@@ -38,7 +38,7 @@ layout: default
             {% elsif post.title contains "LADDER" %}
             <a href="https://arxiv.org/pdf/2503.00735" class="read-more" target="_blank">Read paper</a>
             {% else %}
-            <a href="{{ site.baseurl }}/_site{{ post.url }}" class="read-more">Read more</a>
+            <a href="{{ post.url | relative_url }}" class="read-more">Read more</a>
             {% endif %}
         </li>
         {% endfor %}
