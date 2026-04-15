@@ -5,6 +5,9 @@ header:
   - label: Research
     url: /research/
     id: research
+  - label: News
+    url: /news/
+    id: news
   - label: Open Positions
     url: /open-positions/
     id: open-positions

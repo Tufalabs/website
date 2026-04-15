@@ -1,0 +1,34 @@
+{% assign entries = include.items %}
+{% if entries and entries.size > 0 %}
+<h2 class="post-list-heading">{{ include.heading }}</h2>
+<ul class="post-list">
+    {% for entry in entries %}
+    {% assign entry_href = entry.external_link | default: entry.url %}
+    <li class="post-item">
+        <h3>
+            <a class="post-link" href="{% if entry.external_link %}{{ entry.external_link }}{% else %}{{ entry.url | relative_url }}{% endif %}"{% if entry.external_link %} target="_blank" rel="noopener"{% endif %}>
+                {{ entry.title | escape }}
+            </a>
+            {% if entry.external_link %}
+            <span class="external-indicator">External</span>
+            {% endif %}
+        </h3>
+        <div class="post-meta">
+            <time datetime="{{ entry.date | date_to_xmlschema }}">
+                {{ entry.date | date: "%B %-d, %Y" }}
+            </time>
+            {% if entry.author %}
+            <span aria-hidden="true">•</span>
+            <span>{{ entry.author }}</span>
+            {% endif %}
+        </div>
+        {% if entry.description %}
+        <p class="post-excerpt">{{ entry.description }}</p>
+        {% else %}
+        <p class="post-excerpt">{{ entry.content | strip_html | truncatewords: 50 }}</p>
+        {% endif %}
+        <a href="{% if entry.external_link %}{{ entry.external_link }}{% else %}{{ entry.url | relative_url }}{% endif %}" class="read-more"{% if entry.external_link %} target="_blank" rel="noopener"{% endif %}>Read more</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
