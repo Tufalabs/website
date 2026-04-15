@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-{% assign redirect_target = page.redirect_url | default: page.external_link %}
 <html lang="{{ site.lang | default: 'en-US' }}">
 <head>
     <meta charset="UTF-8">
@@ -12,17 +11,8 @@
     <link rel="icon" type="image/png" href="{{ '/favicon.png' | relative_url }}">
     <link rel="apple-touch-icon" href="{{ '/favicon.png' | relative_url }}">
     <link rel="shortcut icon" href="{{ '/favicon.ico' | relative_url }}">
-    {% if page.redirect_kind == "compat" %}
-    <meta name="robots" content="noindex">
-    <link rel="canonical" href="{{ redirect_target | absolute_url }}">
-    {% endif %}
-    {% if redirect_target and page.redirect_kind == "compat" %}
-    <meta http-equiv="refresh" content="0; url={{ redirect_target | xml_escape }}">
-    {% endif %}
     {% feed_meta %}
-    {% unless page.redirect_kind == "compat" %}
     {% seo title=false %}
-    {% endunless %}
     <script src="{{ '/assets/js/logo.js' | relative_url }}" defer></script>
 </head>
 <body{% if page.body_class %} class="{{ page.body_class }}"{% endif %}>

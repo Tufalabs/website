@@ -43,6 +43,7 @@ build: init
       eval "$(rbenv init - bash)"
     fi
 
+    bundle _{{bundler_version}}_ exec jekyll clean {{jekyll_args}}
     bundle _{{bundler_version}}_ exec jekyll build {{jekyll_args}}
 
 serve: init
