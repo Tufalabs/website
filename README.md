@@ -6,21 +6,32 @@ Public website for Tufa Labs.
 - GitHub Pages serves the repo as-is (no Jekyll build on GitHub).
 
 ## Local build and test
-1. Install blog dependencies (first time only):
+1. Install `just` if it is not installed already:
    ```
-   cd blog
-   bundle install
+   # macOS
+   brew install just
+
+   # Linux (Debian/Ubuntu)
+   sudo apt install just
    ```
-2. Build the blog:
+   `just` is required for the local workflow in this repository.
+2. Initialize the Ruby/Bundler toolchain and install blog dependencies:
    ```
-   make jekyll-build
+   just init
    ```
-3. Serve the site locally:
+3. Build the blog:
    ```
-   make serve
+   just build
    ```
+4. Serve the full site locally:
+   ```
+   just serve
+   ```
+   This watches blog source files and rebuilds `blog/_site` automatically while serving the whole repo.
    Then open `http://localhost:4000/` (main site) and `http://localhost:4000/blog/_site/` (blog).
 
 ## Notes
 - The blog output is committed at `blog/_site`.
 - GitHub Pages does not run Jekyll for this repo (static hosting only).
+- The local workflow expects Ruby `3.4.9` and Bundler `4.0.3`.
+- `just serve` auto-rebuilds the Jekyll blog on changes, but it does not do browser live reload.
