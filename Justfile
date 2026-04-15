@@ -2,10 +2,15 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
 ruby_version := "3.4.9"
 bundler_version := "4.0.3"
+jekyll_args := "--config site/_config.yml --source site --destination docs"
 
 init:
     #!/usr/bin/env bash
     set -euo pipefail
+
+    if command -v rbenv >/dev/null 2>&1; then
+      eval "$(rbenv init - bash)"
+    fi
 
     current_ruby="$(ruby -e 'print RUBY_VERSION')"
     if [[ "$current_ruby" != "{{ruby_version}}" ]]; then
@@ -27,34 +32,25 @@ init:
       exit 1
     fi
 
-    cd blog
     bundle _{{bundler_version}}_ check >/dev/null 2>&1 || bundle _{{bundler_version}}_ install
     echo "Ruby {{ruby_version}} and Bundler {{bundler_version}} are ready."
 
 build: init
-    cd blog && bundle _{{bundler_version}}_ exec jekyll build
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if command -v rbenv >/dev/null 2>&1; then
+      eval "$(rbenv init - bash)"
+    fi
+
+    bundle _{{bundler_version}}_ exec jekyll build {{jekyll_args}}
 
 serve: init
     #!/usr/bin/env bash
     set -euo pipefail
 
-    cleanup() {
-      if [[ -n "${jekyll_pid:-}" ]]; then
-        kill "$jekyll_pid" >/dev/null 2>&1 || true
-        wait "$jekyll_pid" 2>/dev/null || true
-      fi
-    }
+    if command -v rbenv >/dev/null 2>&1; then
+      eval "$(rbenv init - bash)"
+    fi
 
-    trap cleanup EXIT INT TERM
-
-    (
-      cd blog
-      bundle _{{bundler_version}}_ exec jekyll build --watch
-    ) &
-    jekyll_pid="$!"
-
-    echo "Watching blog sources and rebuilding into research/..."
-    echo "Serving website at http://localhost:4000/"
-    echo "Serving blog at http://localhost:4000/research/"
-    echo "Press Ctrl+C to stop."
-    python3 -m http.server 4000 --directory .
+    bundle _{{bundler_version}}_ exec jekyll serve {{jekyll_args}} --host 127.0.0.1 --port 4000

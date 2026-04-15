@@ -2,8 +2,8 @@
 Public website for Tufa Labs.
 
 ## Deploy (static)
-- Build the blog locally, commit the generated files, then push to `main`.
-- GitHub Pages serves the repo as-is (no Jekyll build on GitHub).
+- Build the website locally, commit the generated files in `docs/`, then push to `main`.
+- GitHub Pages should publish from `main:/docs` (no Jekyll build on GitHub).
 
 ## Local build and test
 1. Install `just` if it is not installed already:
@@ -15,11 +15,11 @@ Public website for Tufa Labs.
    sudo apt install just
    ```
    `just` is required for the local workflow in this repository.
-2. Initialize the Ruby/Bundler toolchain and install blog dependencies:
+2. Initialize the Ruby/Bundler toolchain and install site dependencies:
    ```
    just init
    ```
-3. Build the blog:
+3. Build the site:
    ```
    just build
    ```
@@ -27,11 +27,12 @@ Public website for Tufa Labs.
    ```
    just serve
    ```
-   This watches blog source files and rebuilds `research/` automatically while serving the whole repo.
-   Then open `http://localhost:4000/` (main site) and `http://localhost:4000/research/` (blog).
+   This serves the unified Jekyll source from `site/` and writes output to `docs/`.
+   Then open `http://localhost:4000/`.
 
 ## Notes
-- The blog output is committed at `research/`.
-- GitHub Pages does not run Jekyll for this repo (static hosting only).
+- The editable website source lives in `site/`.
+- The committed publish output lives in `docs/`.
+- GitHub Pages does not run Jekyll for this repo; it serves the committed static output.
 - The local workflow expects Ruby `3.4.9` and Bundler `4.0.3`.
-- `just serve` auto-rebuilds the Jekyll blog on changes, but it does not do browser live reload.
+- `just serve` auto-rebuilds the site on changes and serves the canonical pretty URLs directly.

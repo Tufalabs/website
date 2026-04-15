@@ -1,0 +1,19 @@
+<header class="site-header">
+    <div class="container">
+        <div class="header-content">
+            <a href="{{ '/' | relative_url }}" class="logo-container" aria-label="Tufa Labs home">
+                <img src="{{ '/assets/images/tufa_logo.png' | relative_url }}" alt="Tufa Labs logo" class="logo-image" id="logo-image">
+                <div class="logo-text">Tufa Labs</div>
+            </a>
+            <nav class="site-nav" aria-label="Main navigation">
+                <ul>
+                    {% for item in site.data.navigation.header %}
+                    <li>
+                        <a href="{{ item.url | relative_url }}"{% if item.id == page.nav_id %} class="active"{% endif %}>{{ item.label }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>

@@ -1,0 +1,26 @@
+---
+title: Our Team
+nav_id: team
+---
+<section class="team-list">
+    {% for member in site.data.team %}
+    <div class="team-member">
+        <img src="{{ member.image | relative_url }}" alt="{{ member.name }}" class="team-member-image"{% if member.image_style and member.image_style != "" %} style="{{ member.image_style }}"{% endif %}>
+        <div class="team-member-info">
+            <div class="name-role">
+                <h2>{{ member.name }}</h2>
+                <p class="role">{{ member.role }}</p>
+            </div>
+            <div class="team-member-bio">{{ member.bio | markdownify }}</div>
+            {% if member.links %}
+            <p class="team-member-links">
+                {% for link in member.links %}
+                <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.label }}</a>{% unless forloop.last %} · {% endunless %}
+                {% endfor %}
+            </p>
+            {% endif %}
+            <div class="research-interests">{{ 'Research interests: ' | append: member.research_interests | markdownify }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</section>

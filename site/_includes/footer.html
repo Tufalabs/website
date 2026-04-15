@@ -1,0 +1,9 @@
+<footer class="site-footer">
+    <div class="container">
+        <p>
+            {% for item in site.data.navigation.footer %}
+            <a href="{{ item.url | relative_url }}">{{ item.label }}</a>{% unless forloop.last %} | {% endunless %}
+            {% endfor %}
+        </p>
+    </div>
+</footer>
