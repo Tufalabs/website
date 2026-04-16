@@ -1,9 +1,9 @@
 # Website
 Public website for Tufa Labs.
 
-## Deploy (static)
-- Build the website locally, commit the generated files in `docs/`, then push to `main`.
-- GitHub Pages should publish from `main:/docs` (no Jekyll build on GitHub).
+## Deploy
+- GitHub Pages deploys the site through the `Pages deploy` GitHub Actions workflow.
+- Generated output is no longer committed to the repository.
 
 ## Local build and test
 1. Install `just` if it is not installed already:
@@ -32,7 +32,7 @@ Public website for Tufa Labs.
 
 ## Notes
 - The editable website source lives in `site/`.
-- The committed publish output lives in `docs/`.
-- GitHub Pages does not run Jekyll for this repo; it serves the committed static output.
+- Local test builds write to `docs/`, which is ignored by git.
+- GitHub Pages builds a separate `_site/` artifact in CI and deploys that artifact.
 - The local workflow expects Ruby `3.4.9` and Bundler `4.0.3`.
 - `just serve` auto-rebuilds the site on changes and serves the canonical pretty URLs directly.

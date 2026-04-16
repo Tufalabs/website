@@ -41,25 +41,25 @@ jobs:
 
       - name: Build site
         run: |
-          bundle _4.0.3_ exec jekyll clean --config site/_config.yml --source site --destination docs
-          bundle _4.0.3_ exec jekyll build --config site/_config.yml --source site --destination docs
+          bundle _4.0.3_ exec jekyll clean --config site/_config.yml --source site --destination _site
+          bundle _4.0.3_ exec jekyll build --config site/_config.yml --source site --destination _site
 
       - name: Check generated files
         run: |
-          test -f docs/index.html
-          test -f docs/team/index.html
-          test -f docs/research/index.html
-          test -f docs/research/feed.xml
-          test -f docs/assets/css/site.css
-          grep -q "Tufa Labs" docs/index.html
-          grep -q "Latest Posts" docs/research/index.html
-          grep -q "<feed" docs/research/feed.xml
+          test -f _site/index.html
+          test -f _site/team/index.html
+          test -f _site/research/index.html
+          test -f _site/research/feed.xml
+          test -f _site/assets/css/site.css
+          grep -q "Tufa Labs" _site/index.html
+          grep -q "Latest Posts" _site/research/index.html
+          grep -q "<feed" _site/research/feed.xml
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
           include-hidden-files: true
-          path: docs
+          path: _site
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/jerome/refactor')
