@@ -92,7 +92,7 @@
 - name: Jerome Sieber
   role: AI Researcher
   image: /assets/images/jerome.jpg
-  image_style: ""
+  image_style: "object-position: center 8%;"
   bio: |-
     Jerome is an AI researcher focusing on deep sequence model architectures
     and reasoning models. He holds a PhD in control theory from ETH Zurich,
@@ -161,3 +161,12 @@
   research_interests: >-
     reinforcement learning, reasoning, recurrence, universal transformers,
     sequence models, large-scale training and optimization
+
+- name: Tommy He
+  role: AI Researcher
+  image: /assets/images/tommy.jpg
+  image_style: ""
+  bio: >-
+    Tommy has a Bachelor’s in math & computer science, worked on research in cryptography and ML, and previously co-founded YC company Clarum building AI agents for investing. His previous experience spans working on nanosecond HFT systems to privacy preserving ad-tech solutions.
+  research_interests: >-
+    reasoning, RL, self-play, interpretability, geometry of learning, mathematical foundations of learning systems
