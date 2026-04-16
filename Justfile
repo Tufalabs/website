@@ -2,7 +2,7 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
 ruby_version := "3.4.9"
 bundler_version := "4.0.3"
-jekyll_args := "--config site/_config.yml --source site --destination docs"
+jekyll_args := "--config site/_config.yml --source site --destination build"
 
 init:
     #!/usr/bin/env bash
