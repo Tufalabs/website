@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-smoke:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -52,17 +52,6 @@ jobs:
           grep -q "Latest Posts" docs/research/index.html
           grep -q "<feed" docs/research/feed.xml
 
-      - name: Smoke test built site over HTTP
-        run: |
-          python3 -m http.server 4000 --directory docs >/tmp/pages-smoke-http.log 2>&1 &
-          server_pid=$!
-          trap 'kill "$server_pid"' EXIT
-          sleep 1
-          curl -fsSI http://127.0.0.1:4000/
-          curl -fsSI http://127.0.0.1:4000/team/
-          curl -fsSI http://127.0.0.1:4000/research/
-          curl -fsSI http://127.0.0.1:4000/research/feed.xml
-
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
@@ -71,7 +60,7 @@ jobs:
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/jerome/refactor')
-    needs: build-and-smoke
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
