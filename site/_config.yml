@@ -8,8 +8,6 @@ timezone: "Europe/Zurich"
 lang: "en-US"
 destination: ../docs
 markdown: kramdown
-include:
-  - .nojekyll
 
 plugins:
   - jekyll-feed
