@@ -3,7 +3,6 @@ layout: post
 title:  "Text to RL: Extracting High-Quality RL Questions from Text"
 date:   2025-03-05 09:50:53
 permalink: /research/textbooks-to-rl/
-categories: jekyll update
 author: Toby Simonds
 description: "Turning textbooks into RL Questions"
 --- 

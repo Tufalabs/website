@@ -1,6 +1,22 @@
 # Website
 Public website for Tufa Labs.
 
+## Common content workflows
+- Add a team member: update [site/_data/team.yml](site/_data/team.yml) with the new entry and add the profile image under [site/assets/images/](site/assets/images/).
+- Add a research post: create a dated Markdown file in [site/_posts/](site/_posts/) with the usual front matter.
+- Add a news item: create a Markdown file in [site/_news/](site/_news/) with basic front matter.
+
+### Front matter reference
+- `title`: the headline shown on the site and used in page metadata.
+- `date`: the publish date and time used for sorting and display.
+- `author`: the byline shown on the entry.
+- `description`: the short summary used on listing pages and in metadata.
+- `layout`: the Jekyll layout used to render the entry; `post` is the normal choice for research posts and news items.
+- `permalink`: the canonical URL for a research post, usually under `/research/<slug>/`.
+- `external_link`: optional; if set on a research post, the research index links directly to that external URL.
+
+For news entries, `title`, `date`, `author`, and `description` are usually enough.
+
 ## Deploy
 - GitHub Pages automatically deploys the site through the `Pages deploy` GitHub Actions workflow.
 

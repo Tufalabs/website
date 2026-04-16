@@ -1,4 +1,5 @@
 ---
+layout: post
 title: "News Section Launch"
 date: 2026-04-15 10:00:00
 author: Tufa Labs

@@ -3,7 +3,6 @@ layout: post
 title:  "AlphaWrite: Inference-Time Compute Scaling for Writing"
 date:   2025-06-06 09:50:53 +1100
 permalink: /research/alphawrite/
-categories: jekyll update
 author: Toby Simonds
 description: "We introduce AlphaWrite, an inference-time scaling method for creative writing that uses evolutionary generation and ELO-based ranking to improve story quality."
 ---

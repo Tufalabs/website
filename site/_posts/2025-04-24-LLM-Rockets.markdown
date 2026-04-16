@@ -3,7 +3,6 @@ layout: post
 title: "LLMs for Engineering: Teaching Models to Design High-Powered Rockets"
 date: 2025-4-24 09:50:53 +1100
 permalink: /research/llm-rockets/
-categories: ai
 author: Toby Simonds
 description: "We demonstrate that while current SOTA language models struggle with iterative self-improvement in rocket engineering challenges, augmenting them with reinforcement learning unlocks superhuman design capabilities that could revolutionize physical engineering domains. "
 external_link: "https://arxiv.org/abs/2504.19394"

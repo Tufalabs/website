@@ -3,7 +3,6 @@ layout: post
 title: "Self-Rewarding, Self-Improving"
 date: 2025-5-12 09:50:53 +1100
 permalink: /research/self-rewarding/
-categories: ai
 author: Toby Simonds
 description: "We demonstrate that large language models can autonomously improve by judging their own solutions without reference answers, creating a complete self-learning loop that enhances performance beyond existing benchmarks. "
 external_link: "https://arxiv.org/abs/2505.08827"
