@@ -6,7 +6,7 @@ author: Tufa Labs
 description: "Tufa Talks is a new event series bringing leading AI researchers to Tufa Labs for talks, discussion, and informal exchange."
 ---
 
-Now that we have much more space in our new office, we are launching **Tufa Talks**.
+With much more space in our new office, we are launching **Tufa Talks**.
 
 The idea is simple: we invite top AI researchers to our office to give talks, spend time with our researchers, and meet guests from the public. We want to use the new space to create more direct exchange between people working on frontier AI research and the broader community around it.
 

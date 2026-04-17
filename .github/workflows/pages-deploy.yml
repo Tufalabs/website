@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - main
-      - jerome/refactor
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -66,7 +67,7 @@ jobs:
           path: _site
 
   deploy:
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/jerome/refactor')
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:
