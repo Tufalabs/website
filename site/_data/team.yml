@@ -1,0 +1,172 @@
+- name: Benjamin Crouzier
+  role: Founder & Research Engineer
+  image: /assets/images/ben.jpeg
+  image_style: ""
+  bio: >-
+    Benjamin has a masters in Computer Science likes to build stuff.
+  research_interests: >-
+    test-time computation, [UED](https://arxiv.org/abs/2012.02096)/[MCC](http://www.cmap.polytechnique.fr/~nikolaus.hansen/proceedings/2017/GECCO/proceedings/proceedings_files/pap140s3-file1.pdf)/auto-curriculum, [framing problem](https://folk.idi.ntnu.no/gamback/teaching/TDT4138/dennett84.pdf),
+    tokenisation, probabilistic programming, search/self-play,
+    music-generation, generalization, scaling laws
+
+- name: Mohamed Osman
+  role: AI Researcher
+  image: /assets/images/mohamed-closeup.webp
+  image_style: ""
+  bio: >-
+    Mohamed has four years of work experience in developing deep learning
+    models and multiple successful real-world deployments under his belt.
+  research_interests: >-
+    Meta learning, reasoning, test-time learning, active inference,
+    few-shot learning, data scarcity
+
+- name: Akira Yoshiyama
+  role: AI Researcher
+  image: /assets/images/akira.jpeg
+  image_style: ""
+  bio: >-
+    Akira was previously focused on LLM fusion at the University of Waterloo.
+    He has a diverse background in building innovative technology solutions,
+    from generative machine learning applications in aerospace engineering to
+    advanced CCTV footage analysis tools for law enforcement.
+  research_interests: >-
+    LLM fusion, generative machine learning, AI applications in security and
+    law enforcement, computational design and optimization, autonomous systems
+
+- name: Kevin Danilo López Andrango
+  role: AI Researcher
+  image: /assets/images/kev.jpeg
+  image_style: ""
+  bio: >-
+    Kevin is an AI researcher specializing in deep learning, computational
+    neuroscience, and software engineering. He holds a master's from ETH
+    Zurich, where he developed advanced machine learning frameworks and
+    contributed significantly to research in recurrent neural network
+    architectures. Kevin's work spans from developing open-source software for
+    computational neuroscience to engineering robust algorithms for natural
+    language processing and distributed computing.
+  research_interests: >-
+    deep learning architectures, sparse recurrent neural networks,
+    computational neuroscience, natural language processing, distributed
+    training methodologies, synthetic data generation for language models
+
+- name: Dries Smit
+  role: AI Researcher
+  image: /assets/images/dries.jpg
+  image_style: ""
+  bio: >-
+    Dries is a researcher specialising in reinforcement learning, multi-agent
+    systems, and large language models, with a strong track record of applying
+    these techniques in medical and financial domains. Dries led the team
+    behind Laila, a fine-tuned variant of Llama 3.1 designed to assist
+    biologists by interfacing directly with laboratory equipment. His research currently focuses on large-scale training and reinforcement learning; follow his latest work on [driessmit.github.io](https://driessmit.github.io/).
+  research_interests: >-
+    Reinforcement learning, multi-agent systems, large language models,
+    large-scale AI training, biomedical applications, foundational model
+    enhancement, autonomous systems, curiosity-driven learning
+
+- name: Dominique Garmier
+  role: AI Researcher
+  image: /assets/images/dominique.webp
+  image_style: ""
+  bio: >-
+    Dominique has a bachelor's in mathematics and is currently pursuing his
+    master's with a focus on analysis.
+  research_interests: >-
+    reasoning, formal proofs, statistical learning theory, functional
+    analysis, ergodic theory, dynamical systems
+
+- name: Isaiah Pressman
+  role: AI Researcher
+  image: /assets/images/isaiah.jpeg
+  image_style: ""
+  bio: >-
+    Isaiah is a research engineer with a focus on self-play reinforcement
+    learning and the techniques needed to train large-scale deep learning
+    models. His background includes machine learning engineering for dynamic
+    pricing, applying computer vision to histopathology research, and multiple
+    1st- and 2nd-place finishes in Kaggle competitions.
+  research_interests: >-
+    self-play, reinforcement learning, in-context learning, reasoning models
+
+- name: Jerome Sieber
+  role: AI Researcher
+  image: /assets/images/jerome.jpg
+  image_style: "object-position: center 8%;"
+  bio: |-
+    Jerome is an AI researcher focusing on deep sequence model architectures
+    and reasoning models. He holds a PhD in control theory from ETH Zurich,
+    where he worked on optimal control for dynamical systems and sequence model
+    architectures. His research spans various domains, including robotics,
+    dynamical systems, and artificial intelligence. Jerome has published
+    several papers on control theory and machine learning, contributing to
+    advancements in predictive control and fundamental understanding of
+    sequence models.
+
+    You can find Jerome's latest work on [Google Scholar](https://scholar.google.com/citations?user=JHmSvaMAAAAJ&hl=en).
+  research_interests: >-
+    sequence model architectures, reasoning fundamentals, test-time RL, model
+    normalization, optimization techniques, dynamical systems
+
+- name: Alejandro Alvarez
+  role: AI Researcher
+  image: /assets/images/alejandro.jpeg
+  image_style: ""
+  bio: >-
+    Alejandro has a master's in biophysics where he did research in
+    computational neuroscience and seven years of experience as a software
+    engineer, where he spent time at Google, Dfinity and others.
+  research_interests: >-
+    deep learning architectures, computational neuroscience, distributed
+    training methodologies, reasoning
+
+- name: Stefano Viel
+  role: AI Researcher
+  image: /assets/images/stefano.jpeg
+  image_style: ""
+  bio: >-
+    Stefano has a master's in data science from EPFL. There, he primarily
+    conducted research on reinforcement learning, large language models, and
+    computational social science.
+  research_interests: >-
+    reinforcement learning, unsupervised environment design, meta learning,
+    synthetic data generation, curiosity-driven learning, and large language
+    models
+
+- name: Jeroen Cottaar
+  role: AI Researcher
+  image: /assets/images/jeroen.jpg
+  image_style: "object-position: center 8%;"
+  bio: >-
+    Jeroen has a PhD in Applied Physics from Eindhoven University of
+    Technology and over 10 years of industry experience at ASML, where he
+    architected Bayesian machine learning approaches for semiconductor
+    metrology. He is a top-5 Kaggle competitor with multiple 1st and 2nd place
+    finishes across diverse domains, with solutions ranging from principled
+    Bayesian inference to genetic algorithms with custom CUDA kernels. He now
+    aims to merge Bayesian methods with LLM reasoning approaches.
+  research_interests: >-
+    reasoning, abstraction, test-time computation, program synthesis, Bayesian
+    inference, Gaussian processes, scientific machine learning
+
+- name: Harold Bessis
+  role: AI Researcher
+  image: /assets/images/harold.jpg
+  image_style: ""
+  bio: >-
+    Harold has 8+ years of experience designing and deploying deep learning
+    systems across recommender systems, NLP, computer vision, and sensor data.
+    He previously worked as a machine learning technical lead on
+    production-scale models.
+  research_interests: >-
+    reinforcement learning, reasoning, recurrence, universal transformers,
+    sequence models, large-scale training and optimization
+
+- name: Tommy He
+  role: AI Researcher
+  image: /assets/images/tommy.jpg
+  image_style: ""
+  bio: >-
+    Tommy has a Bachelor’s in math & computer science, worked on research in cryptography and ML, and previously co-founded YC company Clarum building AI agents for investing. His previous experience spans working on nanosecond HFT systems to privacy preserving ad-tech solutions.
+  research_interests: >-
+    reasoning, RL, self-play, interpretability, geometry of learning, mathematical foundations of learning systems

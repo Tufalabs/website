@@ -1,0 +1,53 @@
+- title: YouTube
+  display_url: https://www.youtube.com/c/MachineLearningStreetTalk
+  url: https://www.youtube.com/c/MachineLearningStreetTalk
+  icon: /assets/images/share-platforms/youtube-logo.png
+  alt: Youtube icon
+
+- title: Patreon
+  display_url: patreon.com/mlst
+  url: https://www.patreon.com/mlst
+  icon: /assets/images/share-platforms/patreon-icon.png
+  alt: Patreon icon
+
+- title: Discord
+  display_url: discord.gg/machine-learning-street-talk-mlst-937356144060530778
+  url: https://discord.gg/machine-learning-street-talk-mlst-937356144060530778
+  icon: /assets/images/share-platforms/discord-icon.png
+  alt: Discord icon
+
+- title: Merch
+  display_url: machine-learning-street-talk.creator-spring.com
+  url: https://machine-learning-street-talk.creator-spring.com
+  icon: /assets/images/share-platforms/merch-icon.png
+  alt: Merch icon
+
+- title: Website / Blog
+  display_url: mlst.ai
+  url: https://mlst.ai
+  icon: /assets/images/share-platforms/website-icon.jpeg
+  alt: Website icon
+
+- title: LinkedIn
+  display_url: linkedin.com/company/machine-learning-street-talk
+  url: https://www.linkedin.com/company/machine-learning-street-talk
+  icon: /assets/images/share-platforms/linkedin-icon.png
+  alt: LinkedIn icon
+
+- title: Twitter
+  display_url: twitter.com/MLStreetTalk
+  url: https://twitter.com/MLStreetTalk
+  icon: /assets/images/share-platforms/twitter-icon.png
+  alt: Twitter icon
+
+- title: Podcast
+  display_url: podcasters.spotify.com/pod/show/machinelearningstreettalk
+  url: https://podcasters.spotify.com/pod/show/machinelearningstreettalk
+  icon: /assets/images/share-platforms/podcast-icon.png
+  alt: Podcast icon
+
+- title: Donate
+  display_url: paypal.com/donate/?hosted_button_id=K2TYRVPBGXVNA
+  url: https://www.paypal.com/donate/?hosted_button_id=K2TYRVPBGXVNA
+  icon: /assets/images/share-platforms/donate-icon.png
+  alt: Donate icon

@@ -1,0 +1,8 @@
+---
+title: News
+nav_id: news
+lede: Announcements and what is changing around the lab.
+---
+
+{% assign news_items = site.news | sort: "date" | reverse %}
+{% include entry-list.html items=news_items heading="Latest News" %}

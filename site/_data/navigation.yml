@@ -1,0 +1,27 @@
+header:
+  - label: Home
+    url: /
+    id: home
+  - label: Research
+    url: /research/
+    id: research
+  - label: News
+    url: /news/
+    id: news
+  - label: Open Positions
+    url: /open-positions/
+    id: open-positions
+  - label: Team
+    url: /team/
+    id: team
+  - label: MLST
+    url: /mlst/
+    id: mlst
+
+footer:
+  - label: Privacy Policy
+    url: /privacy/
+  - label: Imprint
+    url: /imprint/
+  - label: Terms Of Use
+    url: /terms/

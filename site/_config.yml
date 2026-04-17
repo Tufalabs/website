@@ -1,0 +1,40 @@
+title: Tufa Labs
+description: >-
+  Public website for Tufa Labs, a small independent research group working on
+  fundamental AI research.
+url: "https://tufalabs.ai"
+baseurl: ""
+timezone: "Europe/Zurich"
+lang: "en-US"
+destination: ../docs
+markdown: kramdown
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+collections:
+  news:
+    output: true
+    permalink: /news/:slug/
+
+feed:
+  path: research/feed.xml
+
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      nav_id: research
+  - scope:
+      path: ""
+      type: news
+    values:
+      layout: post
+      nav_id: news
+  - scope:
+      path: ""
+    values:
+      layout: page

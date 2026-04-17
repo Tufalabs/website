@@ -1,2 +1,8 @@
 /.jekyll-cache/
-/_site/
+/build/
+/docs/
+/.sass-cache/
+/.jekyll-metadata
+/site/.jekyll-cache/
+/site/.jekyll-metadata
+/vendor/

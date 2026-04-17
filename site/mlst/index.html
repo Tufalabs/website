@@ -1,0 +1,30 @@
+---
+title: Sponsoring MLST
+nav_id: mlst
+---
+<p>Tufa Labs is proud to be an official sponsor of Tim Scarfe and his MLST podcast.</p>
+
+<h2>About MLST</h2>
+<p>
+    MLST is the top technical AI podcast on Spotify.
+    They bring you the latest in advanced AI research, from the best AI experts in the world.
+    Their approach is unrivalled in terms of scope and rigour. They believe in diversity of ideas
+    (which is to say, not just LLMs) and they also cover other promising alternative paths to AGI,
+    as well as CogSci, CompSci, Neuro, Mathematics, Philosophy of Mind and Language.
+</p>
+
+<ul class="links-list">
+    {% for item in site.data.mlst_links %}
+    <li>
+        <img src="{{ item.icon | relative_url }}" alt="{{ item.alt }}">
+        <div>
+            <strong>{{ item.title }}</strong>
+            <a href="{{ item.url }}">{{ item.display_url }}</a>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+
+<div class="video-embed">
+    <iframe src="https://www.youtube.com/embed/jSAT_RuJ_Cg?si=nVN7py3UJK8U1jcc" title="Machine Learning Street Talk video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
