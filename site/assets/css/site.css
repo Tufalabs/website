@@ -453,6 +453,11 @@ a:hover {
     border-bottom: none;
 }
 
+.research-chatter {
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+}
+
 .post-link {
     color: var(--heading-color);
     text-decoration: none;
