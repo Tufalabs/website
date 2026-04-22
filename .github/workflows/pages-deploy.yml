@@ -51,17 +51,12 @@ jobs:
           test -f _site/team/index.html
           test -f _site/research/index.html
           test -f _site/research/feed.xml
-          test -f _site/research/sidenote-demo/index.html
           test -f _site/news/index.html
           test -f _site/news/new-office/index.html
           test -f _site/news/intro-tufa-talks/index.html
           test -f _site/assets/css/site.css
           grep -q "Tufa Labs" _site/index.html
           grep -q "Latest Posts" _site/research/index.html
-          grep -q 'class="sidenote"' _site/research/sidenote-demo/index.html
-          grep -q 'class="marginnote"' _site/research/sidenote-demo/index.html
-          grep -q 'id="sn-demo-1"' _site/research/sidenote-demo/index.html
-          grep -q 'class="footnotes"' _site/research/sidenote-demo/index.html
           grep -q "Introducing Tufa Talks" _site/news/index.html
           grep -q "<feed" _site/research/feed.xml
 
