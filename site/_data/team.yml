@@ -149,6 +149,15 @@
     reasoning, abstraction, test-time computation, program synthesis, Bayesian
     inference, Gaussian processes, scientific machine learning
 
+- name: Matteo Saponati
+  role: AI Researcher
+  image: /assets/images/matteo.png
+  image_style: ""
+  bio: >-
+    Matteo works on pre-training for reasoning models and novel post-training algorithms. He was previously a postdoctoral researcher at ETH Zurich in mechanistic interpretability and neuromorphic computing, and has worked as a consultant for neuromorphic computing startups. He holds a PhD in Neuroinformatics, completed jointly at the Max Planck Institute for Brain Research (Germany) and Radboud University (Netherlands). You can find out more [here](https://matteosaponati.github.io/).
+  research_interests: >-
+    reasoning, small reasoning models, optimization, mechanistic interpretability
+
 - name: Harold Bessis
   role: AI Researcher
   image: /assets/images/harold.jpg
@@ -170,3 +179,12 @@
     Tommy has a Bachelor’s in math & computer science, worked on research in cryptography and ML, and previously co-founded YC company Clarum building AI agents for investing. His previous experience spans working on nanosecond HFT systems to privacy preserving ad-tech solutions.
   research_interests: >-
     reasoning, RL, self-play, interpretability, geometry of learning, mathematical foundations of learning systems
+
+- name: Michal Tresnar
+  role: AI Researcher
+  image: /assets/images/michal.jpeg
+  image_style: ""
+  bio: >-
+    Michal is pursuing a Master’s in Data Science at ETH, focusing on the mathematical foundations of the field and its applications to deep learning. He has conducted research on continual learning in robotics and reasoning with diffusion models. He maintains a broad focus, exploring human cognition and the impact of technology on the society.
+  research_interests: >-
+    reasoning, large-language model post-training, long-context agentic tasks, agentic orchestration, test-time scaling, and uncertainty estimation
