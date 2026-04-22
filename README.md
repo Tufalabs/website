@@ -14,8 +14,13 @@ Public website for Tufa Labs.
 - `layout`: the Jekyll layout used to render the entry; `post` is the normal choice for research posts and news items.
 - `permalink`: the canonical URL for a research post, usually under `/research/<slug>/`.
 - `external_link`: optional; if set on a research post, the research index links directly to that external URL.
+- `sidenotes`: optional; set to `true` to enable the wider post layout needed for custom sidenotes and margin notes.
 
 For news entries, `title`, `date`, `author`, and `description` are usually enough.
+
+## Sidenotes
+- Set `sidenotes: true` in front matter to opt a post into the wider layout that supports custom sidenotes and margin notes.
+- See [site/_posts/2000-01-01-sidenote-demo.markdown](site/_posts/2000-01-01-sidenote-demo.markdown) for a compact example of the Liquid tag syntax and usage.
 
 ## Deploy
 - GitHub Pages automatically deploys the site through the `Pages deploy` GitHub Actions workflow.

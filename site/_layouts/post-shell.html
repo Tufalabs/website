@@ -15,7 +15,7 @@
     {% seo title=false %}
     <script src="{{ '/assets/js/logo.js' | relative_url }}" defer></script>
 </head>
-<body class="post-page{% if page.body_class %} {{ page.body_class }}{% endif %}">
+<body class="post-page{% if page.sidenotes %} post--sidenotes{% endif %}{% if page.body_class %} {{ page.body_class }}{% endif %}">
     {% include header.html %}
     <main class="container post-container">
         {{ content }}
