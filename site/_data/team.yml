@@ -108,6 +108,15 @@
     sequence model architectures, reasoning fundamentals, test-time RL, model
     normalization, optimization techniques, dynamical systems
 
+- name: Jean-Marie Droz
+  role: AI Researcher
+  image: /assets/images/jmd.jpeg
+  image_style: ""
+  bio: >-
+    After a PhD in low-dimensional topology, Jean-Marie conducted research in category theory, worked in bioinformatics, as a statistician in the pharmaceutical industry, and as an AI specialist at an online education startup. He finally fulfilled his childhood dream of becoming an AI researcher.    
+  research_interests: >-
+    Statistics/ML interface, computational statistics, statistical learning theory, RL, agent foundations, Bayesian methods, mathematical aspects of deep learning, biostatistics
+
 - name: Alejandro Alvarez
   role: AI Researcher
   image: /assets/images/alejandro.jpeg
@@ -180,7 +189,7 @@
   research_interests: >-
     reasoning, RL, self-play, interpretability, geometry of learning, mathematical foundations of learning systems
 
-- name: Michal Tresnar
+- name: Michal Tesnar
   role: AI Researcher
   image: /assets/images/michal.jpeg
   image_style: ""
@@ -188,12 +197,3 @@
     Michal is pursuing a Master’s in Data Science at ETH, focusing on the mathematical foundations of the field and its applications to deep learning. He has conducted research on continual learning in robotics and reasoning with diffusion models. He maintains a broad focus, exploring human cognition and the impact of technology on the society.
   research_interests: >-
     reasoning, large-language model post-training, long-context agentic tasks, agentic orchestration, test-time scaling, and uncertainty estimation
-
-- name: Jean-Marie Droz
-  role: AI Researcher
-  image: /assets/images/jmd.jpeg
-  image_style: ""
-  bio: >-
-    After a PhD in low-dimensional topology, Jean-Marie conducted research in category theory, worked in bioinformatics, as a statistician in the pharmaceutical industry, and as an AI specialist at an online education startup. He finally fulfilled his childhood dream of becoming an AI researcher.    
-  research_interests: >-
-    Statistics/ML interface, computational statistics, statistical learning theory, RL, agent foundations, Bayesian methods, mathematical aspects of deep learning, biostatistics
