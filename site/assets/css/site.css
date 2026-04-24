@@ -503,6 +503,10 @@ a:hover {
     margin: 2rem 0;
 }
 
+.post-content a {
+    color: #0b3f75;
+}
+
 .post-content table {
     border-collapse: separate;
     border-spacing: 0;
@@ -649,7 +653,7 @@ body.post--sidenotes .sidenote-number {
 
 body.post--sidenotes .sidenote-number::after {
     content: counter(sidenote-counter);
-    color: var(--primary-color);
+    color: #0b3f75;
     font-size: 0.66em;
     font-weight: 400;
     line-height: 1;
@@ -658,7 +662,7 @@ body.post--sidenotes .sidenote-number::after {
 }
 
 body.post--sidenotes .sidenote-ref {
-    color: var(--primary-color);
+    color: #0b3f75;
     font-size: 0.66em;
     font-weight: 400;
     line-height: 1;
