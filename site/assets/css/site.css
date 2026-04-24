@@ -605,6 +605,20 @@ body.post--sidenotes .sidenote-number::after {
     vertical-align: super;
 }
 
+body.post--sidenotes .sidenote-ref {
+    color: var(--primary-color);
+    font-size: 0.66em;
+    font-weight: 400;
+    line-height: 1;
+    margin-left: 0.06em;
+    text-decoration: none;
+    vertical-align: super;
+}
+
+body.post--sidenotes .sidenote-ref:hover {
+    text-decoration: underline;
+}
+
 body.post--sidenotes .marginnote-toggle {
     color: var(--primary-color);
     display: inline-block;
@@ -634,6 +648,12 @@ body.post--sidenotes .sidenote::before {
     font-weight: 400;
 }
 
+body.post--sidenotes .sidenote:target {
+    background: #f3f9fc;
+    border-radius: 10px;
+    box-shadow: 0 0 0 0.45rem #f3f9fc;
+}
+
 body.post--sidenotes .sidenote code,
 body.post--sidenotes .marginnote code {
     font-size: 0.9em;
@@ -654,13 +674,40 @@ body.post--sidenotes .marginnote code {
     }
 
     body.post--sidenotes input.margin-toggle:checked + .sidenote,
-    body.post--sidenotes input.margin-toggle:checked + .marginnote {
+    body.post--sidenotes input.margin-toggle:checked + .marginnote,
+    body.post--sidenotes .sidenote:target {
         background-color: #f7fbfe;
         border-left: 3px solid var(--primary-color);
         border-radius: 10px;
         display: block;
         padding: 0.75rem 1rem;
     }
+}
+
+.research-callout {
+    background:
+        linear-gradient(135deg, rgba(37, 106, 134, 0.1), rgba(37, 106, 134, 0.02)),
+        #fbfdfe;
+    border: 1px solid rgba(37, 106, 134, 0.2);
+    border-radius: 18px;
+    box-shadow: 0 14px 32px rgba(20, 54, 69, 0.08);
+    margin: 2rem 0;
+    padding: 1.35rem 1.5rem;
+}
+
+.research-callout__label {
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.55rem;
+    text-transform: uppercase;
+}
+
+.research-callout p {
+    font-size: 1.08rem;
+    line-height: 1.5;
+    margin: 0;
 }
 
 pre, code {
