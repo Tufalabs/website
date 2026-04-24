@@ -10,9 +10,9 @@ sidenotes: true
 math: true
 ---
 
-# Motivation
+## Motivation
 
-Synthetic data has become a key ingredient in modern pretraining recipes for Large Language Models (LLMs).{% sidenote ref-synth-1 %}[Qwen3 Technical Report](https://arxiv.org/abs/2505.09388) (Yang et al., 2025).{% endsidenote %}{% sidenote ref-synth-2 %}[Phi-4 Technical Report](https://arxiv.org/abs/2412.08905) (Abdin et al., 2024).{% endsidenote %}{% sidenote ref-synth-3 %}[Trinity Large](https://www.arcee.ai/blog/trinity-large) (Atkins, 2026).{% endsidenote %}{% sidenote ref-synth-4 %}[NVIDIA Nemotron 3: Efficient and Open Intelligence](https://arxiv.org/abs/2512.20856) (NVIDIA, 2025).{% endsidenote %}{% sidenote ref-synth-5 %}[FinePhrase](https://huggingface.co/datasets/HuggingFaceFW/finephrase) (HuggingFaceFW, 2026).{% endsidenote %} It represents a natural evolution in data curation: synthetic generation can recover and enhance data previously excluded from pretraining, rephrase existing high-quality content to expand the corpus, and potentially extend scaling laws towards more capable models. Crucially, the right pretraining data mix is essential for grounding reasoning capabilities early in training and enabling further gains during post-training{% sidenote ref-posttraining-1 %}[Demystifying Synthetic Data in LLM Pre-training: A Systematic Study of Scaling Laws, Benefits, and Pitfalls](https://arxiv.org/pdf/2510.01631) (Kang et al., 2025).{% endsidenote %}{% sidenote ref-posttraining-2 %}[BeyondWeb: Lessons from Scaling Synthetic Data for Trillion-scale Pretraining](https://arxiv.org/pdf/2508.10975) (DatologyAI, 2025).{% endsidenote %}{% sidenote ref-posttraining-3 %}[SYNTH: the new data frontier](https://pleias.fr/blog/blogsynth-the-new-data-frontier) (Pleias, 2025).{% endsidenote %}.
+Synthetic data has become a key ingredient in modern pretraining recipes for Large Language Models (LLMs).{% sidenote ref-synth-1 %}[Qwen3 Technical Report](https://arxiv.org/abs/2505.09388) (Yang et al., 2025).{% endsidenote %}{% sidenote ref-synth-2 %}[Phi-4 Technical Report](https://arxiv.org/abs/2412.08905) (Abdin et al., 2024).{% endsidenote %}{% sidenote ref-synth-3 %}[Trinity Large](https://www.arcee.ai/blog/trinity-large) (Atkins, 2026).{% endsidenote %}{% sidenote ref-synth-4 %}[NVIDIA Nemotron 3: Efficient and Open Intelligence](https://arxiv.org/abs/2512.20856) (NVIDIA, 2025).{% endsidenote %}{% sidenote ref-synth-5 %}[FinePhrase](https://huggingface.co/datasets/HuggingFaceFW/finephrase) (HuggingFaceFW, 2026).{% endsidenote %} It represents a natural evolution in data curation: synthetic generation can recover and enhance data previously excluded from pretraining, rephrase existing high-quality content to expand the corpus, and potentially extend scaling laws towards more capable models. Crucially, the right pretraining data mix is essential for grounding reasoning capabilities early in training and enabling further gains during post-training.{% sidenote ref-posttraining-1 %}[Demystifying Synthetic Data in LLM Pre-training: A Systematic Study of Scaling Laws, Benefits, and Pitfalls](https://arxiv.org/pdf/2510.01631) (Kang et al., 2025).{% endsidenote %}{% sidenote ref-posttraining-2 %}[BeyondWeb: Lessons from Scaling Synthetic Data for Trillion-scale Pretraining](https://arxiv.org/pdf/2508.10975) (DatologyAI, 2025).{% endsidenote %}{% sidenote ref-posttraining-3 %}[SYNTH: the new data frontier](https://pleias.fr/blog/blogsynth-the-new-data-frontier) (Pleias, 2025).{% endsidenote %}
 
 Beyond increasing data quantity — and of greater interest to us — synthetic pretraining offers control over the learning signal itself, improving token efficiency. By converting human-written text into more explicit, reasoning-friendly sequences, synthetic rephrasing can increase the informational value of each training token.
 
@@ -26,13 +26,13 @@ Our hypothesis is that enriching reasoning datasets (e.g., math corpora) with mo
 
 To investigate this, we study three synthetic transformations, each instantiating a different way to improve token efficiency through synthetic pretraining:
 
-1. “**TPT**”, inspired by “Thinking Augmented Pretraining”{% sidenote ref-tpt-intro %}[Thinking Augmented Pre-training](https://arxiv.org/pdf/2509.20186) (Wang et al., 2025).{% endsidenote %}, adds explicit thought-process structure to each training example. 
-2. "**First principles**", (inspired by SwallowMath{% sidenote ref-swallowmath-intro %}[Rewriting Pre-Training Data Boosts LLM Performance in Math and Code](https://arxiv.org/pdf/2505.02881) (Fujii et al., 2025).{% endsidenote %} and Kimi K2{% sidenote ref-kimi-intro %}[Kimi K2: Open Agentic Intelligence](https://arxiv.org/pdf/2507.20534) (Kimi Team et al., 2025).{% endsidenote %}), reformulates math documents as learning-note style content. 
+1. “**TPT**”, inspired by “Thinking Augmented Pretraining”,{% sidenote ref-tpt-intro %}[Thinking Augmented Pre-training](https://arxiv.org/pdf/2509.20186) (Wang et al., 2025).{% endsidenote %} adds explicit thought-process structure to each training example.
+2. "**First principles**", (inspired by SwallowMath{% sidenote ref-swallowmath-intro %}[Rewriting Pre-Training Data Boosts LLM Performance in Math and Code](https://arxiv.org/pdf/2505.02881) (Fujii et al., 2025).{% endsidenote %} and Kimi K2{% sidenote ref-kimi-intro %}[Kimi K2: Open Agentic Intelligence](https://arxiv.org/pdf/2507.20534) (Kimi Team et al., 2025).{% endsidenote %}), reformulates math documents as learning-note style content.
 3. "**Rephrasing**" rewrites math documents to maximize learnability for an autoregressive student model. 
 
 Together, these three prompts provide a controlled comparison between two plausible mechanisms: enriching training examples with more reasoning content, versus making existing reasoning content more learnable. 
 
-We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max{% sidenote ref-megamath %}[OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling](https://arxiv.org/abs/2506.20512) (Wang et al., 2025).{% endsidenote %}, and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode){% sidenote ref-qwen-hf-intro %}[Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Qwen Team, 2026).{% endsidenote %} as the generator model.
+We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max,{% sidenote ref-megamath %}[OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling](https://arxiv.org/abs/2506.20512) (Wang et al., 2025).{% endsidenote %} and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode){% sidenote ref-qwen-hf-intro %}[Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Qwen Team, 2026).{% endsidenote %} as the generator model.
 
 We evaluate reasoning gains through few-shot accuracy across shot counts, summarized by the few-shot gain metric,
 
@@ -42,12 +42,10 @@ $$
 
 which isolates the marginal benefit of in-context demonstrations over zero-shot performance. See the [Methodology](#methodology) section for a more detailed description.
 
-<br>
 
 ---
 
-# Results
-
+## Results
 
 <a id="main-takeaway"></a>
 
@@ -74,7 +72,7 @@ Gains vary across synthetic pretraining runs, but all three prompts show signifi
     <figcaption><strong>Figure 2.</strong> Performance gain over k=0 accuracy for the original and synthetic pretrained models, following the same evaluation protocol as Figure 1. Each point shows the median across 4 random seeds, with error bars indicating the interquartile range (IQ25–IQ75).</figcaption>
 </figure>
 
-It is known that few-shot performance is affected not only by “using examples to learn in context,” but also by base task competence, prompt format sensitivity, example selection, example order, and possible benchmark overlap or contamination{% sidenote ref-fewshot-1 %}[Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?](https://arxiv.org/abs/2202.12837) (Min et al., 2022).{% endsidenote %}{% sidenote ref-fewshot-2 %}[Fantastically Ordered Prompts and Where to Find Them: Overcoming Few-Shot Prompt Order Sensitivity](https://arxiv.org/abs/2104.08786) (Lu et al., 2021).{% endsidenote %}{% sidenote ref-fewshot-3 %}[Let's Learn Step by Step: Enhancing In-Context Learning Ability with Curriculum Learning](https://arxiv.org/pdf/2402.10738) (Liu et al., 2024).{% endsidenote %}{% sidenote ref-fewshot-4 %}[In-Context Learning with Long-Context Models: An In-Depth Exploration](https://aclanthology.org/2025.naacl-long.605/) (Bertsch et al., 2025).{% endsidenote %}
+It is known that few-shot performance is affected not only by “using examples to learn in context,” but also by base task competence, prompt format sensitivity, example selection, example order, and possible benchmark overlap or contamination.{% sidenote ref-fewshot-1 %}[Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?](https://arxiv.org/abs/2202.12837) (Min et al., 2022).{% endsidenote %}{% sidenote ref-fewshot-2 %}[Fantastically Ordered Prompts and Where to Find Them: Overcoming Few-Shot Prompt Order Sensitivity](https://arxiv.org/abs/2104.08786) (Lu et al., 2021).{% endsidenote %}{% sidenote ref-fewshot-3 %}[Let's Learn Step by Step: Enhancing In-Context Learning Ability with Curriculum Learning](https://arxiv.org/pdf/2402.10738) (Liu et al., 2024).{% endsidenote %}{% sidenote ref-fewshot-4 %}[In-Context Learning with Long-Context Models: An In-Depth Exploration](https://aclanthology.org/2025.naacl-long.605/) (Bertsch et al., 2025).{% endsidenote %}
 
 To assess the robustness of our results to the choice and ordering of CoT demonstrations, we repeat the same evaluation but replace the fixed CoT examples with a random set drawn per test question. We fix the random seeds to ensure consistency across checkpoints. Our results show that synthetic pretraining maintains its gains under this randomized setup, confirming that improvements reflect genuine reasoning ability. Interestingly, this randomized evaluation reveals a clearer ranking among the synthetic pretraining runs than the original fixed-example setup, where all models achieved roughly similar gains on GSM8K. This suggests that random demonstrations may better discriminate between the reasoning capabilities induced by different generation prompts.
 
@@ -135,7 +133,7 @@ To assess whether these differences in length correspond to differences in lexic
 >
 > A same-size generator (0.8B, non-thinking mode) yields clear benefits, showing that effective synthetic data generation does not require a larger or computationally heavier model.
 
-To our knowledge, this is the first work demonstrating that a model this small, operating in non-thinking mode, can serve as an effective generator for synthetic pretraining. Our results further support the growing evidence that generator model size is not a critical factor for synthetic data quality. Prior work has shown that model family matters more than model size{% sidenote ref-generator-family-1 %}[Rephrasing natural text data with different languages and quality levels for Large Language Model pre-training](https://arxiv.org/pdf/2410.20796) (Pieler et al., 2024).{% endsidenote %}{% sidenote ref-generator-family-2 %}[Demystifying Synthetic Data in LLM Pre-training: A Systematic Study of Scaling Laws, Benefits, and Pitfalls](https://arxiv.org/pdf/2510.01631) (Kang et al., 2025).{% endsidenote %}, and that scaling beyond 1B parameters yields no meaningful gains in synthetic data quality{% sidenote ref-synthetic-playbook %}[The Synthetic Data Playbook: Generating Trillions of the Finest Tokens](https://stuker.com/wp-content/uploads/2026/03/the-synthetic-data-playbook-generating-trillions-of-the-finest-tokens.pdf) (Niklaus et al., 2026).{% endsidenote %}.
+To our knowledge, this is the first work demonstrating that a model this small, operating in non-thinking mode, can serve as an effective generator for synthetic pretraining. Our results further support the growing evidence that generator model size is not a critical factor for synthetic data quality. Prior work has shown that model family matters more than model size,{% sidenote ref-generator-family-1 %}[Rephrasing natural text data with different languages and quality levels for Large Language Model pre-training](https://arxiv.org/pdf/2410.20796) (Pieler et al., 2024).{% endsidenote %}{% sidenote ref-generator-family-2 %}[Demystifying Synthetic Data in LLM Pre-training: A Systematic Study of Scaling Laws, Benefits, and Pitfalls](https://arxiv.org/pdf/2510.01631) (Kang et al., 2025).{% endsidenote %} and that scaling beyond 1B parameters yields no meaningful gains in synthetic data quality.{% sidenote ref-synthetic-playbook %}[The Synthetic Data Playbook: Generating Trillions of the Finest Tokens](https://stuker.com/wp-content/uploads/2026/03/the-synthetic-data-playbook-generating-trillions-of-the-finest-tokens.pdf) (Niklaus et al., 2026).{% endsidenote %}
 
 
 <a id="takeaway-6"></a>
@@ -144,59 +142,51 @@ To our knowledge, this is the first work demonstrating that a model this small, 
 >
 > We observe strong gains from synthetic data augmentation even when applied to MegaMath-Web-Pro-Max, a heavily filtered and curated corpus.
 
-It is commonly reported that synthetic data augmentation yields significant gains primarily on noisy, low-quality corpora such as The Pile{% sidenote ref-pile %}[The Pile: An 800GB Dataset of Diverse Text for Language Modeling](https://arxiv.org/abs/2101.00027) (Gao et al., 2020).{% endsidenote %} or Common Crawl{% sidenote ref-common-crawl %}[Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) (Raffel et al., 2019).{% endsidenote %}, with limited benefit on already high-quality data{% sidenote ref-high-quality-1 %}[Rephrasing natural text data with different languages and quality levels for Large Language Model pre-training](https://arxiv.org/pdf/2410.20796) (Pieler et al., 2024).{% endsidenote %}{% sidenote ref-high-quality-2 %}[Rephrasing the Web: A Recipe for Compute and Data-Efficient Language Modeling](https://arxiv.org/abs/2401.16380) (Maini et al., 2024).{% endsidenote %}{% sidenote ref-high-quality-3 %}[Recycling the Web: A Method to Enhance Pre-training Data Quality and Quantity for Language Models](https://arxiv.org/abs/2506.04689) (Nguyen et al., 2025).{% endsidenote %}{% sidenote ref-high-quality-4 %}[Reformulation for Pretraining Data Augmentation](https://arxiv.org/abs/2502.04235) (Hao et al., 2025).{% endsidenote %}. However, we observe strong gains even when augmenting MegaMath-Web-Pro-Max, a heavily filtered and curated corpus. This is consistent with the Thinking Augmented Pretraining work{% sidenoteref ref-tpt-intro %}, where the authors similarly report gains from synthetic augmentation of high-quality datasets including MegaMath-Web-Pro-Max and FineWeb-Edu.
+It is commonly reported that synthetic data augmentation yields significant gains primarily on noisy, low-quality corpora such as The Pile{% sidenote ref-pile %}[The Pile: An 800GB Dataset of Diverse Text for Language Modeling](https://arxiv.org/abs/2101.00027) (Gao et al., 2020).{% endsidenote %} or Common Crawl,{% sidenote ref-common-crawl %}[Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) (Raffel et al., 2019).{% endsidenote %} with limited benefit on already high-quality data.{% sidenote ref-high-quality-1 %}[Rephrasing natural text data with different languages and quality levels for Large Language Model pre-training](https://arxiv.org/pdf/2410.20796) (Pieler et al., 2024).{% endsidenote %}{% sidenote ref-high-quality-2 %}[Rephrasing the Web: A Recipe for Compute and Data-Efficient Language Modeling](https://arxiv.org/abs/2401.16380) (Maini et al., 2024).{% endsidenote %}{% sidenote ref-high-quality-3 %}[Recycling the Web: A Method to Enhance Pre-training Data Quality and Quantity for Language Models](https://arxiv.org/abs/2506.04689) (Nguyen et al., 2025).{% endsidenote %}{% sidenote ref-high-quality-4 %}[Reformulation for Pretraining Data Augmentation](https://arxiv.org/abs/2502.04235) (Hao et al., 2025).{% endsidenote %} However, we observe strong gains even when augmenting MegaMath-Web-Pro-Max, a heavily filtered and curated corpus. This is consistent with the Thinking Augmented Pretraining work,{% sidenoteref ref-tpt-intro %} where the authors similarly report gains from synthetic augmentation of high-quality datasets including MegaMath-Web-Pro-Max and FineWeb-Edu.
 
-
-<br>
 
 ---
 
-# Conclusions
-
+## Conclusions
 
 We explored whether synthetic pretraining can improve reasoning in very small language models (< 1B parameters). By augmenting MegaMath-Web-Pro-Max with synthetically generated content — using a same-size, non-thinking 0.8B generator — we consistently improve few-shot reasoning on GSM8K and MATH500 across all generation prompts tested.
 
-Performance gains scale with the number of in-context demonstrations (2–3×), suggesting synthetic pretraining strengthens in-context learning rather than merely improving output formatting ([**Main takeaway**](#main-takeaway) and [**Takeaway 2**](#takeaway-2)). Gains emerge early in training, with synthetic models matching the original model's final performance using 3–6× fewer training tokens on GSM8K and ~2.5× fewer training tokens on MATH500 ([**Takeaway 3**](#takeaway-3)). These improvements are robust to CoT example choice and ordering, confirming they reflect genuine reasoning gains ([**Ablation experiment**](#ablation-experiment)).
+Performance gains scale with the number of in-context demonstrations (2–3×), suggesting synthetic pretraining strengthens in-context learning rather than merely improving output formatting ([Main takeaway](#main-takeaway) and [Takeaway 2](#takeaway-2)). Gains emerge early in training, with synthetic models matching the original model's final performance using 3–6× fewer training tokens on GSM8K and ~2.5× fewer training tokens on MATH500 ([Takeaway 3](#takeaway-3)). These improvements are robust to CoT example choice and ordering, confirming they reflect genuine reasoning gains ([Ablation experiment](#ablation-experiment)).
 
-Our results also challenge two common assumptions: that effective generators must be large, and that source data must be low-quality to benefit from augmentation. A same-size, non-thinking generator suffices, and strong gains are achievable even on heavily curated corpora ([**Takeaway 5**](#takeaway-5) and [**Takeaway 6**](#takeaway-6)).
+Our results also challenge two common assumptions: that effective generators must be large, and that source data must be low-quality to benefit from augmentation. A same-size, non-thinking generator suffices, and strong gains are achievable even on heavily curated corpora ([Takeaway 5](#takeaway-5) and [Takeaway 6](#takeaway-6)).
 
-This work is a first step toward understanding how to maximize token utility and build the right pretraining recipe for very small reasoning models. {% sidenote ref-distillation-open-question %}An open research question is how to separate the gains from synthetic data generation from those coming from distillation; see more [here](#discussion-synthetic-pretraining-vs-distillation).{% endsidenote %}
+This work is a first step toward understanding how to maximize token utility and build the right pretraining recipe for very small reasoning models.{% sidenote ref-distillation-open-question %}An open research question is how to separate the gains from synthetic data generation from those coming from distillation; see more [here](#discussion-synthetic-pretraining-vs-distillation).{% endsidenote %}
 
-<br>
 
 ---
 
-# Citation
+## Citation
 
 Please cite this work as:
 
-Saponati, Matteo, "Enhancing reasoning in very small language models through synthetic pretraining", Tufa Labs Research, Apr 2026.
+Saponati, Matteo, "Synthetic pretraining for very small reasoning models.", Tufa Labs Research, Apr 2026.
 
 ```bibtex
 @article{saponati2026enhancingreasoning,
   author = {Matteo Saponati},
-  title = {Enhancing reasoning in very small language models through synthetic pretraining},
+  title = {Synthetic pretraining for very small reasoning models.},
   journal = {Tufa Labs Research},
   year = {2026},
   note = {https://tufalabs.ai/research/enhancing-reasoning-small-language-models/},
 }
 ```
 
-<br>
-<br>
-<br>
-
 ---
 
-# Methodology
+## Methodology
 
 ### Synthetic data generation
 
-Our base dataset is MegaMath-Web-Pro-Max, a roughly 70-billion-token math-focused web corpus derived from MegaMath through a dedicated classifier, with each sample subsequently scored for mathematical usefulness by Llama-3.1-70B-Instruct. This is a highly preprocessed, math-focused web corpus{% sidenoteref ref-megamath %}. Synthetic tokens were generated using Qwen 3.5 0.8B with thinking mode disabled and generation capped at 3072 tokens{% sidenote ref-qwen-blog %}[Qwen3.5](https://qwen.ai/blog?id=qwen3.5) (Qwen Team, 2026).{% endsidenote %}. Following the best practices suggested in the Qwen 3.5 reports, sampling was performed at temperature 1, top-p 0.95, and top-k 20{% sidenoteref ref-qwen-hf-intro %}.
+Our base dataset is MegaMath-Web-Pro-Max, a roughly 70-billion-token math-focused web corpus derived from MegaMath through a dedicated classifier, with each sample subsequently scored for mathematical usefulness by Llama-3.1-70B-Instruct. This is a highly preprocessed, math-focused web corpus.{% sidenoteref ref-megamath %} Synthetic tokens were generated using Qwen 3.5 0.8B with thinking mode disabled and generation capped at 3072 tokens.{% sidenote ref-qwen-blog %}[Qwen3.5](https://qwen.ai/blog?id=qwen3.5) (Qwen Team, 2026).{% endsidenote %} Following the best practices suggested in the Qwen 3.5 reports, sampling was performed at temperature 1, top-p 0.95, and top-k 20.{% sidenoteref ref-qwen-hf-intro %}
 
 We consider three different generation prompts for generating synthetic data, as follows:
 
-1. The same prompt as in Thinking Augmented Pretraining{% sidenoteref ref-tpt-intro %}. 
+1. The same prompt as in Thinking Augmented Pretraining.{% sidenoteref ref-tpt-intro %}
     
     ```
     {text}
@@ -206,7 +196,7 @@ We consider three different generation prompts for generating synthetic data, as
     technique whenever possible to ensure a deep understanding.
     ```
     
-2. A “first principles” prompt, which is inspired by previous work on synthetic data augmentation for math and coding reasoning (SwallowMath{% sidenoteref ref-swallowmath-intro %}, Kimi K2 technical report{% sidenoteref ref-kimi-intro %}). The idea is that writing high-quality math documents into learning-notes style helps an autoregressive learner.
+2. A “first principles” prompt, which is inspired by previous work on synthetic data augmentation for math and coding reasoning (SwallowMath,{% sidenoteref ref-swallowmath-intro %} Kimi K2 technical report).{% sidenoteref ref-kimi-intro %} The idea is that writing high-quality math documents into learning-notes style helps an autoregressive learner.
     
     ```
     {text}
@@ -269,7 +259,7 @@ We pretrain a dense 0.8B-parameter Qwen3 model. Word embeddings are tied, and th
 
 ### Evaluation
 
-We evaluate on two standard benchmarks: GSM8K{% sidenote ref-gsm8k %}[Training Verifiers to Solve Math Word Problems](https://arxiv.org/abs/2110.14168) (Cobbe et al., 2021).{% endsidenote %} and MATH500{% sidenote ref-math500 %}[MATH-500](https://huggingface.co/datasets/HuggingFaceH4/MATH-500) (HuggingFaceH4, 2024).{% endsidenote %}, using greedy decoding (temperature 0), a maximum of 256 output tokens, and no prompt template. To assess the reasoning capabilities and as a proxy for ICL, we measure few-shot accuracy on GSM8K across shot counts k ∈ {0, 1, 2, 4, 5}, summarized by the **few-shot gain**
+We evaluate on two standard benchmarks: GSM8K{% sidenote ref-gsm8k %}[Training Verifiers to Solve Math Word Problems](https://arxiv.org/abs/2110.14168) (Cobbe et al., 2021).{% endsidenote %} and MATH500,{% sidenote ref-math500 %}[MATH-500](https://huggingface.co/datasets/HuggingFaceH4/MATH-500) (HuggingFaceH4, 2024).{% endsidenote %} using greedy decoding (temperature 0), a maximum of 256 output tokens, and no prompt template. To assess the reasoning capabilities and as a proxy for ICL, we measure few-shot accuracy on GSM8K across shot counts k ∈ {0, 1, 2, 4, 5}, summarized by the **few-shot gain**
 
 $$
 \text{gain}(k) = \text{acc}(k) - \text{acc}(0)
@@ -277,18 +267,17 @@ $$
 
 This quantity isolates the marginal benefit of demonstrations over zero-shot performance, and crucially disambiguates two distinct effects. A model that uniformly outperforms another across all values of k is primarily exhibiting stronger mathematical ability. By contrast, models that perform comparably at k = 0 but diverge as k increases provide cleaner evidence of a difference in ICL capacity specifically. 
 
-<br>
 
 ---
 
-# Supplementary Materials
+## Supplementary Materials
 
 <figure id="supplementary-figure-1" class="post-figure">
     <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/supplementary-figure-1.png' | relative_url }}" alt="Supplementary Figure 1. Percentage of test questions answered correctly by only the original model (orange), only the synthetic model (purple), or both models (green), under strict parsing (top) and flexible parsing (bottom).">
     <figcaption><strong>Supplementary Figure 1.</strong> Percentage of test questions answered correctly by only the original model (orange), only the synthetic model (purple), or both models (green), under strict parsing (top) and flexible parsing (bottom).</figcaption>
 </figure>
 
-## Synthetic data examples
+### Synthetic data examples
 
 This is the original row taken from the MegaMath-Web-Pro-Max dataset (375 tokens):
 
@@ -608,7 +597,7 @@ Related math problems include:*
     ```
     
 
-## Answer examples
+### Answer examples
 
 1. GSM8k (5-shots with CoT):
     
@@ -629,12 +618,12 @@ Related math problems include:*
     - - first-principles-12B: exact_match ✅, final=`60`, raw=`$10 \times 15 \times 24 = 3600.$ The positive square root of $3600$ is $60.$ Final Answer: The final answer is 60. I hope it is correct.`
     - - tpt-12B: exact_match ✅, final=`60`, raw=`We can use the distributive property to rewrite the product as $10 \times (15 \times 24) = 10 \times 360 = 3600.$ The positive square root of 3600 is $\boxed{60}$. Final Answer: The final answer is 60. I hope it is correct.`
     ```
-    
 
+
+### Discussion: synthetic pretraining vs distillation
 <a id="discussion-synth-pretrain-distillation"></a>
-## Discussion: synthetic pretraining vs distillation
 
-A natural caveat in this line of work is the difficulty of cleanly separating synthetic pretraining from distillation. When the training corpus is rewritten by another model, the student learns not only from the original human-written data, but also from the generator's decompositions, emphases, and stylistic choices. This concern is closely related to the framing of TPT, where thinking traces are generated by DeepSeek-R1-Distill-Qwen-7B, itself a distilled reasoning model{% sidenote ref-tpt-openreview-1 %}For more details, check the reviewer's comments on the "Thinking Augmented Pre-training" submission to ICLR 2026 [here](https://openreview.net/forum?id=5LCCLqJX67).{% endsidenote %}.
+A natural caveat in this line of work is the difficulty of cleanly separating synthetic pretraining from distillation. When the training corpus is rewritten by another model, the student learns not only from the original human-written data, but also from the generator's decompositions, emphases, and stylistic choices. This concern is closely related to the framing of TPT, where thinking traces are generated by DeepSeek-R1-Distill-Qwen-7B, itself a distilled reasoning model.{% sidenote ref-tpt-openreview-1 %}For more details, check the reviewer's comments on the "Thinking Augmented Pre-training" submission to ICLR 2026 [here](https://openreview.net/forum?id=5LCCLqJX67).{% endsidenote %}
 
 In a broad sense, however, self-supervised pretraining is already a form of distillation: a next-token predictor compresses regularities from an upstream distribution into its parameters. With ordinary web text, that distribution reflects human language and problem-solving; with synthetic data, the teacher simply becomes more explicit. The relevant question is therefore not whether distillation is present, but what kind of signal is being distilled. Is the student mainly imitating teacher-specific surface behavior, or is the synthetic rewrite acting as a scaffold that makes underlying structure easier to learn?
 

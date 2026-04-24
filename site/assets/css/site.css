@@ -121,6 +121,13 @@ p, ul, ol, table, blockquote, pre {
     margin-bottom: 1.5rem;
 }
 
+.home-content hr,
+.page-content hr,
+.post-content hr {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+}
+
 ul, ol {
     padding-left: 1.5rem;
 }
