@@ -61,8 +61,6 @@ which isolates the marginal benefit of in-context demonstrations over zero-shot 
 
 Gains vary across synthetic pretraining runs, but all three prompts show significant improvements over the original dataset. Performance differences between synthetic and original models widen as k increases (especially from 0 to 2-shot), suggesting stronger in-context learning capabilities. Overall, all three prompts yield stable, consistent gains across few-shot settings, especially on GSM8K. 
 
-We next present a series of additional takeaways building on these results. We show that synthetic pretraining genuinely improves reasoning, that gains emerge early during training as synthetic runs diverge from the original pretraining trajectory, and several findings that challenge common assumptions about synthetic data generation.
-
 
 <a id="ablation-experiment"></a>
 
@@ -78,6 +76,8 @@ We next present a series of additional takeaways building on these results. We s
 It is known that few-shot performance is affected not only by “using examples to learn in context,” but also by base task competence, prompt format sensitivity, example selection, example order, and possible benchmark overlap or contamination{% sidenote ref-fewshot-1 %}[Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?](https://arxiv.org/abs/2202.12837) (Min et al., 2022).{% endsidenote %}{% sidenote ref-fewshot-2 %}[Fantastically Ordered Prompts and Where to Find Them: Overcoming Few-Shot Prompt Order Sensitivity](https://arxiv.org/abs/2104.08786) (Lu et al., 2021).{% endsidenote %}{% sidenote ref-fewshot-3 %}[Let's Learn Step by Step: Enhancing In-Context Learning Ability with Curriculum Learning](https://arxiv.org/pdf/2402.10738) (Liu et al., 2024).{% endsidenote %}{% sidenote ref-fewshot-4 %}[In-Context Learning with Long-Context Models: An In-Depth Exploration](https://aclanthology.org/2025.naacl-long.605/) (Bertsch et al., 2025).{% endsidenote %}
 
 To assess the robustness of our results to the choice and ordering of CoT demonstrations, we repeat the same evaluation but replace the fixed CoT examples with a random set drawn per test question. We fix the random seeds to ensure consistency across checkpoints. Our results show that synthetic pretraining maintains its gains under this randomized setup, confirming that improvements reflect genuine reasoning ability. Interestingly, this randomized evaluation reveals a clearer ranking among the synthetic pretraining runs than the original fixed-example setup, where all models achieved roughly similar gains on GSM8K. This suggests that random demonstrations may better discriminate between the reasoning capabilities induced by different generation prompts.
+
+We next present a series of additional takeaways building on these results. We show that synthetic pretraining genuinely improves reasoning, that gains emerge early during training as synthetic runs diverge from the original pretraining trajectory, and several findings that challenge common assumptions about synthetic data generation.
 
 
 <a id="takeaway-2"></a>
