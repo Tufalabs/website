@@ -22,6 +22,7 @@ module TufaLabs
       converter = context.registers[:site].find_converter_instance(Jekyll::Converters::Markdown)
       note_html = converter.convert(note_body).strip
       inline_html = extract_inline_html(note_html, context)
+      inline_html = externalize_links(inline_html)
 
       rendered_note(inline_html)
     end
@@ -34,6 +35,15 @@ module TufaLabs
 
       raise Jekyll::Errors::FatalException,
             "#{@tag_name} tag #{@note_id.inspect} must render to a single paragraph#{page_location(context)}"
+    end
+
+    def externalize_links(inline_html)
+      inline_html.gsub(/<a href="([^"]+)"/) do |match|
+        href = Regexp.last_match(1)
+        next match unless href.start_with?("http://", "https://")
+
+        %(<a href="#{href}" target="_blank" rel="noopener noreferrer")
+      end
     end
 
     def page_location(context)

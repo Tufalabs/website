@@ -503,6 +503,58 @@ a:hover {
     margin: 2rem 0;
 }
 
+.post-content table {
+    border-collapse: separate;
+    border-spacing: 0;
+    display: block;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    overflow-x: auto;
+    width: 100%;
+}
+
+.post-content th,
+.post-content td {
+    border-bottom: 1px solid #d9e4ea;
+    border-right: 1px solid #d9e4ea;
+    padding: 0.65rem 0.8rem;
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.post-content th:first-child,
+.post-content td:first-child {
+    border-left: 1px solid #d9e4ea;
+}
+
+.post-content thead th {
+    background: #eef6f9;
+    border-top: 1px solid #d9e4ea;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.post-content thead th:first-child {
+    border-top-left-radius: 10px;
+}
+
+.post-content thead th:last-child {
+    border-top-right-radius: 10px;
+}
+
+.post-content tbody tr:nth-child(even) td {
+    background: #fbfdfe;
+}
+
+.post-content tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 10px;
+}
+
+.post-content tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 10px;
+}
+
 .post-content img {
     max-width: 100%;
     height: auto;
