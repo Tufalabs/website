@@ -511,6 +511,27 @@ a:hover {
     border-radius: 4px;
 }
 
+.post-figure {
+    margin: 2rem auto;
+}
+
+.post-figure img {
+    margin: 0 auto;
+}
+
+.post-figure figcaption {
+    max-width: 92%;
+    margin: 0.75rem auto 0;
+    color: var(--muted-text);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.post-figure figcaption strong {
+    color: var(--text-color);
+}
+
 .post-image-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
