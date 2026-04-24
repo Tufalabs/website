@@ -1,4 +1,35 @@
 module TufaLabs
+  module AdjacentNoteSeparators
+    SEPARATOR_HTML = %(<span class="sidenote-separator" aria-hidden="true">,</span>)
+    SIDENOTE_PATTERN = %r{
+      <label\b[^>]*\bclass="margin-toggle\ sidenote-number"[^>]*></label>
+      <input\b[^>]*\bclass="margin-toggle"[^>]*>
+      <span\b[^>]*\bclass="sidenote"[^>]*>.*?</span>
+    }mx.freeze
+    MARGINNOTE_PATTERN = %r{
+      <label\b[^>]*\bclass="margin-toggle\ marginnote-toggle"[^>]*>.*?</label>
+      <input\b[^>]*\bclass="margin-toggle"[^>]*>
+      <span\b[^>]*\bclass="marginnote"[^>]*>.*?</span>
+    }mx.freeze
+    SIDENOTE_REF_PATTERN = %r{
+      <a\b[^>]*\bclass="sidenote-ref"[^>]*>.*?</a>
+    }mx.freeze
+    NOTE_PATTERN = /
+      (?:
+        #{SIDENOTE_PATTERN.source}|
+        #{MARGINNOTE_PATTERN.source}|
+        #{SIDENOTE_REF_PATTERN.source}
+      )
+    /mx.freeze
+    ADJACENT_NOTE_PATTERN = /(#{NOTE_PATTERN.source})(\s*)(?=#{NOTE_PATTERN.source})/mx.freeze
+
+    def self.apply(html)
+      html.gsub(ADJACENT_NOTE_PATTERN) do
+        "#{Regexp.last_match(1)}#{SEPARATOR_HTML}#{Regexp.last_match(2)}"
+      end
+    end
+  end
+
   class NoteTag < Liquid::Block
     NOTE_ID_PATTERN = /\A[a-zA-Z][a-zA-Z0-9_-]*\z/
 
@@ -126,3 +157,9 @@ module TufaLabs
 end
 
 Liquid::Template.register_tag("sidenoteref", TufaLabs::SidenoteRefTag)
+
+Jekyll::Hooks.register [:pages, :documents], :post_render do |document|
+  next unless document.output&.include?("sidenote") || document.output&.include?("marginnote")
+
+  document.output = TufaLabs::AdjacentNoteSeparators.apply(document.output)
+end
