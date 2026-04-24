@@ -648,12 +648,6 @@ body.post--sidenotes .sidenote::before {
     font-weight: 400;
 }
 
-body.post--sidenotes .sidenote:target {
-    background: #f3f9fc;
-    border-radius: 10px;
-    box-shadow: 0 0 0 0.45rem #f3f9fc;
-}
-
 body.post--sidenotes .sidenote code,
 body.post--sidenotes .marginnote code {
     font-size: 0.9em;
@@ -674,8 +668,7 @@ body.post--sidenotes .marginnote code {
     }
 
     body.post--sidenotes input.margin-toggle:checked + .sidenote,
-    body.post--sidenotes input.margin-toggle:checked + .marginnote,
-    body.post--sidenotes .sidenote:target {
+    body.post--sidenotes input.margin-toggle:checked + .marginnote {
         background-color: #f7fbfe;
         border-left: 3px solid var(--primary-color);
         border-radius: 10px;
@@ -690,7 +683,6 @@ body.post--sidenotes .marginnote code {
         #fbfdfe;
     border: 1px solid rgba(37, 106, 134, 0.2);
     border-radius: 18px;
-    box-shadow: 0 14px 32px rgba(20, 54, 69, 0.08);
     margin: 2rem 0;
     padding: 1.35rem 1.5rem;
 }
