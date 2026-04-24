@@ -1,10 +1,10 @@
 ---
 layout: post
-title: "Enhancing reasoning in very small language models through synthetic pretraining"
+title: "Synthetic pretraining for very small reasoning models."
 date: 2026-04-24 09:00:00 +0200
 permalink: /research/enhancing-reasoning-small-language-models/
 author: Matteo Saponati
-description: "Does synthetic data improve reasoning in very small (<1B) reasoning models? Yes."
+description: "Does synthetic data improve reasoning in very small (<1B) reasoning models? Yes, a same-size generator unlocks stronger few-shot gains and better token efficiency on GSM8K and MATH500."
 sidenotes: true
 math: true
 ---
@@ -31,15 +31,15 @@ To investigate this, we study three synthetic transformations, each instantiatin
 
 Together, these three prompts provide a controlled comparison between two plausible mechanisms: enriching training examples with more reasoning content, versus making existing reasoning content more learnable. 
 
-We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max, and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode){% sidenote ref-qwen-hf-intro %}[Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Qwen Team, 2026).{% endsidenote %} as the generator model. 
+We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max{% sidenote ref-megamath %}[OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling](https://arxiv.org/abs/2506.20512) (Wang et al., 2025).{% endsidenote %}, and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode){% sidenote ref-qwen-hf-intro %}[Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Qwen Team, 2026).{% endsidenote %} as the generator model. 
 
 We evaluate reasoning gains through few-shot accuracy across shot counts, summarized by the few-shot gain metric**,**
 
 $$
-\text{gain}(k) = \text{acc}(k) - \text{acc}(0)\,,
+\text{gain}(k) = \text{acc}(k) - \text{acc}(0)
 $$
 
-which isolates the marginal benefit of in-context demonstrations over zero-shot performance. See the Methodology section for a more detailed description.
+which isolates the marginal benefit of in-context demonstrations over zero-shot performance. See the [Methodology](#methodology) section for a more detailed description.
 
 <br>
 
@@ -69,8 +69,8 @@ Gains vary across synthetic pretraining runs, but all three prompts show signifi
 > When CoT examples are randomly sampled per question, synthetic pretraining continues to show consistent improvements over the original dataset.
 
 <figure class="post-figure">
-    <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/figure-5.png' | relative_url }}" alt="Figure 5. Performance gain over k=0 accuracy for the original and synthetic pretrained models, following the same evaluation protocol as Figure 1. Each point shows the median across 4 random seeds, with error bars indicating the interquartile range (IQ25–IQ75).">
-    <figcaption><strong>Figure 5.</strong> Performance gain over k=0 accuracy for the original and synthetic pretrained models, following the same evaluation protocol as Figure 1. Each point shows the median across 4 random seeds, with error bars indicating the interquartile range (IQ25–IQ75).</figcaption>
+    <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/figure-2.png' | relative_url }}" alt="Figure 2. Performance gain over k=0 accuracy for the original and synthetic pretrained models, following the same evaluation protocol as Figure 1. Each point shows the median across 4 random seeds, with error bars indicating the interquartile range (IQ25–IQ75).">
+    <figcaption><strong>Figure 2.</strong> Performance gain over k=0 accuracy for the original and synthetic pretrained models, following the same evaluation protocol as Figure 1. Each point shows the median across 4 random seeds, with error bars indicating the interquartile range (IQ25–IQ75).</figcaption>
 </figure>
 
 It is known that few-shot performance is affected not only by “using examples to learn in context,” but also by base task competence, prompt format sensitivity, example selection, example order, and possible benchmark overlap or contamination{% sidenote ref-fewshot-1 %}[Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?](https://arxiv.org/abs/2202.12837) (Min et al., 2022).{% endsidenote %}{% sidenote ref-fewshot-2 %}[Fantastically Ordered Prompts and Where to Find Them: Overcoming Few-Shot Prompt Order Sensitivity](https://arxiv.org/abs/2104.08786) (Lu et al., 2021).{% endsidenote %}{% sidenote ref-fewshot-3 %}[Let's Learn Step by Step: Enhancing In-Context Learning Ability with Curriculum Learning](https://arxiv.org/pdf/2402.10738) (Liu et al., 2024).{% endsidenote %}{% sidenote ref-fewshot-4 %}[In-Context Learning with Long-Context Models: An In-Depth Exploration](https://aclanthology.org/2025.naacl-long.605/) (Bertsch et al., 2025).{% endsidenote %}
@@ -87,22 +87,22 @@ We next present a series of additional takeaways building on these results. We s
 > Models trained on synthetic data show clear gains in reasoning and numeric problem-solving, confirming the benefit goes beyond learning output formatting.
 
 <figure class="post-figure">
-    <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/figure-2.png' | relative_url }}" alt="Figure 2. Percentage of answers where the original model fails under both strict and flexible parsing (purple), and where it fails under strict parsing but succeeds under flexible parsing (blue).">
-    <figcaption><strong>Figure 2.</strong> Percentage of answers where the original model fails under both strict and flexible parsing (purple), and where it fails under strict parsing but succeeds under flexible parsing (blue).</figcaption>
+    <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/figure-3.png' | relative_url }}" alt="Figure 3. Percentage of answers where the original model fails under both strict and flexible parsing (purple), and where it fails under strict parsing but succeeds under flexible parsing (blue).">
+    <figcaption><strong>Figure 3.</strong> Percentage of answers where the original model fails under both strict and flexible parsing (purple), and where it fails under strict parsing but succeeds under flexible parsing (blue).</figcaption>
 </figure>
 
-For both GSM8K and MATH500, answers can be evaluated under two parsing modes: strict parsing requires the answer in a precise format (e.g., inside a `\boxed{}` expression), while flexible parsing uses broader heuristics to locate the answer anywhere in the output. To disentangle reasoning improvements from formatting improvements, we focus on examples where the synthetic model answers correctly under strict parsing but the original model does not (see [Supplementary Figure 1](#supplementary-figure-1)), and split them into two sub-cases: **(1) flex correct**: the original model succeeds under flexible parsing, meaning it found the correct solution but failed to format it — so the synthetic model's gain is purely in formatting; **(2) flex incorrect**: the original model also fails under flexible parsing, meaning the synthetic model is genuinely better at reasoning. We find that the latter is by far the most common case, confirming that synthetic pretraining improves reasoning rather than just output formatting. 
+For both GSM8K and MATH500, answers can be evaluated under two parsing modes: strict parsing requires the answer in a precise format (e.g., inside a `\boxed{}` expression), while flexible parsing uses broader heuristics to locate the answer anywhere in the output. To disentangle reasoning improvements from formatting improvements, we focus on examples where the synthetic model answers correctly under strict parsing but the original model does not (see [Supplementary Figure 1](#supplementary-figure-1)), and split them into two sub-cases: **(1) flex incorrect**: the original model also fails under flexible parsing, meaning the synthetic model is genuinely better at reasoning; **(2) flex correct**: the original model succeeds under flexible parsing, meaning it found the correct solution but failed to format it — so the synthetic model's gain is purely in formatting. We find that the former is by far the most common case, confirming that synthetic pretraining improves reasoning rather than just output formatting. 
 
 
 <a id="takeaway-3"></a>
 
 > **Takeaway 3 - Do gains emerge during pretraining?** **Yes.**
 >
-> Improvements from synthetic pretraining are visible from early training checkpoints, particularly on MATH500. In terms of token efficiency, synthetic pretrained models match the final performance of the original model using **3–6× fewer tokens on GSM8K and ~2.5× fewer tokens on MATH500**
+> Improvements from synthetic pretraining are visible from early training checkpoints, particularly on MATH500. In terms of token efficiency, synthetic pretrained models match the final performance of the original model using **3–6× fewer training tokens on GSM8K and ~2.5× fewer training tokens on MATH500**
 
 <figure class="post-figure">
-    <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/figure-3.png' | relative_url }}" alt="Figure 3. Percentage of strict correct answers for the original and synthetic pretraining models as a function of training tokens seen. Models are evaluated on GSM8K (5-shot) and MATH500 (4-shot), both with CoT prompting.">
-    <figcaption><strong>Figure 3.</strong> Percentage of strict correct answers for the original and synthetic pretraining models as a function of training tokens seen. Models are evaluated on GSM8K (5-shot) and MATH500 (4-shot), both with CoT prompting.</figcaption>
+    <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/figure-4.png' | relative_url }}" alt="Figure 4. Percentage of strict correct answers for the original and synthetic pretraining models as a function of training tokens seen. Models are evaluated on GSM8K (5-shot) and MATH500 (4-shot), both with CoT prompting.">
+    <figcaption><strong>Figure 4.</strong> Percentage of strict correct answers for the original and synthetic pretraining models as a function of training tokens seen. Models are evaluated on GSM8K (5-shot) and MATH500 (4-shot), both with CoT prompting.</figcaption>
 </figure>
 
 The “rephrasing” and “TPT” prompts show more stable and consistent downstream performance gains throughout pretraining, compared to the "first principles" prompt. 
@@ -115,8 +115,8 @@ The “rephrasing” and “TPT” prompts show more stable and consistent downs
 > Test-time reasoning gains vary across generation prompts, but all synthetic pretraining runs show significant improvements over the original dataset, regardless of the specific synthetic data configuration (number of synthetic tokens or data style).
 
 <figure class="post-figure">
-    <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/figure-4.png' | relative_url }}" alt="Figure 4. Normalized distribution of row length (in characters) for the original dataset and the three synthetic datasets. Lengths are computed over 50k examples. For the synthetic datasets, we use the same rows as in the original, measuring both the original content and the synthetic augmentation.">
-    <figcaption><strong>Figure 4.</strong> Normalized distribution of row length (in characters) for the original dataset and the three synthetic datasets. Lengths are computed over 50k examples. For the synthetic datasets, we use the same rows as in the original, measuring both the original content and the synthetic augmentation.</figcaption>
+    <img src="{{ '/assets/posts/enhancing-reasoning-small-language-models/figure-5.png' | relative_url }}" alt="Figure 5. Normalized distribution of row length (in characters) for the original dataset and the three synthetic datasets. Lengths are computed over 50k examples. For the synthetic datasets, we use the same rows as in the original, measuring both the original content and the synthetic augmentation.">
+    <figcaption><strong>Figure 5.</strong> Normalized distribution of row length (in characters) for the original dataset and the three synthetic datasets. Lengths are computed over 50k examples. For the synthetic datasets, we use the same rows as in the original, measuring both the original content and the synthetic augmentation.</figcaption>
 </figure>
 
 While Figure 1 shows that different prompts induce different gains over the original dataset, all synthetic pretraining runs are better than the original dataset. Interestingly, there are clear differences in the statistics of the synthetic data (especially between “rephrasing” and the other prompts). The “rephrasing” prompt induces synthetic augmentations roughly as long as the original prompt, while the other two prompts create longer augmentations (also the length distribution is different as shown above):
@@ -155,7 +155,7 @@ It is commonly reported that synthetic data augmentation yields significant gain
 
 We explored whether synthetic pretraining can improve reasoning in very small language models (< 1B parameters). By augmenting MegaMath-Web-Max-Pro with synthetically generated content — using a same-size, non-thinking 0.8B generator — we consistently improve few-shot reasoning on GSM8K and MATH500 across all generation prompts tested.
 
-Performance gains scale with the number of in-context demonstrations (2–3×), suggesting synthetic pretraining strengthens in-context learning rather than merely improving output formatting ([**Main takeaway**](#main-takeaway) and [**Takeaway 2**](#takeaway-2)). Gains emerge early in training, with synthetic models matching the original model's final performance using 2–6× fewer tokens ([**Takeaway 3**](#takeaway-3)). These improvements are robust to CoT example choice and ordering, confirming they reflect genuine reasoning gains ([**Ablation experiment**](#ablation-experiment)).
+Performance gains scale with the number of in-context demonstrations (2–3×), suggesting synthetic pretraining strengthens in-context learning rather than merely improving output formatting ([**Main takeaway**](#main-takeaway) and [**Takeaway 2**](#takeaway-2)). Gains emerge early in training, with synthetic models matching the original model's final performance using 2–6× fewer training tokens ([**Takeaway 3**](#takeaway-3)). These improvements are robust to CoT example choice and ordering, confirming they reflect genuine reasoning gains ([**Ablation experiment**](#ablation-experiment)).
 
 Our results also challenge two common assumptions: that effective generators must be large, and that source data must be low-quality to benefit from augmentation. A same-size, non-thinking generator suffices, and strong gains are achievable even on heavily curated corpora ([**Takeaway 5**](#takeaway-5) and [**Takeaway 6**](#takeaway-6)).
 
@@ -191,11 +191,21 @@ Saponati, Matteo, "Enhancing reasoning in very small language models through syn
 
 ### Synthetic data generation
 
-Our base dataset is MegaMath-Web-Max-Pro, a roughly 70-billion-token math-focused web corpus derived from MegaMath through a dedicated classifier, with each sample subsequently scored for mathematical usefulness by Llama-3.1-70B-Instruct. This is a highly preprocessed, math-focused web corpus{% sidenote ref-megamath %}[OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling](https://arxiv.org/abs/2506.20512) (Wang et al., 2025).{% endsidenote %}. Synthetic tokens were generated using Qwen 3.5 0.8B with thinking mode disabled and generation capped at 3072 tokens{% sidenote ref-qwen-blog %}[Qwen3.5](https://qwen.ai/blog?id=qwen3.5) (Qwen Team, 2026).{% endsidenote %}. Following the best practices suggested in the Qwen 3.5 reports, sampling was performed at temperature 1, top-p 0.95, and top-k 20{% sidenoteref ref-qwen-hf-intro %}. 
+Our base dataset is MegaMath-Web-Max-Pro, a roughly 70-billion-token math-focused web corpus derived from MegaMath through a dedicated classifier, with each sample subsequently scored for mathematical usefulness by Llama-3.1-70B-Instruct. This is a highly preprocessed, math-focused web corpus{% sidenoteref ref-megamath %}. Synthetic tokens were generated using Qwen 3.5 0.8B with thinking mode disabled and generation capped at 3072 tokens{% sidenote ref-qwen-blog %}[Qwen3.5](https://qwen.ai/blog?id=qwen3.5) (Qwen Team, 2026).{% endsidenote %}. Following the best practices suggested in the Qwen 3.5 reports, sampling was performed at temperature 1, top-p 0.95, and top-k 20{% sidenoteref ref-qwen-hf-intro %}. 
 
 We consider three different generation prompts for generating synthetic data, as follows:
 
-1. A “first principles” prompt, which is inspired by previous work on synthetic data augmentation for math and coding reasoning (SwallowMath{% sidenoteref ref-swallowmath-intro %}, Kimi K2 technical report{% sidenoteref ref-kimi-intro %}). The idea is that writing high-quality math documents into learning-notes style helps an autoregressive learner.
+1. The same prompt as in Thinking Augmented Pretraining{% sidenoteref ref-tpt-intro %}. 
+    
+    ```
+    {text}
+    ## End of the context
+    Simulate an expert’s in-depth thought process as they analyze the above context,
+    focusing on complex and informative aspects. Skip trivial details. Use Feynman
+    technique whenever possible to ensure a deep understanding.
+    ```
+    
+2. A “first principles” prompt, which is inspired by previous work on synthetic data augmentation for math and coding reasoning (SwallowMath{% sidenoteref ref-swallowmath-intro %}, Kimi K2 technical report{% sidenoteref ref-kimi-intro %}). The idea is that writing high-quality math documents into learning-notes style helps an autoregressive learner.
     
     ```
     {text}
@@ -205,16 +215,6 @@ We consider three different generation prompts for generating synthetic data, as
     rebuild understanding from scratch, questioning each assumption along
     the way. Explain the core mechanics as if discovering them for
     the first time.
-    ```
-    
-2. The same prompt as in Thinking Augmented Pretraining{% sidenoteref ref-tpt-intro %}. 
-    
-    ```
-    {text}
-    ## End of the context
-    Simulate an expert’s in-depth thought process as they analyze the above context,
-    focusing on complex and informative aspects. Skip trivial details. Use Feynman
-    technique whenever possible to ensure a deep understanding.
     ```
     
 3. A “rephrasing” prompt, where the conversion into learning notes is made explicit in the generation prompt. We use this prompt to test if more explicit prompts lead to better downstream performances.
@@ -235,8 +235,6 @@ We consider three different generation prompts for generating synthetic data, as
     
 
 ### Pretraining
-
-We pretrain a dense 0.8B-parameter model comprising 28 layers, a hidden size of 1280, and grouped-query attention with 16 attention heads and 8 key-value heads. The model uses the Qwen3 tokenizer and a context window of 32768 tokens, with variable-length attention enabled. Optimization is performed with AdamW (β₁=0.9, β₂=0.95, ε=10⁻⁸, weight decay=0.1) at a peak learning rate of 5×10⁻⁴, following a cosine decay schedule with a 1% linear warmup (~120M tokens) and a final learning rate of 10% of the peak value, over a total training budget of 12 billion tokens. Gradients are clipped to a maximum norm of 1.0. All runs use a per-device batch size of 8 and are conducted on 4 NVIDIA B200 GPUs.
 
 We pretrain a dense 0.8B-parameter Qwen3 model. Word embeddings are tied, and the model uses the Qwen3 tokenizer (vocab size 151936) with a 32768-token context window and variable-length attention. Training runs for 12B tokens on 4 NVIDIA B200 GPUs (per-device batch size 8), with checkpoints saved every 2B tokens.
 
@@ -273,7 +271,7 @@ We pretrain a dense 0.8B-parameter Qwen3 model. Word embeddings are tied, and th
 We evaluate on two standard benchmarks: GSM8K{% sidenote ref-gsm8k %}[Training Verifiers to Solve Math Word Problems](https://arxiv.org/abs/2110.14168) (Cobbe et al., 2021).{% endsidenote %} and MATH500{% sidenote ref-math500 %}[MATH-500](https://huggingface.co/datasets/HuggingFaceH4/MATH-500) (HuggingFaceH4, 2024).{% endsidenote %}, using greedy decoding (temperature 0), a maximum of 256 output tokens, and no prompt template. To assess the reasoning capabilities and as a proxy for ICL, we measure few-shot accuracy on GSM8K across shot counts k ∈ {0, 1, 2, 4, 5}, summarized by the **few-shot gain**
 
 $$
-\text{gain}(k) = \text{acc}(k) - \text{acc}(0)\,,
+\text{gain}(k) = \text{acc}(k) - \text{acc}(0)
 $$
 
 This quantity isolates the marginal benefit of demonstrations over zero-shot performance, and crucially disambiguates two distinct effects. A model that uniformly outperforms another across all values of k is primarily exhibiting stronger mathematical ability. By contrast, models that perform comparably at k = 0 but diverge as k increases provide cleaner evidence of a difference in ICL capacity specifically. 
