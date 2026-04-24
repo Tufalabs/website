@@ -11,7 +11,7 @@ math: true
 
 # Motivation
 
-Synthetic data has become a key ingredient in modern pretraining recipes for Large Language Models (LLMs){% sidenote ref-synth-1 %}[Qwen3 Technical Report](https://arxiv.org/abs/2505.09388) (Yang et al., 2025).{% endsidenote %}{% sidenote ref-synth-2 %}[Phi-4 Technical Report](https://arxiv.org/abs/2412.08905) (Abdin et al., 2024).{% endsidenote %}{% sidenote ref-synth-3 %}[Trinity Large](https://www.arcee.ai/blog/trinity-large) (Atkins, 2026).{% endsidenote %}{% sidenote ref-synth-4 %}[NVIDIA Nemotron 3: Efficient and Open Intelligence](https://arxiv.org/abs/2512.20856) (NVIDIA, 2025).{% endsidenote %}{% sidenote ref-synth-5 %}[FinePhrase](https://huggingface.co/datasets/HuggingFaceFW/finephrase) (HuggingFaceFW, 2026).{% endsidenote %}. It represents a natural evolution in data curation: synthetic generation can recover and enhance data previously excluded from pretraining, rephrase existing high-quality content to expand the corpus, and potentially extend scaling laws towards more capable models. Crucially, the right pretraining data mix is essential for grounding reasoning capabilities early in training and enabling further gains during post-training{% sidenote ref-posttraining-1 %}[Demystifying Synthetic Data in LLM Pre-training: A Systematic Study of Scaling Laws, Benefits, and Pitfalls](https://arxiv.org/pdf/2510.01631) (Kang et al., 2025).{% endsidenote %}{% sidenote ref-posttraining-2 %}[BeyondWeb: Lessons from Scaling Synthetic Data for Trillion-scale Pretraining](https://arxiv.org/pdf/2508.10975) (DatologyAI, 2025).{% endsidenote %}{% sidenote ref-posttraining-3 %}[SYNTH: the new data frontier](https://pleias.fr/blog/blogsynth-the-new-data-frontier) (Pleias, 2025).{% endsidenote %}.
+Synthetic data has become a key ingredient in modern pretraining recipes for Large Language Models (LLMs).{% sidenote ref-synth-1 %}[Qwen3 Technical Report](https://arxiv.org/abs/2505.09388) (Yang et al., 2025).{% endsidenote %}{% sidenote ref-synth-2 %}[Phi-4 Technical Report](https://arxiv.org/abs/2412.08905) (Abdin et al., 2024).{% endsidenote %}{% sidenote ref-synth-3 %}[Trinity Large](https://www.arcee.ai/blog/trinity-large) (Atkins, 2026).{% endsidenote %}{% sidenote ref-synth-4 %}[NVIDIA Nemotron 3: Efficient and Open Intelligence](https://arxiv.org/abs/2512.20856) (NVIDIA, 2025).{% endsidenote %}{% sidenote ref-synth-5 %}[FinePhrase](https://huggingface.co/datasets/HuggingFaceFW/finephrase) (HuggingFaceFW, 2026).{% endsidenote %} It represents a natural evolution in data curation: synthetic generation can recover and enhance data previously excluded from pretraining, rephrase existing high-quality content to expand the corpus, and potentially extend scaling laws towards more capable models. Crucially, the right pretraining data mix is essential for grounding reasoning capabilities early in training and enabling further gains during post-training{% sidenote ref-posttraining-1 %}[Demystifying Synthetic Data in LLM Pre-training: A Systematic Study of Scaling Laws, Benefits, and Pitfalls](https://arxiv.org/pdf/2510.01631) (Kang et al., 2025).{% endsidenote %}{% sidenote ref-posttraining-2 %}[BeyondWeb: Lessons from Scaling Synthetic Data for Trillion-scale Pretraining](https://arxiv.org/pdf/2508.10975) (DatologyAI, 2025).{% endsidenote %}{% sidenote ref-posttraining-3 %}[SYNTH: the new data frontier](https://pleias.fr/blog/blogsynth-the-new-data-frontier) (Pleias, 2025).{% endsidenote %}.
 
 Beyond increasing data quantity — and of greater interest to us — synthetic pretraining offers control over the learning signal itself, improving token efficiency. By converting human-written text into more explicit, reasoning-friendly sequences, synthetic rephrasing can increase the informational value of each training token.
 
@@ -31,9 +31,9 @@ To investigate this, we study three synthetic transformations, each instantiatin
 
 Together, these three prompts provide a controlled comparison between two plausible mechanisms: enriching training examples with more reasoning content, versus making existing reasoning content more learnable. 
 
-We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max{% sidenote ref-megamath %}[OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling](https://arxiv.org/abs/2506.20512) (Wang et al., 2025).{% endsidenote %}, and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode){% sidenote ref-qwen-hf-intro %}[Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Qwen Team, 2026).{% endsidenote %} as the generator model. 
+We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max{% sidenote ref-megamath %}[OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling](https://arxiv.org/abs/2506.20512) (Wang et al., 2025).{% endsidenote %}, and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode){% sidenote ref-qwen-hf-intro %}[Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Qwen Team, 2026).{% endsidenote %} as the generator model.
 
-We evaluate reasoning gains through few-shot accuracy across shot counts, summarized by the few-shot gain metric**,**
+We evaluate reasoning gains through few-shot accuracy across shot counts, summarized by the few-shot gain metric,
 
 $$
 \text{gain}(k) = \text{acc}(k) - \text{acc}(0)
@@ -141,9 +141,9 @@ To our knowledge, this is the first work demonstrating that a model this small, 
 
 > **Takeaway 6 - Does the source dataset need to be low-quality to observe gains with synthetic pretraining?** **No.**
 >
-> We observe strong gains from synthetic data augmentation even when applied to MegaMath-Web-Max-Pro, a heavily filtered and curated corpus.
+> We observe strong gains from synthetic data augmentation even when applied to MegaMath-Web-Pro-Max, a heavily filtered and curated corpus.
 
-It is commonly reported that synthetic data augmentation yields significant gains primarily on noisy, low-quality corpora such as The Pile{% sidenote ref-pile %}[The Pile: An 800GB Dataset of Diverse Text for Language Modeling](https://arxiv.org/abs/2101.00027) (Gao et al., 2020).{% endsidenote %} or Common Crawl{% sidenote ref-common-crawl %}[Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) (Raffel et al., 2019).{% endsidenote %}, with limited benefit on already high-quality data{% sidenote ref-high-quality-1 %}[Rephrasing natural text data with different languages and quality levels for Large Language Model pre-training](https://arxiv.org/pdf/2410.20796) (Pieler et al., 2024).{% endsidenote %}{% sidenote ref-high-quality-2 %}[Rephrasing the Web: A Recipe for Compute and Data-Efficient Language Modeling](https://arxiv.org/abs/2401.16380) (Maini et al., 2024).{% endsidenote %}{% sidenote ref-high-quality-3 %}[Recycling the Web: A Method to Enhance Pre-training Data Quality and Quantity for Language Models](https://arxiv.org/abs/2506.04689) (Nguyen et al., 2025).{% endsidenote %}{% sidenote ref-high-quality-4 %}[Reformulation for Pretraining Data Augmentation](https://arxiv.org/abs/2502.04235) (Hao et al., 2025).{% endsidenote %}. However, we observe strong gains even when augmenting MegaMath-Web-Max-Pro, a heavily filtered and curated corpus. This is consistent with the Thinking Augmented Pretraining work{% sidenoteref ref-tpt-intro %}, where the authors similarly report gains from synthetic augmentation of high-quality datasets including MegaMath-Web-Max-Pro and FineWeb-Edu.
+It is commonly reported that synthetic data augmentation yields significant gains primarily on noisy, low-quality corpora such as The Pile{% sidenote ref-pile %}[The Pile: An 800GB Dataset of Diverse Text for Language Modeling](https://arxiv.org/abs/2101.00027) (Gao et al., 2020).{% endsidenote %} or Common Crawl{% sidenote ref-common-crawl %}[Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) (Raffel et al., 2019).{% endsidenote %}, with limited benefit on already high-quality data{% sidenote ref-high-quality-1 %}[Rephrasing natural text data with different languages and quality levels for Large Language Model pre-training](https://arxiv.org/pdf/2410.20796) (Pieler et al., 2024).{% endsidenote %}{% sidenote ref-high-quality-2 %}[Rephrasing the Web: A Recipe for Compute and Data-Efficient Language Modeling](https://arxiv.org/abs/2401.16380) (Maini et al., 2024).{% endsidenote %}{% sidenote ref-high-quality-3 %}[Recycling the Web: A Method to Enhance Pre-training Data Quality and Quantity for Language Models](https://arxiv.org/abs/2506.04689) (Nguyen et al., 2025).{% endsidenote %}{% sidenote ref-high-quality-4 %}[Reformulation for Pretraining Data Augmentation](https://arxiv.org/abs/2502.04235) (Hao et al., 2025).{% endsidenote %}. However, we observe strong gains even when augmenting MegaMath-Web-Pro-Max, a heavily filtered and curated corpus. This is consistent with the Thinking Augmented Pretraining work{% sidenoteref ref-tpt-intro %}, where the authors similarly report gains from synthetic augmentation of high-quality datasets including MegaMath-Web-Pro-Max and FineWeb-Edu.
 
 
 <br>
@@ -153,9 +153,9 @@ It is commonly reported that synthetic data augmentation yields significant gain
 # Conclusions
 
 
-We explored whether synthetic pretraining can improve reasoning in very small language models (< 1B parameters). By augmenting MegaMath-Web-Max-Pro with synthetically generated content — using a same-size, non-thinking 0.8B generator — we consistently improve few-shot reasoning on GSM8K and MATH500 across all generation prompts tested.
+We explored whether synthetic pretraining can improve reasoning in very small language models (< 1B parameters). By augmenting MegaMath-Web-Pro-Max with synthetically generated content — using a same-size, non-thinking 0.8B generator — we consistently improve few-shot reasoning on GSM8K and MATH500 across all generation prompts tested.
 
-Performance gains scale with the number of in-context demonstrations (2–3×), suggesting synthetic pretraining strengthens in-context learning rather than merely improving output formatting ([**Main takeaway**](#main-takeaway) and [**Takeaway 2**](#takeaway-2)). Gains emerge early in training, with synthetic models matching the original model's final performance using 2–6× fewer training tokens ([**Takeaway 3**](#takeaway-3)). These improvements are robust to CoT example choice and ordering, confirming they reflect genuine reasoning gains ([**Ablation experiment**](#ablation-experiment)).
+Performance gains scale with the number of in-context demonstrations (2–3×), suggesting synthetic pretraining strengthens in-context learning rather than merely improving output formatting ([**Main takeaway**](#main-takeaway) and [**Takeaway 2**](#takeaway-2)). Gains emerge early in training, with synthetic models matching the original model's final performance using 3–6× fewer training tokens on GSM8K and ~2.5× fewer training tokens on MATH500 ([**Takeaway 3**](#takeaway-3)). These improvements are robust to CoT example choice and ordering, confirming they reflect genuine reasoning gains ([**Ablation experiment**](#ablation-experiment)).
 
 Our results also challenge two common assumptions: that effective generators must be large, and that source data must be low-quality to benefit from augmentation. A same-size, non-thinking generator suffices, and strong gains are achievable even on heavily curated corpora ([**Takeaway 5**](#takeaway-5) and [**Takeaway 6**](#takeaway-6)).
 
@@ -191,7 +191,7 @@ Saponati, Matteo, "Enhancing reasoning in very small language models through syn
 
 ### Synthetic data generation
 
-Our base dataset is MegaMath-Web-Max-Pro, a roughly 70-billion-token math-focused web corpus derived from MegaMath through a dedicated classifier, with each sample subsequently scored for mathematical usefulness by Llama-3.1-70B-Instruct. This is a highly preprocessed, math-focused web corpus{% sidenoteref ref-megamath %}. Synthetic tokens were generated using Qwen 3.5 0.8B with thinking mode disabled and generation capped at 3072 tokens{% sidenote ref-qwen-blog %}[Qwen3.5](https://qwen.ai/blog?id=qwen3.5) (Qwen Team, 2026).{% endsidenote %}. Following the best practices suggested in the Qwen 3.5 reports, sampling was performed at temperature 1, top-p 0.95, and top-k 20{% sidenoteref ref-qwen-hf-intro %}. 
+Our base dataset is MegaMath-Web-Pro-Max, a roughly 70-billion-token math-focused web corpus derived from MegaMath through a dedicated classifier, with each sample subsequently scored for mathematical usefulness by Llama-3.1-70B-Instruct. This is a highly preprocessed, math-focused web corpus{% sidenoteref ref-megamath %}. Synthetic tokens were generated using Qwen 3.5 0.8B with thinking mode disabled and generation capped at 3072 tokens{% sidenote ref-qwen-blog %}[Qwen3.5](https://qwen.ai/blog?id=qwen3.5) (Qwen Team, 2026).{% endsidenote %}. Following the best practices suggested in the Qwen 3.5 reports, sampling was performed at temperature 1, top-p 0.95, and top-k 20{% sidenoteref ref-qwen-hf-intro %}.
 
 We consider three different generation prompts for generating synthetic data, as follows:
 
@@ -259,9 +259,9 @@ We pretrain a dense 0.8B-parameter Qwen3 model. Word embeddings are tied, and th
 |  | ε | 1e-8 |
 |  | Weight decay | 0.1 |
 |  | Gradient clip norm | 1.0 |
-| LR Schedule | Type | Cosine decya |
+| LR Schedule | Type | Cosine decay |
 |  | Warmup | ~120M tokens (linear) |
-|  | Decay | Cosine to 10% of peak |
+|  | min. LR | 5e-5 |
 | Training | Total tokens | 12B |
 |  | Per-device batch size | 8 |
 |  | Gradient accumulation steps | 1 |
@@ -289,7 +289,7 @@ This quantity isolates the marginal benefit of demonstrations over zero-shot per
 
 ## Synthetic data examples
 
-This is the original row taken from the MegaMath-Web-Max-Pro dataset (375 tokens):
+This is the original row taken from the MegaMath-Web-Pro-Max dataset (375 tokens):
 
 *“To solve the equation 5(28/2), we need to follow the order of operations.
 First, divide 28 by 2: 28/2 = 14.
