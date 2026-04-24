@@ -4,6 +4,7 @@ title: "Synthetic pretraining for very small reasoning models."
 date: 2026-04-24 09:00:00 +0200
 permalink: /research/enhancing-reasoning-small-language-models/
 author: Matteo Saponati
+byline_note: "In collaboration with others at Tufa Labs"
 description: "Does synthetic data improve reasoning in very small (<1B) reasoning models? Yes, a same-size generator unlocks stronger few-shot gains and better token efficiency on GSM8K and MATH500."
 sidenotes: true
 math: true
