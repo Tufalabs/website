@@ -724,7 +724,9 @@ body.post--sidenotes .marginnote code {
     }
 
     body.post--sidenotes input.margin-toggle:checked + .sidenote,
-    body.post--sidenotes input.margin-toggle:checked + .marginnote {
+    body.post--sidenotes input.margin-toggle:checked + .marginnote,
+    body.post--sidenotes .sidenote:target,
+    body.post--sidenotes .marginnote:target {
         background-color: #f7fbfe;
         border-left: 3px solid var(--primary-color);
         border-radius: 10px;
