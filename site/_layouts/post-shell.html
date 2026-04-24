@@ -13,6 +13,9 @@
     <link rel="shortcut icon" href="{{ '/favicon.ico' | relative_url }}">
     {% feed_meta %}
     {% seo title=false %}
+    {% if page.math %}
+    {% include mathjax.html %}
+    {% endif %}
     <script src="{{ '/assets/js/logo.js' | relative_url }}" defer></script>
 </head>
 <body class="post-page{% if page.sidenotes %} post--sidenotes{% endif %}{% if page.body_class %} {{ page.body_class }}{% endif %}">
