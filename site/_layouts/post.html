@@ -1,7 +1,7 @@
 ---
 layout: post-shell
 ---
-<article class="post{% if page.external_link %} post--redirect{% endif %}">
+<article class="post{% if page.external_link %} post--redirect{% endif %}{% if page.byline_note %} post--has-byline-note{% endif %}">
     <header class="post-header">
         <h1 class="post-title">{{ page.title }}</h1>
         <div class="post-meta">
@@ -13,6 +13,9 @@ layout: post-shell
             <span class="post-author">{{ page.author }}</span>
             {% endif %}
         </div>
+        {% if page.byline_note %}
+        <p class="post-byline-note">{{ page.byline_note | escape }}</p>
+        {% endif %}
     </header>
 
     {% if page.external_link %}

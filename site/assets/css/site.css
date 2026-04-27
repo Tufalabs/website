@@ -121,6 +121,13 @@ p, ul, ol, table, blockquote, pre {
     margin-bottom: 1.5rem;
 }
 
+.home-content hr,
+.page-content hr,
+.post-content hr {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+}
+
 ul, ol {
     padding-left: 1.5rem;
 }
@@ -474,6 +481,17 @@ a:hover {
     margin-bottom: 0.8rem;
 }
 
+.post--has-byline-note .post-meta {
+    margin-bottom: 0.2rem;
+}
+
+.post-byline-note {
+    color: var(--muted-text);
+    font-size: 0.9rem;
+    font-style: italic;
+    margin: 0 0 0.8rem;
+}
+
 .post-excerpt {
     margin: 0.8rem 0;
 }
@@ -503,12 +521,89 @@ a:hover {
     margin: 2rem 0;
 }
 
+.post-content a {
+    color: #0b3f75;
+}
+
+.post-content table {
+    border-collapse: separate;
+    border-spacing: 0;
+    display: block;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    overflow-x: auto;
+    width: 100%;
+}
+
+.post-content th,
+.post-content td {
+    border-bottom: 1px solid #d9e4ea;
+    border-right: 1px solid #d9e4ea;
+    padding: 0.65rem 0.8rem;
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.post-content th:first-child,
+.post-content td:first-child {
+    border-left: 1px solid #d9e4ea;
+}
+
+.post-content thead th {
+    background: #eef6f9;
+    border-top: 1px solid #d9e4ea;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.post-content thead th:first-child {
+    border-top-left-radius: 10px;
+}
+
+.post-content thead th:last-child {
+    border-top-right-radius: 10px;
+}
+
+.post-content tbody tr:nth-child(even) td {
+    background: #fbfdfe;
+}
+
+.post-content tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 10px;
+}
+
+.post-content tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 10px;
+}
+
 .post-content img {
     max-width: 100%;
     height: auto;
     display: block;
     margin: 1.5rem auto;
     border-radius: 4px;
+}
+
+.post-figure {
+    margin: 2rem auto;
+}
+
+.post-figure img {
+    margin: 0 auto;
+}
+
+.post-figure figcaption {
+    max-width: 92%;
+    margin: 0.75rem auto 0;
+    color: var(--muted-text);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.post-figure figcaption strong {
+    color: var(--text-color);
 }
 
 .post-image-grid {
@@ -576,11 +671,33 @@ body.post--sidenotes .sidenote-number {
 
 body.post--sidenotes .sidenote-number::after {
     content: counter(sidenote-counter);
-    color: var(--primary-color);
+    color: #0b3f75;
     font-size: 0.66em;
     font-weight: 400;
     line-height: 1;
     margin-left: 0.06em;
+    vertical-align: super;
+}
+
+body.post--sidenotes .sidenote-ref {
+    color: #0b3f75;
+    font-size: 0.66em;
+    font-weight: 400;
+    line-height: 1;
+    margin-left: 0.06em;
+    text-decoration: none;
+    vertical-align: super;
+}
+
+body.post--sidenotes .sidenote-ref:hover {
+    text-decoration: underline;
+}
+
+body.post--sidenotes .sidenote-separator {
+    color: #0b3f75;
+    font-size: 0.66em;
+    font-weight: 400;
+    line-height: 1;
     vertical-align: super;
 }
 
@@ -633,13 +750,40 @@ body.post--sidenotes .marginnote code {
     }
 
     body.post--sidenotes input.margin-toggle:checked + .sidenote,
-    body.post--sidenotes input.margin-toggle:checked + .marginnote {
+    body.post--sidenotes input.margin-toggle:checked + .marginnote,
+    body.post--sidenotes .sidenote:target,
+    body.post--sidenotes .marginnote:target {
         background-color: #f7fbfe;
         border-left: 3px solid var(--primary-color);
         border-radius: 10px;
         display: block;
         padding: 0.75rem 1rem;
     }
+}
+
+.research-callout {
+    background:
+        linear-gradient(135deg, rgba(37, 106, 134, 0.1), rgba(37, 106, 134, 0.02)),
+        #fbfdfe;
+    border: 1px solid rgba(37, 106, 134, 0.2);
+    border-radius: 18px;
+    margin: 2rem 0;
+    padding: 1.35rem 1.5rem;
+}
+
+.research-callout__label {
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.55rem;
+    text-transform: uppercase;
+}
+
+.research-callout p {
+    font-size: 1.08rem;
+    line-height: 1.5;
+    margin: 0;
 }
 
 pre, code {

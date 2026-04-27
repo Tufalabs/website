@@ -1,4 +1,35 @@
 module TufaLabs
+  module AdjacentNoteSeparators
+    SEPARATOR_HTML = %(<span class="sidenote-separator" aria-hidden="true">,</span>)
+    SIDENOTE_PATTERN = %r{
+      <label\b[^>]*\bclass="margin-toggle\ sidenote-number"[^>]*></label>
+      <input\b[^>]*\bclass="margin-toggle"[^>]*>
+      <span\b[^>]*\bclass="sidenote"[^>]*>.*?</span>
+    }mx.freeze
+    MARGINNOTE_PATTERN = %r{
+      <label\b[^>]*\bclass="margin-toggle\ marginnote-toggle"[^>]*>.*?</label>
+      <input\b[^>]*\bclass="margin-toggle"[^>]*>
+      <span\b[^>]*\bclass="marginnote"[^>]*>.*?</span>
+    }mx.freeze
+    SIDENOTE_REF_PATTERN = %r{
+      <a\b[^>]*\bclass="sidenote-ref"[^>]*>.*?</a>
+    }mx.freeze
+    NOTE_PATTERN = /
+      (?:
+        #{SIDENOTE_PATTERN.source}|
+        #{MARGINNOTE_PATTERN.source}|
+        #{SIDENOTE_REF_PATTERN.source}
+      )
+    /mx.freeze
+    ADJACENT_NOTE_PATTERN = /(#{NOTE_PATTERN.source})(\s*)(?=#{NOTE_PATTERN.source})/mx.freeze
+
+    def self.apply(html)
+      html.gsub(ADJACENT_NOTE_PATTERN) do
+        "#{Regexp.last_match(1)}#{SEPARATOR_HTML}#{Regexp.last_match(2)}"
+      end
+    end
+  end
+
   class NoteTag < Liquid::Block
     NOTE_ID_PATTERN = /\A[a-zA-Z][a-zA-Z0-9_-]*\z/
 
@@ -22,6 +53,7 @@ module TufaLabs
       converter = context.registers[:site].find_converter_instance(Jekyll::Converters::Markdown)
       note_html = converter.convert(note_body).strip
       inline_html = extract_inline_html(note_html, context)
+      inline_html = externalize_links(inline_html)
 
       rendered_note(inline_html)
     end
@@ -36,6 +68,15 @@ module TufaLabs
             "#{@tag_name} tag #{@note_id.inspect} must render to a single paragraph#{page_location(context)}"
     end
 
+    def externalize_links(inline_html)
+      inline_html.gsub(/<a href="([^"]+)"/) do |match|
+        href = Regexp.last_match(1)
+        next match unless href.start_with?("http://", "https://")
+
+        %(<a href="#{href}" target="_blank" rel="noopener noreferrer")
+      end
+    end
+
     def page_location(context)
       page = context.registers[:page]
       path = page && (page["path"] || page["name"])
@@ -44,8 +85,27 @@ module TufaLabs
   end
 
   class SidenoteTag < NoteTag
+    def render(context)
+      register_note(context)
+      super
+    end
+
     def rendered_note(inline_html)
-      %(<label for="#{@note_id}" class="margin-toggle sidenote-number"></label><input type="checkbox" id="#{@note_id}" class="margin-toggle" /><span class="sidenote">#{inline_html}</span>)
+      note_anchor = "sidenote-#{@note_id}"
+      %(<label for="#{@note_id}" class="margin-toggle sidenote-number"></label><input type="checkbox" id="#{@note_id}" class="margin-toggle" /><span id="#{note_anchor}" class="sidenote">#{inline_html}</span>)
+    end
+
+    private
+
+    def register_note(context)
+      registry = context.registers[:tufa_sidenotes] ||= { order: [], numbers: {} }
+      if registry[:numbers].key?(@note_id)
+        raise Jekyll::Errors::FatalException,
+              "sidenote tag #{@note_id.inspect} is defined more than once#{page_location(context)}"
+      end
+
+      registry[:order] << @note_id
+      registry[:numbers][@note_id] = registry[:order].size
     end
   end
 
@@ -58,3 +118,48 @@ end
 
 Liquid::Template.register_tag("sidenote", TufaLabs::SidenoteTag)
 Liquid::Template.register_tag("marginnote", TufaLabs::MarginnoteTag)
+
+module TufaLabs
+  class SidenoteRefTag < Liquid::Tag
+    NOTE_ID_PATTERN = NoteTag::NOTE_ID_PATTERN
+
+    def initialize(tag_name, markup, tokens)
+      super
+      @note_id = markup.to_s.strip
+      raise Liquid::SyntaxError, "#{tag_name} tag requires a note id" if @note_id.empty?
+
+      unless NOTE_ID_PATTERN.match?(@note_id)
+        raise Liquid::SyntaxError,
+              "#{tag_name} tag id #{@note_id.inspect} must start with a letter and contain only letters, numbers, dashes, or underscores"
+      end
+    end
+
+    def render(context)
+      registry = context.registers[:tufa_sidenotes]
+      note_number = registry && registry[:numbers][@note_id]
+
+      unless note_number
+        raise Jekyll::Errors::FatalException,
+              "sidenoteref tag #{@note_id.inspect} must refer to an earlier sidenote#{page_location(context)}"
+      end
+
+      %(<a href="#sidenote-#{@note_id}" class="sidenote-ref" aria-label="Jump to sidenote #{note_number}">#{note_number}</a>)
+    end
+
+    private
+
+    def page_location(context)
+      page = context.registers[:page]
+      path = page && (page["path"] || page["name"])
+      path ? " in #{path}" : ""
+    end
+  end
+end
+
+Liquid::Template.register_tag("sidenoteref", TufaLabs::SidenoteRefTag)
+
+Jekyll::Hooks.register [:pages, :documents], :post_render do |document|
+  next unless document.output&.include?("sidenote") || document.output&.include?("marginnote")
+
+  document.output = TufaLabs::AdjacentNoteSeparators.apply(document.output)
+end
