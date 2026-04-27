@@ -21,7 +21,7 @@ Our hypothesis is that enriching reasoning datasets (e.g., math corpora) with mo
 <div class="research-callout research-callout--question" markdown="1">
 <div class="research-callout__label">Research Question</div>
 
-**Does synthetic data improve reasoning in very small (<1B) reasoning models?**
+**Does synthetic data improve reasoning in very small (<1B) language models?**
 </div>
 
 To investigate this, we study three synthetic transformations, each instantiating a different way to improve token efficiency through synthetic pretraining:
