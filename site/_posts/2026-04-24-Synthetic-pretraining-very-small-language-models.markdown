@@ -21,7 +21,7 @@ Our hypothesis is that enriching reasoning datasets (e.g., math corpora) with mo
 <div class="research-callout research-callout--question" markdown="1">
 <div class="research-callout__label">Research Question</div>
 
-**Does synthetic data improve reasoning in very small (<1B) language models?**
+**Does synthetic data improve reasoning models?**
 </div>
 
 To investigate this, we study three synthetic transformations, each instantiating a different way to improve token efficiency through synthetic pretraining:
@@ -32,7 +32,7 @@ To investigate this, we study three synthetic transformations, each instantiatin
 
 Together, these three prompts provide a controlled comparison between two plausible mechanisms: enriching training examples with more reasoning content, versus making existing reasoning content more learnable. 
 
-We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max,{% sidenote ref-megamath %}[OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling](https://arxiv.org/abs/2506.20512) (Wang et al., 2025).{% endsidenote %} and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode){% sidenote ref-qwen-hf-intro %}[Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Qwen Team, 2026).{% endsidenote %} as the generator model.
+Since our compute budget is still relatively limited as a small research lab, we focus on small and very small reasoning language models as an initial proxy for isolating the effect of synthetic pretraining data. We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max,{% sidenote ref-megamath %}[OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling](https://arxiv.org/abs/2506.20512) (Wang et al., 2025).{% endsidenote %} and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode){% sidenote ref-qwen-hf-intro %}[Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Qwen Team, 2026).{% endsidenote %} as the generator model.
 
 We evaluate reasoning gains through few-shot accuracy across shot counts, summarized by the few-shot gain metric,
 
