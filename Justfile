@@ -9,7 +9,7 @@ init:
     set -euo pipefail
 
     if command -v rbenv >/dev/null 2>&1; then
-      eval "$(rbenv init - bash)"
+      eval "$(rbenv init - --no-rehash bash)"
     fi
 
     current_ruby="$(ruby -e 'print RUBY_VERSION')"
@@ -40,7 +40,7 @@ build: init
     set -euo pipefail
 
     if command -v rbenv >/dev/null 2>&1; then
-      eval "$(rbenv init - bash)"
+      eval "$(rbenv init - --no-rehash bash)"
     fi
 
     bundle _{{bundler_version}}_ exec jekyll clean {{jekyll_args}}
@@ -51,7 +51,7 @@ serve: init
     set -euo pipefail
 
     if command -v rbenv >/dev/null 2>&1; then
-      eval "$(rbenv init - bash)"
+      eval "$(rbenv init - --no-rehash bash)"
     fi
 
     bundle _{{bundler_version}}_ exec jekyll serve {{jekyll_args}} --host 127.0.0.1 --port 4000
