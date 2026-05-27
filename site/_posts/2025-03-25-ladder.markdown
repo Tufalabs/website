@@ -1,0 +1,10 @@
+---
+layout: post
+title: "LADDER: Self-Improving LLMs Through Recursive Problem Decomposition"
+date: 2025-03-25 09:50:53 +1100
+permalink: /research/ladder/
+author: Toby Simonds
+description: "An in-depth analysis of a novel framework enabling language models to autonomously improve their problem-solving capabilities through recursive decomposition."
+external_link: "https://arxiv.org/abs/2503.00735"
+---
+

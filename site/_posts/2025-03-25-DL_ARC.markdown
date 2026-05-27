@@ -1,0 +1,10 @@
+---
+layout: post
+title: "Don't Throw the Baby out with the Bathwater: How and why Deep Learning for ARC"
+date: 2025-03-25 09:50:53 +1100
+permalink: /research/deep-learning-for-arc/
+author: Jack Cole and Mohamed Osman
+description: "Paper detailing our approach to the ARC-prize competition."
+external_link: "https://github.com/MohamedOsman1998/deep-learning-for-arc/blob/main/deep_learning_for_arc.pdf"
+---
+
