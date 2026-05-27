@@ -33,23 +33,6 @@
     LLM fusion, generative machine learning, AI applications in security and
     law enforcement, computational design and optimization, autonomous systems
 
-- name: Kevin Danilo López Andrango
-  role: AI Researcher
-  image: /assets/images/kev.jpeg
-  image_style: ""
-  bio: >-
-    Kevin is an AI researcher specializing in deep learning, computational
-    neuroscience, and software engineering. He holds a master's from ETH
-    Zurich, where he developed advanced machine learning frameworks and
-    contributed significantly to research in recurrent neural network
-    architectures. Kevin's work spans from developing open-source software for
-    computational neuroscience to engineering robust algorithms for natural
-    language processing and distributed computing.
-  research_interests: >-
-    deep learning architectures, sparse recurrent neural networks,
-    computational neuroscience, natural language processing, distributed
-    training methodologies, synthetic data generation for language models
-
 - name: Dries Smit
   role: AI Researcher
   image: /assets/images/dries.jpg
