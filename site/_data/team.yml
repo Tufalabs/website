@@ -137,3 +137,18 @@
     Michal is pursuing a Master’s in Data Science at ETH, focusing on the mathematical foundations of the field and its applications to deep learning. He has conducted research on continual learning in robotics and reasoning with diffusion models. He maintains a broad focus, exploring human cognition and the impact of technology on the society.
   research_interests: >-
     reasoning, large-language model post-training, long-context agentic tasks, agentic orchestration, test-time scaling, and uncertainty estimation
+
+- name: Victor Mercklé
+  role: AI Researcher
+  image: /assets/images/victor-merckle.webp
+  image_style: ""
+  bio: >-
+    Victor is a machine learning researcher with a background in reinforcement
+    learning and deep learning. He studied computer science at ENS Lyon. His
+    work looks at the theory of neural network training, including how the
+    geometry of data shapes optimization landscapes in ReLU networks. He has
+    also worked on LLM systems, agents, and search methods for games and logic
+    problems. Check out his work on his [website](https://victormerckle.fr).
+  research_interests: >-
+    unsupervised training, game AI, search, coding agents, mechanical sympathy,
+    automating research
