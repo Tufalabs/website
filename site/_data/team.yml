@@ -152,3 +152,20 @@
   research_interests: >-
     unsupervised training, game AI, search, coding agents, mechanical sympathy,
     automating research
+
+- name: Andrin Rehmann
+  role: AI Researcher
+  image: /assets/images/andrin.jpeg
+  image_style: ""
+  bio: >-
+    Andrin has a master's in Computational Science from the University of
+    Zurich and was most recently a research engineer at Pasteur Labs, where
+    he worked on differentiable systems, inverse design, and neural
+    surrogates. Previously he has dabbled in computer graphics,
+    high-performance computing, and graph neural networks, and spent his
+    university years simulating the universe — from GPU-accelerated N-body
+    codes to predicting dark matter with neural networks. Find his work on
+    [andrinrehmann.ch](https://andrinrehmann.ch).
+  research_interests: >-
+    scientific machine learning, test-time optimization, astrophysics,
+    real-time rendering
