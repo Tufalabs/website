@@ -9,21 +9,6 @@
     tokenisation, probabilistic programming, search/self-play,
     music-generation, generalization, scaling laws
 
-- name: Angus Adams
-  role: Head of Operations
-  image: /assets/images/angus.jpg
-  image_style: ""
-  bio: >-
-    Angus works on the operating layer around Tufa Labs' research: finance,
-    legal and admin systems, hiring and relocation logistics, infrastructure
-    procurement, and the internal tooling that helps the team move faster. He
-    has a background in finance, company operations, and using AI agents to turn
-    complex operational problems into reliable processes.
-  focus_label: Focus
-  research_interests: >-
-    operations, finance and governance, team infrastructure, automation,
-    agent-assisted workflows, vendor coordination
-
 - name: Mohamed Osman
   role: AI Researcher
   image: /assets/images/mohamed-closeup.webp
@@ -184,3 +169,18 @@
   research_interests: >-
     scientific machine learning, test-time optimization, astrophysics,
     real-time rendering
+
+- name: Angus Adams
+  role: Head of Operations
+  image: /assets/images/angus.jpg
+  image_style: ""
+  bio: >-
+    Angus works on the operating layer around Tufa Labs' research: finance,
+    legal and admin systems, hiring and relocation logistics, infrastructure
+    procurement, and the internal tooling that helps the team move faster. He
+    has a background in finance, company operations, and using AI agents to turn
+    complex operational problems into reliable processes.
+  focus_label: Focus
+  research_interests: >-
+    operations, finance and governance, team infrastructure, automation,
+    agent-assisted workflows, vendor coordination
