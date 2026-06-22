@@ -19,7 +19,8 @@ nav_id: team
                 {% endfor %}
             </p>
             {% endif %}
-            <div class="research-interests">{{ 'Research interests: ' | append: member.research_interests | markdownify }}</div>
+            {% assign focus_label = member.focus_label | default: 'Research interests' %}
+            <div class="research-interests">{{ focus_label | append: ': ' | append: member.research_interests | markdownify }}</div>
         </div>
     </div>
     {% endfor %}
