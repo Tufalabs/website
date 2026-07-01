@@ -7,9 +7,9 @@ author: Harold Bessis, Jeroen Cottaar, Isaiah Pressman, Andries Smit, Michal Te≈
 description: "We open-source the duck harness, our agent for the ARC-AGI-3 challenge on Kaggle, and share a technical overview and results comparing it to other published approaches."
 ---
 
-With this post, we are open-sourcing our agent harness for the ARC-AGI-3 challenge on Kaggle. We summarize the design, explain the behavior of the agent, and provide a detailed technical overview (LINK) linking the Kaggle resources needed to reproduce our results. At the same time, we also release the [code on GitHub](https://github.com/Tufalabs/duck-harness){:target="_blank" rel="noopener"} and compare the results to other published approaches.
+With this post, we are open-sourcing our agent harness for the ARC-AGI-3 challenge on Kaggle. We summarize the design, explain the behavior of the agent, and provide a [detailed technical overview](https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/discussion/717133){:target="_blank" rel="noopener"} linking the Kaggle resources needed to reproduce our results. At the same time, we also release the [code on GitHub](https://github.com/Tufalabs/duck-harness){:target="_blank" rel="noopener"} and compare the results to other published approaches.
 
-Accompanying this post are two episodes on the Machine Learning Street Talk Podcast (LINK): one episode covers the technical details of our harness, and another goes deeper into broader topics around ARC-AGI-3.
+Accompanying this post are two episodes on the Machine Learning Street Talk Podcast: one episode covers the [technical details of our harness](https://x.com/MLStreetTalk/status/2072326433922297975){:target="_blank" rel="noopener"}, and another goes deeper into [broader topics around ARC-AGI-3](https://www.youtube.com/watch?v=Vg6FBKTlfOw){:target="_blank" rel="noopener"}.
 
 ## ARC-AGI-3
 
@@ -29,7 +29,7 @@ These promising results motivated us to construct our solution around coding/rea
 
 ## Solution Architecture
 
-In our solution, the LLM works in a REPL where all game observations are encoded as Python variables. It can inspect these variables with tool calls, evaluate pre-built helper functions, and take actions in the game environment. The actions are executed in the ARC-AGI-3 environment, which then updates the Python sandbox with fresh variables. The model uses both image and text representations of the grid and the context is kept short by automatically evicting the oldest messages. For more detailed information, we refer to the technical write-up on Kaggle (LINK).
+In our solution, the LLM works in a REPL where all game observations are encoded as Python variables. It can inspect these variables with tool calls, evaluate pre-built helper functions, and take actions in the game environment. The actions are executed in the ARC-AGI-3 environment, which then updates the Python sandbox with fresh variables. The model uses both image and text representations of the grid and the context is kept short by automatically evicting the oldest messages. For more detailed information, we refer to the [technical write-up on Kaggle](https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/discussion/717133){:target="_blank" rel="noopener"}.
 
 ![Duck harness architecture]({{ '/assets/posts/duck-harness/architecture.png' | relative_url }})
 
