@@ -54,4 +54,4 @@ serve: init
       eval "$(rbenv init - --no-rehash bash)"
     fi
 
-    bundle _{{bundler_version}}_ exec jekyll serve {{jekyll_args}} --host 127.0.0.1 --port 4000
+    bundle _{{bundler_version}}_ exec jekyll serve {{jekyll_args}} --future --host 127.0.0.1 --port 4000
