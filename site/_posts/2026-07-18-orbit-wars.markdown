@@ -4,7 +4,7 @@ title: "Scaling Reinforcement Learning to the Stars"
 date: 2026-07-18 00:00:00 +0200
 permalink: /research/orbit-wars/
 author: Isaiah Pressman
-description: "We won Kaggle's Orbit Wars competition by scaling self-play reinforcement learning."
+description: "Winning Kaggle's Orbit Wars competition by scaling self-play reinforcement learning."
 math: true
 sidenotes: true
 ---
