@@ -3,7 +3,7 @@
   image: /assets/images/ben.jpeg
   image_style: ""
   bio: >-
-    Benjamin has a masters in Computer Science likes to build stuff.
+    Benjamin has a master’s in Computer Science and likes to build stuff.
   research_interests: >-
     test-time computation, [UED](https://arxiv.org/abs/2012.02096)/[MCC](http://www.cmap.polytechnique.fr/~nikolaus.hansen/proceedings/2017/GECCO/proceedings/proceedings_files/pap140s3-file1.pdf)/auto-curriculum, [framing problem](https://folk.idi.ntnu.no/gamback/teaching/TDT4138/dennett84.pdf),
     tokenisation, probabilistic programming, search/self-play,
@@ -19,19 +19,6 @@
   research_interests: >-
     Meta learning, reasoning, test-time learning, active inference,
     few-shot learning, data scarcity
-
-- name: Akira Yoshiyama
-  role: AI Researcher
-  image: /assets/images/akira.jpeg
-  image_style: ""
-  bio: >-
-    Akira was previously focused on LLM fusion at the University of Waterloo.
-    He has a diverse background in building innovative technology solutions,
-    from generative machine learning applications in aerospace engineering to
-    advanced CCTV footage analysis tools for law enforcement.
-  research_interests: >-
-    LLM fusion, generative machine learning, AI applications in security and
-    law enforcement, computational design and optimization, autonomous systems
 
 - name: Dries Smit
   role: AI Researcher
