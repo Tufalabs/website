@@ -4,7 +4,6 @@ title: "Tufa Labs Wins ARC-AGI-3 Milestone 1"
 date: 2026-07-02 16:00:00 +0200
 author: Tufa Labs
 description: "Our Duck Harness agent took first place in Milestone 1 of the ARC-AGI-3 competition. Read the technical write-up and explore the open-source code."
-published: false
 ---
 
 **Tufa Labs took first place in Milestone 1 of the ARC-AGI-3 competition on Kaggle!**

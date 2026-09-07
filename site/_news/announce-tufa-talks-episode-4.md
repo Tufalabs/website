@@ -4,7 +4,6 @@ title: "Tufa Talks Returns: Announcing Ep. 004"
 date: 2026-09-07 10:00:00 +0200
 author: Tufa Labs
 description: "Tufa Talks is back from summer break! Join Max Rumpf, co-founder and CEO of SID, at Tufa Labs on September 30, 2026."
-published: false
 ---
 
 We're back from summer break, and **Tufa Talks** is returning! On September 30, we'll welcome **Max Rumpf**, co-founder and CEO of [SID](https://www.sid.ai/), for the fourth episode at Tufa Labs in Zürich.
