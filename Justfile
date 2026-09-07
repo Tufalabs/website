@@ -46,7 +46,7 @@ build: init
     bundle _{{bundler_version}}_ exec jekyll clean {{jekyll_args}}
     bundle _{{bundler_version}}_ exec jekyll build {{jekyll_args}}
 
-serve: init
+serve *args: init
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -54,4 +54,7 @@ serve: init
       eval "$(rbenv init - --no-rehash bash)"
     fi
 
-    bundle _{{bundler_version}}_ exec jekyll serve {{jekyll_args}} --future --host 127.0.0.1 --port 4000
+    bundle _{{bundler_version}}_ exec jekyll serve {{jekyll_args}} --future --host 127.0.0.1 --port 4000 {{args}}
+
+# Serve the site with unpublished drafts included.
+preview: (serve "--unpublished")

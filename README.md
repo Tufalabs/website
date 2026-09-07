@@ -50,6 +50,8 @@ For news entries, `title`, `date`, `author`, and `description` are usually enoug
    This serves the unified Jekyll source from `site/` and writes output to `build/`.
    Then open `http://localhost:4000/`.
 
+   To include unpublished news drafts (`published: false`), run `just preview` instead.
+
 ## Notes
 - The editable website source lives in `site/`.
 - Local test builds write to `build/`, which is ignored by git.
