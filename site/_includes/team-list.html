@@ -1,0 +1,24 @@
+<section class="team-list">
+    {% for member in site.data.team %}
+    {% if member.full_team_only and include.full_team != true %}{% continue %}{% endif %}
+    <div class="team-member">
+        <img src="{{ member.image | relative_url }}" alt="{{ member.name }}" class="team-member-image"{% if member.image_style and member.image_style != "" %} style="{{ member.image_style }}"{% endif %}>
+        <div class="team-member-info">
+            <div class="name-role">
+                <h2>{{ member.name }}</h2>
+                <p class="role">{{ member.role }}</p>
+            </div>
+            <div class="team-member-bio">{{ member.bio | markdownify }}</div>
+            {% if member.links %}
+            <p class="team-member-links">
+                {% for link in member.links %}
+                <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.label }}</a>{% unless forloop.last %} · {% endunless %}
+                {% endfor %}
+            </p>
+            {% endif %}
+            {% assign focus_label = member.focus_label | default: 'Research interests' %}
+            <div class="research-interests">{{ focus_label | append: ': ' | append: member.research_interests | markdownify }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</section>

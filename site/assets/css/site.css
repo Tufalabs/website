@@ -226,6 +226,11 @@ a:hover {
     gap: 2rem;
 }
 
+#public-team-notice {
+    color: var(--muted-text);
+    margin-top: 3rem;
+}
+
 .team-member {
     display: flex;
     align-items: flex-start;

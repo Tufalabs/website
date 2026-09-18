@@ -3,6 +3,7 @@ Public website for Tufa Labs.
 
 ## Common content workflows
 - Add a team member: update [site/_data/team.yml](site/_data/team.yml) with the new entry and add the profile image under [site/assets/images/](site/assets/images/).
+- `/team/` shows the public team and legal notice. Set `full_team_only: true` on a member to omit them from the public HTML. The full team is rendered on a separate unlinked page with `noindex` and `sitemap: false`; it is not access-controlled. Query parameters no longer reveal additional members.
 - Add a research post: create a dated Markdown file in [site/_posts/](site/_posts/) with the usual front matter.
 - Add a news item: create a Markdown file in [site/_news/](site/_news/) with basic front matter.
 

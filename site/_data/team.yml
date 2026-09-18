@@ -1,4 +1,5 @@
 - name: Benjamin Crouzier
+  full_team_only: true
   role: Founder & Research Engineer
   image: /assets/images/ben.jpeg
   image_style: ""
