@@ -335,22 +335,37 @@ window.tufaPage = (() => {
 (window.__tufaPages ||= []).push(() => {
     const pc = document.querySelector('body.post--sidenotes .post-content'); if (!pc) return;
     const wide = matchMedia('(min-width: 901px)');
+    const grown = new Set();   // elements given room at their foot, reset on every layout
     const lay = () => {
         const notes = [...pc.querySelectorAll('.sidenote')];
+        grown.forEach((el) => { el.style.marginBottom = ''; }); grown.clear();
         if (!wide.matches) { notes.forEach((n) => { n.style.top = ''; }); pc.style.minHeight = ''; return; }
-        const top0 = pc.getBoundingClientRect().top, gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--line')) / 2 || 12;
+        const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--line')) / 2 || 12;
+        // each section after the first starts at its line; the notes of the section before must end above it. Where they
+        // do not, the section's last element gets the difference at its foot: the next title, line and text move down together
+        // (the section's end is the foot of its last element: the titles stick and the lines follow the layout, so neither is a fixed mark)
+        const lastOf = (h) => { let p = h.previousElementSibling; while (p && (p.classList.contains('section-line') || p.classList.contains('rail-wrap'))) p = p.previousElementSibling; return p; };
+        const heads = [...pc.children].filter((el) => el.tagName === 'H2').slice(1).filter(lastOf);
+        const anchor = (n) => n.previousElementSibling?.previousElementSibling || n.parentElement;
+        const items = [...notes.map((n) => [anchor(n).getBoundingClientRect().top, n]), ...heads.map((h) => [lastOf(h).getBoundingClientRect().bottom, h])]
+            .sort((a, b) => a[0] - b[0]);
         let floor = -Infinity;
-        for (const n of notes) {
-            const ref = n.previousElementSibling?.previousElementSibling || n.previousElementSibling || n.parentElement;
-            const want = ref.getBoundingClientRect().top - top0;
-            const top = Math.max(want, floor);
-            n.style.top = `${Math.round(top)}px`;
-            floor = top + n.offsetHeight + gap;
+        for (const [, el] of items) {
+            const top0 = pc.getBoundingClientRect().top;
+            if (el.tagName === 'H2') {
+                const prev = lastOf(el), at = prev.getBoundingClientRect().bottom - top0;
+                if (floor > at) { prev.style.marginBottom = `${parseFloat(getComputedStyle(prev).marginBottom) + Math.ceil(floor - at)}px`; grown.add(prev); }
+                floor = -Infinity;
+                continue;
+            }
+            const top = Math.max(anchor(el).getBoundingClientRect().top - top0, floor);
+            el.style.top = `${Math.round(top)}px`;
+            floor = top + el.offsetHeight + gap;
         }
         pc.style.minHeight = floor > pc.offsetHeight ? `${Math.ceil(floor)}px` : '';
     };
     let raf = 0; const soon = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(lay); };
     const ro = new ResizeObserver(soon); ro.observe(pc);
-    wide.addEventListener('change', soon); document.fonts?.ready.then(soon); soon();
+    wide.addEventListener('change', soon); document.fonts?.ready.then(lay); lay();
     return () => { ro.disconnect(); wide.removeEventListener('change', soon); cancelAnimationFrame(raf); };
 });

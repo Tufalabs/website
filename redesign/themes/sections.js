@@ -124,11 +124,13 @@ const build = () => {
     narrow.addEventListener?.('change', later);
     addEventListener('load', later);
     document.fonts?.ready.then(later);
+    // the content changes height after load (maths typeset, images, sidenotes making room): the lines follow
+    const ro = new ResizeObserver(later); rails.forEach((r) => ro.observe(r.container));
     measure();
     teardown = () => {   // leaving the page: the listeners go; the rails go with the page's content
         gone = true; cancelAnimationFrame(raf);
         removeEventListener('keydown', onKey); removeEventListener('scroll', onScroll); removeEventListener('resize', onResize);
-        narrow.removeEventListener?.('change', later); removeEventListener('load', later); lineProbe.remove();
+        narrow.removeEventListener?.('change', later); removeEventListener('load', later); lineProbe.remove(); ro.disconnect();
     };
 };
 window.tufaSections = build;
