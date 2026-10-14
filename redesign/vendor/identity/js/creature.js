@@ -19,7 +19,7 @@
 // It lives where there is a pointer to react to (hover), also under the system's reduced motion; html.no-motion stills it.
 window.TufaCreature = (() => {
     const off = () => document.documentElement.classList.contains('no-motion') || !matchMedia('(hover: hover)').matches;
-    const tau = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tau')) || 120) / 1000;
+    const tau = ((v) => (parseFloat(v) || 120) / (/ms\s*$/.test(v) || !/s\s*$/.test(v) ? 1000 : 1))(getComputedStyle(document.documentElement).getPropertyValue('--tau').trim());   // the beat, in seconds ("120ms" or ".12s": minifiers rewrite it)
     const NS = 'http://www.w3.org/2000/svg', num = (el, a) => parseFloat(el.getAttribute(a)), pt = (s) => s.split(' ').map(Number);
     const ease = (t) => t * t * (3 - 2 * t), len = (v) => Math.hypot(v[0], v[1]), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     let blurN = 0;   // motion-blur filters made so far (their ids)

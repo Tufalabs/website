@@ -1,3 +1,4 @@
+var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN(n) ? 120 : /ms$/.test(v) || !/s$/.test(v) ? n : n * 1000; };   // the beat in ms ("120ms", or ".12s" after minifying)
 // Calm generative figures about intelligence. Each figure draws into a region R of a 2-D context.
 // Rules: few marks, slow change, mostly still at any moment, muted inks, the accent on at most one
 // mark, no text. Each run is seeded fresh. API: init(R, rand) -> state; draw(ctx, R, t, C, s, still).
@@ -1243,7 +1244,7 @@
         // read the numbers from the page (the rules page can change them); px via a probe, τ in ms
         sync() { if (typeof document === 'undefined' || !document.body) return; const pr = K._probe || (K._probe = Object.assign(document.createElement('i'), { style: 'position:absolute;visibility:hidden;height:0' })); if (!pr.parentNode) document.body.appendChild(pr);
             pr.style.width = 'var(--line)'; K.LN = pr.offsetWidth || 24; pr.style.width = 'calc(var(--u) * 100)'; K.U = (pr.offsetWidth || 120) / 100;
-            K.TB = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tau')) || 120) / 1000;
+            K.TB = tauMs(getComputedStyle(document.documentElement).getPropertyValue('--tau')) / 1000;
             const m = getComputedStyle(document.documentElement).getPropertyValue('--ease').match(/cubic-bezier\(([^)]*)\)/); if (m) { const v = m[1].split(',').map(Number); if (v.length === 4 && v.every((n) => !isNaN(n))) EASE = v; } },
         // panels: one height for all (a multiple of three lines, so 4:3 widths are whole lines, at most twelve lines),
         // a line apart, the group centred in the figure's columns and in the head, half a line kept above and below

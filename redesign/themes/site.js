@@ -1,3 +1,4 @@
+var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN(n) ? 120 : /ms$/.test(v) || !/s$/.test(v) ? n : n * 1000; };   // the beat in ms ("120ms", or ".12s" after minifying)
 // Site behaviour that needs a script: the page lifecycle the router drives, the header (menu, nav point, theme), each
 // page's parts (statement sizing, page name, compute sheet, build-up, privacy policy) and the creature.
 // A page's own parts (each script registers them in window.__tufaPages) run for every page: on the first load and for each
@@ -118,7 +119,7 @@ window.tufaPage = (() => {
     const slide = (from, to) => {
         if (!from || still() || from.x === to.x || !mark.animate) return;
         const k = Math.min(2.5, 1 + Math.abs(to.x - from.x) / 120);   /* stretched along its path while it travels, round again when it lands */
-        mark.animate([{ transform: `translateX(${from.x}px) scaleX(1)` }, { transform: `translateX(${(from.x + to.x) / 2}px) scaleX(${k})`, offset: 0.5 }, { transform: `translateX(${to.x}px) scaleX(1)` }], { duration: 4 * (parseFloat(cssv('--tau')) || 120), easing: cssv('--ease').trim() || 'ease-in-out' });
+        mark.animate([{ transform: `translateX(${from.x}px) scaleX(1)` }, { transform: `translateX(${(from.x + to.x) / 2}px) scaleX(${k})`, offset: 0.5 }, { transform: `translateX(${to.x}px) scaleX(1)` }], { duration: 4 * tauMs(cssv('--tau')), easing: cssv('--ease').trim() || 'ease-in-out' });
     };
     const show = () => { const a = current(); mark.hidden = !a || !desktop.matches; if (a && desktop.matches) place(at(a)); };
     if (desktop.matches) {
@@ -156,7 +157,7 @@ window.tufaPage = (() => {
         if (!open && root.classList.contains('nav-open') && !desktop.matches && !still() && nav.animate) {
             root.classList.add('nav-closing');
             fold = nav.animate([{ height: `${nav.offsetHeight}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
-                { duration: 1.5 * (parseFloat(cssv('--tau')) || 120), easing: cssv('--ease').trim() || 'ease-in-out' });
+                { duration: 1.5 * tauMs(cssv('--tau')), easing: cssv('--ease').trim() || 'ease-in-out' });
             const f = fold; f.finished.then(() => { if (fold === f) { root.classList.remove('nav-closing'); fold = null; } }).catch(() => {});
         }
         root.classList.toggle('nav-open', open);
@@ -217,7 +218,7 @@ window.tufaPage = (() => {
 (() => {
     const root = document.documentElement;
     if (root.classList.contains('no-motion')) { window.tufaBuild = { split() {} }; return; }   // (under reduced motion the build-up stays: fades, without blur)
-    const TAU = parseFloat(getComputedStyle(root).getPropertyValue('--tau')) || 120;   // the beat, in ms
+    const TAU = tauMs(getComputedStyle(root).getPropertyValue('--tau'));   // the beat, in ms
     let bt = 1;   // the waits' pace, read for each page (shorter when moving on within the site)
     let seed = (Math.random() * 2147483646 + 1) | 0; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     // smooth value noise on a line: a random value every `cell` units, smoothstep in between

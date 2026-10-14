@@ -1,3 +1,4 @@
+var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN(n) ? 120 : /ms$/.test(v) || !/s$/.test(v) ? n : n * 1000; };   // the beat in ms ("120ms", or ".12s" after minifying)
 // Section navigation for long pages (desktop):
 //  - the current section's title sticks under the header (CSS sticky); the next title slides up over it;
 //  - an index of short lines, one per section, sits left of that title; hovering a line shows its
@@ -97,7 +98,7 @@ const build = () => {
             });
             // the index points stretch along the slide while it moves (the slide is a move: dur-2, the one curve)
             if (r.current >= 0 && current >= 0 && current !== r.current && !document.documentElement.classList.contains('no-motion') && desktop) {   // a small movement: it stays under reduced motion
-                const css = getComputedStyle(document.documentElement), dur = 2 * (parseFloat(css.getPropertyValue('--tau')) || 120), k = Math.min(2.2, 1.5 + 0.3 * (Math.abs(current - r.current) - 1));
+                const css = getComputedStyle(document.documentElement), dur = 2 * tauMs(css.getPropertyValue('--tau')), k = Math.min(2.2, 1.5 + 0.3 * (Math.abs(current - r.current) - 1));
                 r.items.forEach((li) => li.querySelector('.rail-tick').animate?.([{ transform: 'scaleY(1)' }, { transform: `scaleY(${k})`, offset: 0.5 }, { transform: 'scaleY(1)' }], { duration: dur, easing: css.getPropertyValue('--ease').trim() || 'ease-in-out' }));
             }
             r.current = current;

@@ -17,6 +17,11 @@ module TufaLabs
   end
 end
 
-Jekyll::Hooks.register [:pages, :documents], :pre_render do |doc|
-  TufaLabs::OgImage.assign(doc.site, doc) if doc.output_ext == ".html"
+# a generator (after reading, before rendering): a pre_render hook is too late for pages, whose Liquid data is
+# copied before the hook runs, so jekyll-seo-tag would never see the image
+class TufaLabs::OgImageGenerator < Jekyll::Generator
+  priority :low
+  def generate(site)
+    (site.pages + site.documents).each { |doc| TufaLabs::OgImage.assign(site, doc) if doc.output_ext == ".html" }
+  end
 end
