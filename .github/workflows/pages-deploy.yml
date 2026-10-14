@@ -40,6 +40,15 @@ jobs:
       - name: Verify Bundler version
         run: bundle _4.0.3_ -v
 
+      # what the site takes from the pinned identity (redesign/vendor/identity): its icons and colours, then the
+      # link-preview cards drawn from the pages in a headless Chrome (preinstalled on the runner), so a new identity
+      # release or a new page needs no hand-made images
+      - name: Identity assets and link-preview cards
+        run: |
+          python3 redesign/tools/site_assets.py
+          python3 redesign/build.py
+          python3 redesign/tools/og.py --require
+
       - name: Build site
         run: |
           bundle _4.0.3_ exec jekyll clean --config site/_config.yml --source site --destination _site

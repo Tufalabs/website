@@ -1,6 +1,7 @@
 """Pin the identity repo (Tufalabs/identity) into vendor/identity: the design rules the site is built on (css/tokens.css,
 css/base.css, css/motion.css), the animated mark (js/creature.js), the mark in parts (mark/mark.svg) and the masters
-(source/). The site never edits these; it takes a version.
+(source/); the tokens resolved (tokens.json: colours as hex, the faces and their Google Fonts request) and the website's
+icons (dist/web/). The site never edits these; it takes a version.
 
     python3 tools/sync_identity.py v0.1.0                 # a tag (or any commit) of the identity repo
     python3 tools/sync_identity.py work                   # its working tree, while working on both at once
@@ -10,7 +11,7 @@ import io, pathlib, shutil, subprocess, sys, tarfile
 
 ROOT = pathlib.Path(__file__).parent.parent
 VENDOR = ROOT / "vendor/identity"
-PATHS = ("css/tokens.css", "css/base.css", "css/motion.css", "js/creature.js", "mark/mark.svg", "source")
+PATHS = ("css/tokens.css", "css/base.css", "css/motion.css", "js/creature.js", "mark/mark.svg", "source", "tokens.json", "dist/web", "dist/mark/tufa-mark-ink.svg")
 
 ref = sys.argv[1] if len(sys.argv) > 1 else sys.exit(__doc__)
 repo = pathlib.Path(sys.argv[2]).expanduser() if len(sys.argv) > 2 else (ROOT.parent.parent / "tufa-identity")

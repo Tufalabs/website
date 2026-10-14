@@ -28,7 +28,7 @@ site/ (Jekyll: the content) ──► tufalabs.ai ──(mirror)──► redesi
 | `build.py` | `live/` → `out/`: each page with the redesign's head, styles and scripts (a local preview, with theme switcher) |
 | `deploy.py` | `out/` → the deployable site: `--base /v2-9dcd86d1/` writes it into `../site/v2-9dcd86d1/`; minifies, adds `noindex` |
 | `identity/page.py`, `identity.html` | the identity page of the site |
-| `tools/` | `sync_identity.py` (pin an identity release), `mirror.py` (refresh `live/`), `serve.py` (a no-cache preview server), `prerender.py` (layout written into the HTML at build time), test pages |
+| `tools/` | `sync_identity.py` (pin an identity release), `site_assets.py` (the identity's icons and colours into the live site), `og.py` + `ogcards.js` (the link-preview cards, in a headless browser), `mirror.py` (refresh `live/`), `serve.py` (a no-cache preview server), `prerender.py` (layout written into the HTML at build time), test pages |
 | `themes/t0-technical.css`, `themes/_*.css`, `themes/archive/` | earlier design rounds, kept for comparison in the preview |
 
 `out/`, `dist/` and `share/` are build outputs and not committed.
@@ -56,8 +56,9 @@ python3 build.py && python3 deploy.py --base /v2-9dcd86d1/
 git add site/v2-9dcd86d1 redesign && git commit -m "v2 preview: …" && git push
 ```
 
-Pushing to `main` runs the `Pages deploy` workflow (`.github/workflows/pages-deploy.yml`), which builds the Jekyll site,
-the redesign folder included, and publishes it. It takes about a minute; the site caches pages for up to 10 minutes.
+Pushing to `main` runs the `Pages deploy` workflow (`.github/workflows/pages-deploy.yml`): it takes the identity's icons
+and colours into the live site, draws the link-preview cards, builds the Jekyll site (the redesign folder included) and
+publishes it. It takes about a minute; the site caches pages for up to 10 minutes.
 
 ### Change content (a post, a team member, a page)
 
@@ -79,6 +80,7 @@ These are the identity's, not the website's. Change them there; the website foll
 
    ```sh
    python3 tools/sync_identity.py v0.3.0
+   python3 tools/site_assets.py
    ```
 
 While working on both at once, `python3 tools/sync_identity.py work` takes the identity repo's working tree instead
@@ -88,11 +90,16 @@ of a tag (the default location is `../../tufa-identity`; give another as a secon
 The website pins a release on purpose: a change in the identity reaches the website only when someone takes it, builds,
 looks, and deploys.
 
-**Not yet derived from the identity** (update by hand when the colours change):
+What follows by itself once the release is taken: every colour and face on the pages, the page ground before the
+styles load and the phone browser's bar colour (`theme-color`, also in the live site through `site/_data/identity.json`),
+the icons (`site/favicon.*`, `site/assets/icons/`), and the link-preview cards (`site/assets/og/`). CI makes the last
+two on every deploy (`tools/site_assets.py`, then `tools/og.py` in a headless Chrome); to see them before pushing, run
+the same locally (`og.py` needs Chrome or Chromium; `--serve` lets any browser draw them).
 
-- `<meta name="theme-color" content="#f7f4ef">` (the phone browser's bar) in `build.py` and `site/_includes/head.html`;
-- the icons and link-preview images in `site/assets/icons/` and `site/assets/og/` (rendered once; `tools/ogcards.js`);
-- the creature GIFs in the identity repo (`make animations` there: CI cannot record them).
+A face is changed the same way: in the identity (its `fonts/fonts.json` and `css/tokens.css`), then taken here.
+
+Only the creature GIFs stay manual (`make animations` in the identity repo: recording needs a browser, and they are
+committed there).
 
 ### Change how the site looks or moves
 
