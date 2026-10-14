@@ -1,0 +1,19 @@
+/* T2 · Terminal — monospace headings, typed-in titles, a block cursor; body stays in Inter for reading. */
+@import url("../_technical.css");
+@import url("../_motion.css");
+
+:root { --head-font: var(--mono-font); --decode: type; --decode-statement: 1; }
+
+h1, h2, h3, .post-title, .logo-text { font-family: var(--mono-font); letter-spacing: -0.03em; font-weight: 500; }
+h1 { font-size: clamp(2rem, 4vw, 2.9rem); }
+.post-title { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
+.home-content > h2, .page > .page-content > h2 { font-size: 0.95rem; letter-spacing: -0.01em; }
+.home-content > p:nth-of-type(2) { font-family: var(--mono-font); font-weight: 400; letter-spacing: -0.035em; font-size: clamp(1.3rem, 2.2vw, 1.75rem); line-height: 1.35; }
+.home-content > p:nth-of-type(2)::after, .page-title::after {
+    content: ""; display: inline-block; width: 0.55em; height: 1em; background: var(--accent); margin-left: 0.15em; vertical-align: -0.12em;
+    animation: blink 1.1s steps(1) infinite;
+}
+.logo-text::after { content: none; }
+.post-item h3 { font-family: var(--body-font); letter-spacing: -0.02em; font-weight: 600; }
+.team-member-info h2 { font-size: 1.2rem; }
+.page-header .page-lede::before { content: "// "; color: var(--accent); font-family: var(--mono-font); }

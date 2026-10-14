@@ -3,6 +3,10 @@ layout: post-shell
 ---
 <article class="post{% if page.external_link %} post--redirect{% endif %}{% if page.byline_note %} post--has-byline-note{% endif %}">
     <header class="post-header">
+        {%- assign back = site.data.navigation.header | where: "id", page.nav_id | first %}
+        {%- if back %}
+        <a class="post-back" href="{{ back.url | relative_url }}">← {{ back.label }}</a>
+        {%- endif %}
         <h1 class="post-title">{{ page.title }}</h1>
         <div class="post-meta">
             <time datetime="{{ page.date | date_to_xmlschema }}">

@@ -865,3 +865,8 @@ pre code {
         font-size: 1.6rem;
     }
 }
+
+/* skip link: hidden until focused from the keyboard, then the first thing on the page */
+.skip-link { position: absolute; left: 8px; top: -100px; z-index: 1000; padding: 8px 12px; background: #fff; color: #000; text-decoration: none; }
+.skip-link:focus { top: 8px; }
+main:focus { outline: none; }

@@ -1,0 +1,14 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#fff"><canvas id=c></canvas><pre id=o></pre>
+<!-- the redrawn mark against the original: grey both, blue only the original, red only the redraw. Copy to out/ with mark.svg -->
+<script>
+(async()=>{const S=2,W=308*S,H=294*S;const c=document.getElementById('c');c.width=W;c.height=H;c.style.width=W+'px';const x=c.getContext('2d');
+const load=(src)=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=src;});
+const orig=await load('/assets/images/tufa_logo.png');
+let svg=await (await fetch('/mark.svg?'+Math.random())).text(); svg=svg.replace(/var\(--mark-eye, #fff\)/g,'#fff').replace(/var\(--mark-pupil, currentColor\)/g,'#000').replace(/currentColor/g,'#000');
+const mine=await load('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg));
+const get=(img)=>{const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);g.drawImage(img,0,0,W,H);return g.getImageData(0,0,W,H).data;};
+const A=get(orig),B=get(mine);const out=x.createImageData(W,H);let both=0,onlyA=0,onlyB=0;
+for(let i=0;i<W*H;i++){const a=A[i*4]<128,b=B[i*4]<128;const k=i*4;out.data[k+3]=255;
+ if(a&&b){both++;out.data[k]=out.data[k+1]=out.data[k+2]=170;}else if(a){onlyA++;out.data[k]=0;out.data[k+1]=80;out.data[k+2]=255;}else if(b){onlyB++;out.data[k]=255;out.data[k+1]=40;out.data[k+2]=0;}else{out.data[k]=out.data[k+1]=out.data[k+2]=255;}}
+x.putImageData(out,0,0);document.getElementById('o').textContent=`IoU ${(both/(both+onlyA+onlyB)).toFixed(3)} · only original (blue) ${onlyA} · only redraw (red) ${onlyB}`;})();
+</script>

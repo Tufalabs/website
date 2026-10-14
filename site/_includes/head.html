@@ -1,0 +1,22 @@
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if page.noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
+    <title>{% if page.meta_title %}{{ page.meta_title }}{% elsif page.title %}{{ page.title }} | {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
+    <link rel="stylesheet" href="{{ '/assets/css/syntax.css' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
+    {%- comment -%} icons: .ico for old browsers, square PNGs in multiples of 48px (what Google shows in results), a 180px touch icon on the page colour, a manifest for Android {%- endcomment %}
+    <link rel="icon" href="{{ '/favicon.ico' | relative_url }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ '/assets/icons/favicon-48.png' | relative_url }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ '/assets/icons/favicon-96.png' | relative_url }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ '/assets/icons/favicon-192.png' | relative_url }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ '/assets/icons/apple-touch-icon.png' | relative_url }}">
+    <link rel="manifest" href="{{ '/site.webmanifest' | relative_url }}">
+    <meta name="theme-color" content="#f7f4ef">
+    {% feed_meta %}
+    {% seo title=false %}
+    {% include structured-data.html %}
+    {% if page.math %}
+    {% include mathjax.html %}
+    {% endif %}
+    <script src="{{ '/assets/js/logo.js' | relative_url }}" defer></script>
