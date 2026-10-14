@@ -54,7 +54,7 @@
         let size = isPost ? 54 : path === '' ? 46 : 76; const maxL = isPost ? 3 : path === '' ? 5 : 4; ctx.font = `600 ${size}px ${DISPLAY}`;
         let lines = wrap(ctx, head, colW, maxL); while (lines.some((l) => l.endsWith('…')) && size > 34) { size -= 2; ctx.font = `600 ${size}px ${DISPLAY}`; lines = wrap(ctx, head, colW, maxL); }
         let y = isPost ? 196 : path === '' ? 186 : 230;
-        ctx.letterSpacing = `${-0.02 * size}px`; lines.forEach((l) => { ctx.fillText(l, 54, y); y += size * 1.08; }); ctx.letterSpacing = '0px';
+        lines.forEach((l) => { ctx.fillText(l, 54, y); y += size * 1.08; });
         const sub = isPost ? desc : path === '' ? '' : statement;
         if (sub) { ctx.fillStyle = C.ink2; ctx.font = `400 25px ${SANS}`; y += 18; wrap(ctx, sub, colW, isPost ? 3 : 4).forEach((l) => { ctx.fillText(l, 56, y); y += 34; }); }
         // the foot: a hairline, the address, and the byline for articles

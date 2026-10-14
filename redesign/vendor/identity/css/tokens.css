@@ -1,10 +1,11 @@
 /* Tufa Labs identity — tokens: the numbers every design is built from (rhythm, type, grid, faces, colour, motion), light and dark. */
+/* ⚠ The website (tufalabs.ai) is built on these: a change here reaches it with the next identity release it takes. */
 
 /* Tufa Labs — rule-based stylesheet.
  *
  * Every measure derives from four numbers:
- *   LINE  = 24px            vertical rhythm; all spacing is a multiple of LINE/2
- *   RATIO = 4:3             type scale (perfect fourth) from a 16px base
+ *   LINE  = 24px            vertical rhythm; all spacing is a multiple of LINE/4
+ *   RATIO = 1.42 (≈ √2)     type scale from a 16px base (the A-series ratio; also the formats and the lockup)
  *   GRID  = 12 × 74px + 11 × 24px gutters = 1152px
  *   HUE   = one angle       accent and the tint of every neutral
  *

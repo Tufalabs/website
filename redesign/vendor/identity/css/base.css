@@ -18,9 +18,9 @@ li { margin-bottom: var(--s-1); }
 li::marker { color: var(--ink-3); }
 li > ul { margin: var(--s-1) 0 0; }
 h1, h2, h3, h4 { margin: 0; color: var(--ink); text-wrap: balance; }
-h1 { font: 600 var(--t3) / 1.1 var(--display); letter-spacing: -0.02em; }
-h2 { font: 600 var(--t0) / var(--line) var(--display); letter-spacing: -0.01em; }
-h3 { font: 600 var(--t0) / var(--line) var(--display); letter-spacing: -0.01em; margin: var(--s1) 0 var(--s0); }
+h1 { font: 600 var(--t3) / 1.1 var(--display); }
+h2 { font: 600 var(--t0) / var(--line) var(--display); }
+h3 { font: 600 var(--t0) / var(--line) var(--display); margin: var(--s1) 0 var(--s0); }
 a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.22em; text-decoration-color: var(--hair); }
 a:hover { text-decoration-color: var(--accent); }
 code, pre { font-family: var(--mono); font-size: 0.875em; }
@@ -80,7 +80,7 @@ pre code { background: none; padding: 0; }
 .post-item > .post-meta { grid-column: 1 / 4; grid-row: 1 / span 3; display: flex; flex-direction: column; color: var(--ink-3); }
 .post-item > .post-meta time { color: var(--ink); font-variant-numeric: tabular-nums; }
 .post-meta span[aria-hidden] { display: none; }
-.post-item h3 { margin: 0 0 var(--s-1); font: 600 var(--t1) / var(--lh-text) var(--display); letter-spacing: -0.02em; }
+.post-item h3 { margin: 0 0 var(--s-1); font: 600 var(--t1) / var(--lh-text) var(--display); }
 .post-link { color: var(--ink); text-decoration: none; }
 .post-link:hover { color: var(--accent-text); }
 .post-excerpt { margin: 0 0 var(--s0); color: var(--ink-2); }
