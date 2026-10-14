@@ -607,7 +607,9 @@ a:hover { text-decoration-thickness: 2px; }
 .spec-names > .spec-cell { background: var(--tint); padding-right: var(--s0); }
 .spec-row:not(.spec-names):hover > .spec-cell { background: color-mix(in oklch, var(--tint) 50%, var(--bg)); }
 @media (max-width: 900px) {
-  .spec-row > .spec-k { padding-bottom: 0; }
+  /* the line between the systems runs on through the labels above each pair (kept to the left column) */
+  .spec-row > .spec-k { padding-bottom: 0; position: relative; padding-right: calc(50% + var(--s0)); }
+  .spec-row > .spec-k::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--hair); }
   .spec-row > .spec-cell { padding-left: var(--s0); }
 }
 /* the citation: at the foot of the head, flush right with column 12; the hint and the opened reference run leftwards
