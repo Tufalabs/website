@@ -80,7 +80,7 @@ main.container { padding-block: 0; }
     position: absolute; left: calc(var(--rail) + var(--rail-gap)); top: 0;
     width: max-content; max-width: calc(3 * var(--col) + 2 * var(--gap) - var(--rail) - var(--rail-gap));
     font: 600 var(--t0) / var(--line) var(--display); color: var(--ink);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    text-wrap: balance;   /* the whole title, wrapped, as the headings themselves */
     background: var(--bg); padding-right: var(--s0);
     opacity: 0; clip-path: inset(0 100% 0 0); pointer-events: none;
 }
