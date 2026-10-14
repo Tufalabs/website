@@ -8,6 +8,18 @@
     const F = window.TufaFigures.F, S = 2, W = 1200, H = 630;
     const css = getComputedStyle(document.documentElement), DISPLAY = css.getPropertyValue('--display').trim(), SANS = css.getPropertyValue('--sans').trim(), MONO = css.getPropertyValue('--mono').trim();
     await document.fonts.load(`600 72px ${DISPLAY}`); await document.fonts.load(`400 26px ${SANS}`); await document.fonts.load(`400 15px ${MONO}`);
+    // cards are mostly seen shrunk (a chat, a feed): their text takes the optical size of that view (24) and the headline
+    // opens by 1%, as the identity's images do; the faces are loaded pinned at that size, under their own name
+    const pinned = async (stack) => {
+        const fam = stack.split(',')[0].trim().replace(/^["']|["']$/g, '');
+        try {
+            const css = await fetch(`https://fonts.googleapis.com/css2?family=${fam.replace(/ /g, '+')}:opsz,wght@24,400;24,600&display=block`).then((r) => { if (!r.ok) throw r.status; return r.text(); });
+            const faces = [...css.matchAll(/@font-face\s*{([^}]*)}/g)].map((m) => m[1]);
+            await Promise.all(faces.map((b) => { const f = new FontFace(`${fam} card`, `url(${b.match(/url\(([^)]+)\)/)[1]})`, { weight: (b.match(/font-weight:\s*(\d+)/) || [, '400'])[1], unicodeRange: (b.match(/unicode-range:\s*([^;]+)/) || [, 'U+0-10FFFF'])[1] }); document.fonts.add(f); return f.load(); }));
+            return `"${fam} card", ${stack}`;
+        } catch (e) { return stack; }   // a face without optical sizes: as it is
+    };
+    const CARD_DISPLAY = await pinned(DISPLAY), CARD_SANS = CARD_DISPLAY.startsWith(`"${SANS.split(',')[0].trim().replace(/^["']|["']$/g, '')} card"`) ? CARD_DISPLAY : await pinned(SANS);
     document.documentElement.removeAttribute('data-theme');
     const probe = document.createElement('i'); document.body.appendChild(probe);
     const col = (v) => { probe.style.color = `var(${v})`; return getComputedStyle(probe).color; };
@@ -33,7 +45,7 @@
         ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
         // the site header: logo, name, the section on the right, the 2px rule
         const lh = 34, lw = lh * logo.width / logo.height; ctx.drawImage(logo, 56, 40, lw, lh);
-        ctx.fillStyle = C.ink; ctx.font = `600 25px ${DISPLAY}`; ctx.textBaseline = 'middle'; ctx.fillText('Tufa Labs', 56 + lw + 12, 58);
+        ctx.fillStyle = C.ink; ctx.font = `600 25px ${CARD_DISPLAY}`; ctx.textBaseline = 'middle'; ctx.fillText('Tufa Labs', 56 + lw + 12, 58);
         ctx.font = `400 14px ${MONO}`; ctx.fillStyle = C.ink2; ctx.textAlign = 'right'; ctx.fillText((SECTION[top] ?? '').toUpperCase(), W - 56, 58); ctx.textAlign = 'left';
         ctx.fillStyle = C.ink; ctx.fillRect(56, 98, W - 112, 2);
         // the figure, in the right columns, fading in from the left like the site's head band
@@ -51,12 +63,12 @@
         // the headline and the statement (pages), or title, description and byline (articles)
         ctx.textBaseline = 'alphabetic'; ctx.fillStyle = C.ink;
         const head = isPost ? title : (path === '' ? statement : title);
-        let size = isPost ? 54 : path === '' ? 46 : 76; const maxL = isPost ? 3 : path === '' ? 5 : 4; ctx.font = `600 ${size}px ${DISPLAY}`;
-        let lines = wrap(ctx, head, colW, maxL); while (lines.some((l) => l.endsWith('…')) && size > 34) { size -= 2; ctx.font = `600 ${size}px ${DISPLAY}`; lines = wrap(ctx, head, colW, maxL); }
+        let size = isPost ? 54 : path === '' ? 46 : 76; const maxL = isPost ? 3 : path === '' ? 5 : 4; ctx.font = `600 ${size}px ${CARD_DISPLAY}`;
+        let lines = wrap(ctx, head, colW, maxL); while (lines.some((l) => l.endsWith('…')) && size > 34) { size -= 2; ctx.font = `600 ${size}px ${CARD_DISPLAY}`; lines = wrap(ctx, head, colW, maxL); }
         let y = isPost ? 196 : path === '' ? 186 : 230;
-        lines.forEach((l) => { ctx.fillText(l, 54, y); y += size * 1.08; });
+        ctx.letterSpacing = `${0.01 * size}px`; lines.forEach((l) => { ctx.fillText(l, 54, y); y += size * 1.08; }); ctx.letterSpacing = '0px';
         const sub = isPost ? desc : path === '' ? '' : statement;
-        if (sub) { ctx.fillStyle = C.ink2; ctx.font = `400 25px ${SANS}`; y += 18; wrap(ctx, sub, colW, isPost ? 3 : 4).forEach((l) => { ctx.fillText(l, 56, y); y += 34; }); }
+        if (sub) { ctx.fillStyle = C.ink2; ctx.font = `400 25px ${CARD_SANS}`; y += 18; wrap(ctx, sub, colW, isPost ? 3 : 4).forEach((l) => { ctx.fillText(l, 56, y); y += 34; }); }
         // the foot: a hairline, the address, and the byline for articles
         ctx.fillStyle = C.hair; ctx.fillRect(56, 574, W - 112, 1);
         ctx.font = `400 15px ${MONO}`; ctx.fillStyle = C.ink3; ctx.fillText(('tufalabs.ai/' + path).replace(/\/$/, ''), 56, 604);
