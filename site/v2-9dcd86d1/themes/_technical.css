@@ -1,0 +1,76 @@
+/* Technical base — Swiss plus a monospace data layer, a visible column rule and international orange. */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("_swiss.css?v=1791965160");
+
+:root { --accent: #ff4f00; --mono-font: "JetBrains Mono", ui-monospace, monospace; }
+
+/* the column rule between margin and text */
+.home-content, .page > .page-content, .post-item, .team-member, .page > .page-content > .research-chatter {
+    background: linear-gradient(var(--hair), var(--hair)) no-repeat calc(var(--label) + var(--col-gap) / 2) 0 / 1px 100%;
+}
+.page > .page-content > .post-list, .page > .page-content > .team-list { background: none; }
+
+.site-nav a, .post-meta, .role, .compute-table th, .site-footer, .page > .page-content > .post-list-heading,
+.external-indicator, .read-more, .research-interests::first-letter, #public-team-notice, .compute-footnote, .post-figure figcaption {
+    font-family: var(--mono-font);
+}
+.site-nav a { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 400; }
+.site-nav a.active::before { content: "→"; background: none; width: auto; height: auto; color: var(--accent); margin-right: 5px; vertical-align: 0; }
+.logo-text::after { content: "_"; color: var(--accent); animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.home-content > h2::before, .page > .page-content > h2::before {
+    content: "[" counter(sec, decimal-leading-zero) "]"; font-family: var(--mono-font); font-size: 0.75rem; font-weight: 400;
+}
+.post-meta { font-size: 0.75rem; letter-spacing: 0.01em; }
+.post-item > .post-meta time { color: var(--ink); }
+.post-item h3 { font-size: 1.25rem; }
+.role { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 400; }
+.read-more { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.compute-table th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 400; }
+.compute-table td { font-variant-numeric: tabular-nums slashed-zero; }
+.page > .page-content > .post-list-heading { font-size: 0.72rem; text-transform: uppercase; font-weight: 400; }
+.page-lede { font-size: 1.05rem; }
+.site-footer { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+code, pre { font-family: var(--mono-font); }
+
+@media (max-width: 900px) {
+    .home-content, .page > .page-content, .post-item, .team-member, .page > .page-content > .research-chatter { background: none; }
+}
+
+/* refinements */
+::selection { background: var(--accent); color: #fff; }
+.logo-text::after { display: inline-block; width: 0.55em; }
+.post-header .post-meta, .post-byline-note { font-family: var(--mono-font); font-size: 0.75rem; }
+.post-content { counter-reset: psec; }
+.post-content > h2 { counter-increment: psec; }
+.post-content > h2::before { content: "[" counter(psec, decimal-leading-zero) "] "; font-family: var(--mono-font); font-size: 0.62em; font-weight: 400; color: var(--accent); vertical-align: 0.2em; }
+.post-figure figcaption { font-size: 0.75rem; line-height: 1.5; }
+.team-member-links { font-family: var(--mono-font); font-size: 0.78rem; }
+.links-list a { font-family: var(--mono-font); font-size: 0.8rem; }
+
+/* round-3 feedback: smaller statement, no rule crossing it, stronger greys */
+:root { --muted: #555; --hair: #d6d6d6; }
+li::marker { color: #888; }
+.post-excerpt { color: #2a2a2a; }
+.home-content > p:nth-of-type(2) {
+    position: relative; z-index: 1; background: var(--bg);
+    font-size: clamp(1.45rem, 2.5vw, 2rem); line-height: 1.2; letter-spacing: -0.02em;
+    padding: 4rem 38% 3rem 0; border-bottom: 1px solid var(--hair);
+}
+.page-lede { color: #444; }
+@media (max-width: 900px) {
+    .home-content > p:nth-of-type(2) { padding: 2.5rem 0 2rem; font-size: 1.45rem; }
+}
+
+/* round-4 feedback: no terminal cursor on the logo; nav uses underlines instead of the arrow */
+.logo-text::after { content: none; animation: none; }
+.site-nav a.active::before { content: none; display: none; }
+.site-nav a { text-decoration: none; padding-bottom: 3px; border-bottom: 1.5px solid transparent; }
+.site-nav a:hover { color: var(--ink); border-bottom-color: var(--hair); }
+.site-nav a.active, .site-nav a:active { color: var(--ink); border-bottom-color: var(--accent); }
+
+/* list pages: one rule above the list, no column rule through the heading row */
+.page > .page-content:has(> .post-list) { background: none; }
+.page-header:has(+ .page-content > .post-list) { border-bottom: 0; padding-bottom: 1.5rem; }
+.page > .page-content > .post-list-heading + .post-list { padding-top: 0; }
