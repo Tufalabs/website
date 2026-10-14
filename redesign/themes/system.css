@@ -68,6 +68,8 @@ main.container { padding-block: 0; }
 /* the passed points slide up under the header line and fade as they near it: the band above the current point is one
    line (four points at the quarter-line pitch), so each step towards the line takes a quarter of their tone */
 .rail-item { opacity: clamp(0, calc(1 - (var(--shift, 0) - var(--i, 0)) / 4), 1); }
+/* the entry under the pointer (or the keyboard) is read in full: its title and its dot at full strength, however far up it is */
+.rail-item:hover, .rail-item:has(a:focus-visible) { opacity: 1; }
 :root:not(.no-motion) .rail-item { transition: opacity var(--dur-2) var(--ease); }
 .rail a { display: block; height: var(--pitch); width: calc(var(--rail) + var(--s0)); padding-top: calc(var(--pitch) / 2 - 0.5px); text-decoration: none; }
 .rail-tick { display: block; width: var(--rail); height: 1px; background: var(--ink-3); }
