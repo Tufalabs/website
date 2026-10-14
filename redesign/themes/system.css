@@ -593,7 +593,9 @@ a:hover { text-decoration-thickness: 2px; }
 .spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 1px solid var(--hair); padding-left: var(--s0); }
 .spec-row:hover .spec-k { color: var(--ink); }
 .spec-row { transition: none; }
-@media (max-width: 900px) { .spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 0; padding-left: 0; } }
+/* on phones the label goes above its row: the first system starts at the page's edge, and the line stays between the two */
+@media (max-width: 900px) { .spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 0; padding-left: 0; }
+  .spec-row > .spec-cell + .spec-cell { border-left: 1px solid var(--hair); padding-left: var(--s0); } }
 /* the citation: at the foot of the head, flush right with column 12; the hint and the opened reference run leftwards
    from it */
 .hero-caption { justify-content: flex-end; text-align: right; }
