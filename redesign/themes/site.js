@@ -329,3 +329,28 @@ window.tufaPage = (() => {
     // pages come and go under the header (router.js): the identity page's marks join, and leave with it
     (window.__tufaPages ||= []).push(() => window.TufaCreature?.track('.id-headmark svg, .id-pair .id-mark-big:not(.id-parts) svg'));
 })();
+
+// sidenotes beside their line: each at the height of the reference that cites it, pushed down only as far as the note
+// before it needs; laid out again whenever the text reflows (fonts, images, maths, width)
+(window.__tufaPages ||= []).push(() => {
+    const pc = document.querySelector('body.post--sidenotes .post-content'); if (!pc) return;
+    const wide = matchMedia('(min-width: 901px)');
+    const lay = () => {
+        const notes = [...pc.querySelectorAll('.sidenote')];
+        if (!wide.matches) { notes.forEach((n) => { n.style.top = ''; }); pc.style.minHeight = ''; return; }
+        const top0 = pc.getBoundingClientRect().top, gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--line')) / 2 || 12;
+        let floor = -Infinity;
+        for (const n of notes) {
+            const ref = n.previousElementSibling?.previousElementSibling || n.previousElementSibling || n.parentElement;
+            const want = ref.getBoundingClientRect().top - top0;
+            const top = Math.max(want, floor);
+            n.style.top = `${Math.round(top)}px`;
+            floor = top + n.offsetHeight + gap;
+        }
+        pc.style.minHeight = floor > pc.offsetHeight ? `${Math.ceil(floor)}px` : '';
+    };
+    let raf = 0; const soon = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(lay); };
+    const ro = new ResizeObserver(soon); ro.observe(pc);
+    wide.addEventListener('change', soon); document.fonts?.ready.then(soon); soon();
+    return () => { ro.disconnect(); wide.removeEventListener('change', soon); cancelAnimationFrame(raf); };
+});

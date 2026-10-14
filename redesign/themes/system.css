@@ -47,8 +47,8 @@ main.container { padding-block: 0; }
 .has-rail > h2 {
     position: sticky; top: calc(var(--head) + var(--s1)); align-self: start; z-index: 2;
     padding-left: calc(var(--rail) + var(--rail-gap));
-    /* a one-line title with an opaque text box, so an arriving title fully covers the pinned one */
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--bg); background-clip: content-box;
+    /* the whole title, wrapped (balanced) rather than cut short; an opaque text box, so an arriving title covers the pinned one */
+    text-wrap: balance; background: var(--bg); background-clip: content-box;
 }
 .has-rail > h2.is-pinned { color: var(--mark-text); }
 .has-rail > h2.is-past { visibility: hidden; }
@@ -930,3 +930,15 @@ svg:has(.m-legs) :is(.m-body, .m-eye, .m-hind) { transform-origin: 600px 560px; 
 svg:has(.m-creature) { overflow: visible; }
 /* between pages (router.js, or a phone-menu tap before a full load): only the header stays until the next page is in */
 .is-leaving body > :not(.site-header):not(.skip-link):not(#theme-switch) { opacity: 0 !important; transition: none !important; }
+
+/* sidenotes on wide screens: placed beside the line that cites them in the aside columns 10–12, and stacked so none
+   overlaps the one before (site.js sets each one's top). Out of the flow, so a long note never holds its paragraph open
+   (a float inside a grid item would: the item grows to contain it, leaving a gap in the text). */
+@media (min-width: 901px) {
+    body.post--sidenotes .post-content { position: relative; }
+    body.post--sidenotes .sidenote { position: absolute; float: none; clear: none; margin: 0; left: calc(9 * (var(--col) + var(--gap))); width: calc(3 * var(--col) + 2 * var(--gap)); }
+}
+/* bylines and list entries: the date in the label voice (mono, capitals, ink 3), the name as text (Inter, ink 2), so the
+   two read as two things, not one run of mono */
+.post-meta time { font: 400 var(--t-1) / var(--line) var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink-3); }
+.post-meta > span:not([aria-hidden]), .post-meta .post-author { font: 400 var(--t0) / var(--line) var(--sans); letter-spacing: 0; text-transform: none; color: var(--ink-2); }

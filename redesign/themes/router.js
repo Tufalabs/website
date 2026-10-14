@@ -37,6 +37,17 @@
         // the new page's own nav says which item is active (a post marks its section)
         const nav = /<nav class="site-nav"[\s\S]*?<\/nav>/.exec(page?.html || '')?.[0] || '';
         window.tufaNav?.select(/<a href="([^"]+)" class="active"/.exec(nav)?.[1] || null);
+        // only #content is swapped: the page's own body class (a post with sidenotes, …) and the scripts its head brings
+        // that this one lacks (MathJax and its settings) come over by hand; maths already loaded is typeset again
+        const doc = new DOMParser().parseFromString(page?.html || '', 'text/html');
+        if (doc.body) document.body.className = doc.body.className;
+        const have = new Set([...document.head.querySelectorAll('script')].map((s) => s.getAttribute('src') || s.textContent));
+        for (const s of doc.head.querySelectorAll('script')) {
+            if (s.type && !/javascript|module/.test(s.type)) continue;
+            const k = s.getAttribute('src') || s.textContent; if (have.has(k)) continue;
+            const n = document.createElement('script'); for (const a of s.attributes) n.setAttribute(a.name, a.value); n.textContent = s.textContent; document.head.append(n);
+        }
+        if (doc.querySelector('script[src*="mathjax"]') && window.MathJax?.typesetPromise) window.MathJax.typesetPromise([document.getElementById('content')]).catch(() => {});
         pages.view();
         // reached by keyboard (a click with no pointer): the reader continues in the new content, not on the old link
         if (visit.trigger.event?.detail === 0) document.getElementById('content')?.focus({ preventScroll: true });
