@@ -159,7 +159,7 @@ html, body { overflow-x: clip; }
 @media (max-width: 900px) {
     .post-content > .event { grid-template-columns: minmax(0, 1fr); }
     .event > .callout, .event-cover { grid-column: 1; }
-    .event-cover { width: calc(var(--line) * 5); margin-top: var(--s1); pointer-events: auto; }
+    .event-cover { width: calc(var(--line) * 8); margin-top: var(--s1); pointer-events: auto; }
     .post-content .event-cover img { position: static; width: 100%; height: auto; }
 }
 /* ── narrow screens: one column, labels above their content ───────────── */
