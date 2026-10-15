@@ -125,7 +125,8 @@ jobs:
     steps:
       - name: No key yet
         if: env.HAS_KEY != 'true'
-        run: echo "::notice::No preview: the secret PREVIEWS_KEY (a write deploy key of Tufalabs/website-previews) is not set"
+        run: |
+          echo "::notice::No preview, as the secret PREVIEWS_KEY (a write deploy key of Tufalabs/website-previews) is not set"
 
       - name: Check out the previews
         if: env.HAS_KEY == 'true'
@@ -153,7 +154,7 @@ jobs:
           git add -A
           git diff --cached --quiet && exit 0
           git commit -qm "${{ github.event.action == 'closed' && 'Remove' || 'Preview' }} Tufalabs/website#${{ github.event.number }} (${{ github.event.pull_request.head.sha }})"
-          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+          for _ in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
 
       - name: Comment
         if: env.HAS_KEY == 'true'
