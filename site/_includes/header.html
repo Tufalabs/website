@@ -3,11 +3,11 @@
     <div class="container">
         <div class="header-content">
             <a href="{{ '/' | relative_url }}" class="logo-container" aria-label="Tufa Labs home">
-                <img src="{{ '/assets/images/tufa_logo.png' | relative_url }}" alt="Tufa Labs logo" class="logo-image" id="logo-image">
+                {% include mark.svg %}
                 <div class="logo-text">Tufa Labs</div>
             </a>
             <nav class="site-nav" aria-label="Main navigation">
-                <ul>
+                <ul id="site-nav-list">
                     {% for item in site.data.navigation.header %}
                     <li>
                         <a href="{{ item.url | relative_url }}"{% if item.id == page.nav_id %} class="active" aria-current="page"{% endif %}>{{ item.label }}</a>
@@ -15,6 +15,7 @@
                     {% endfor %}
                 </ul>
             </nav>
+            <button type="button" class="nav-toggle" aria-controls="site-nav-list" aria-expanded="false">Menu</button>
         </div>
     </div>
 </header>

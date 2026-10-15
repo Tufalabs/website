@@ -1,7 +1,0 @@
-<script>
-(function(){var r=document.documentElement;try{if(localStorage.getItem("tufa-motion")==="off")r.classList.add("no-motion")}catch(e){}
-r.classList.add("js-motion");setTimeout(function(){if(!r.classList.contains("motion-ready"))r.classList.add("motion-done")},3000);
-addEventListener("pagereveal",function(e){if(e.viewTransition)r.classList.add("vt-nav")});
-try{if(sessionStorage.getItem("tufa-seen"))r.classList.add("vt-nav");sessionStorage.setItem("tufa-seen","1")}catch(e){}})();
-</script>
-<script src="/themes/motion.js?v={{STAMP}}" defer></script>

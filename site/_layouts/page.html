@@ -1,17 +1,28 @@
 ---
 layout: default
 ---
+{%- comment -%} the page's statement (its lede, or else the content's first paragraph) carries the page's name above it, in the
+label voice; a long one steps down a size (is-long, over 140 characters) {%- endcomment -%}
+{%- assign kicker = '<span class="band-kicker" aria-hidden="true">' | append: page.title | append: '</span>' -%}
+{%- assign body = content | strip -%}
 <article class="page{% if page.page_class %} {{ page.page_class }}{% endif %}">
     {% if page.title %}
     <header class="page-header">
         <h1 class="page-title">{{ page.title }}</h1>
         {% if page.lede %}
-        <p class="page-lede">{{ page.lede }}</p>
+        <p class="page-lede{% if page.lede.size > 140 %} is-long{% endif %}" data-pre>{{ kicker }}{{ page.lede }}</p>
         {% endif %}
     </header>
     {% endif %}
 
     <div class="page-content">
+        {%- assign opening = body | slice: 0, 3 -%}
+        {%- if page.title and page.lede == nil and opening == '<p>' -%}
+        {%- assign first = body | split: '</p>' | first | strip_html | strip -%}
+        {%- capture opened %}<p{% if first.size > 140 %} class="is-long"{% endif %} data-pre>{{ kicker }}{% endcapture -%}
+        {{ body | replace_first: '<p>', opened }}
+        {%- else %}
         {{ content }}
+        {%- endif %}
     </div>
 </article>
