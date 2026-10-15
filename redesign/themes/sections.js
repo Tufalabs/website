@@ -26,12 +26,6 @@ const build = () => {
         wrap.className = 'rail-wrap';
         wrap.innerHTML = '<nav class="rail" aria-label="Sections" data-no-swup><ol></ol></nav>';   // its links are its own (the router keeps out: two scrolls would fight)
         const r = { container, heads, wrap, nav: wrap.firstChild, items: [], current: -1 };
-        // a post's way back (← Research, ← News) pins above the index once its own place in the head has scrolled away
-        const back = container.classList.contains('post-content') && document.querySelector('.post-back');
-        if (back) {
-            const a = back.cloneNode(true); a.className = 'rail-back'; a.setAttribute('aria-hidden', 'true'); a.tabIndex = -1;   // the head's link stays the one for keyboards and readers
-            wrap.prepend(a); container.classList.add('has-back');
-        }
         heads.forEach((h, i) => {
             if (!h.id) h.id = h.textContent.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
             const li = document.createElement('li');
@@ -55,8 +49,7 @@ const build = () => {
     }
     if (!rails.length) { lineProbe.remove(); return; }
 
-    const extra = () => (document.querySelector('.has-rail.has-back') ? GAP : 0);   // the way back takes the first line under the header
-    const pinLine = () => header.getBoundingClientRect().bottom + GAP + extra();
+    const pinLine = () => header.getBoundingClientRect().bottom + GAP;
 
     function jump(r, i) {
         // natural (unstuck) position: offsetTop of a stuck title reports where it is pinned
@@ -72,7 +65,7 @@ const build = () => {
             r.natural = r.heads.map((h) => (h.style.position = 'static', h.offsetTop));
             r.heads.forEach((h) => (h.style.position = ''));
             r.heights = r.heads.map((h) => h.offsetHeight);
-            r.wrap.style.top = `${r.natural[0] - (r.container.classList.contains('has-back') ? GAP : 0)}px`;
+            r.wrap.style.top = `${r.natural[0]}px`;
             r.lines.forEach((l, i) => (l.style.top = `${r.natural[i] - GAP}px`));
         }
         layout();

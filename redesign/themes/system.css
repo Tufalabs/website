@@ -58,14 +58,6 @@ main.container { padding-block: 0; }
 .rail-wrap { position: absolute; left: 0; bottom: 0; width: 100%; z-index: 40; pointer-events: none; }
 .rail { position: sticky; top: calc(var(--head) + var(--s1)); width: var(--rail); padding-top: calc(var(--line) / 2 - var(--pitch) / 2); pointer-events: auto; visibility: hidden; opacity: 0; }
 .rail-on .rail { visibility: visible; opacity: 1; }
-/* a post's way back, pinned above the index (sections.js): the first line under the header, in the label voice; the
-   titles and the index move down one line to make room */
-.rail-back { position: sticky; top: calc(var(--head) + var(--s1)); display: block; width: max-content; height: var(--line); pointer-events: auto;
-    font: 400 var(--t-half) / var(--line) var(--mono); letter-spacing: .02em; text-transform: uppercase; color: var(--ink-3); text-decoration: none;
-    visibility: hidden; opacity: 0; }
-.rail-back:hover { color: var(--ink); }
-.rail-on .rail-back { visibility: visible; opacity: 1; }
-.has-back .rail, .has-rail.has-back > h2 { top: calc(var(--head) + var(--s1) + var(--line)); }
 .rail ol { list-style: none; padding: 0; margin: calc(var(--shift, 0) * -1 * var(--pitch)) 0 0; }
 /* margin, not transform: titles stay positioned against the rail */
 /* the index slides under the header line rather than over it */
