@@ -86,7 +86,8 @@ def components(html):
                 + f'<p class="callout-title">{title}</p>' + body[head.end():] + '</blockquote>')
     html = re.sub(r'<blockquote>(.*?)</blockquote>', callout, html, flags=re.S)
     # the event card: an event over by the build's date says so and links to its page instead of registering; the cover
-    # comes from Luma's image service at the aside's size (12ℓ, twice for sharp screens) instead of the full upload
+    # comes from Luma's image service at the aside's size (12ℓ, twice for sharp screens) instead of the full upload, cut
+    # to its drawn frame (the Tufa Talks covers keep 22 of their 1024 px white around it), so the frame is the callout's height
     def event(m):
         card = m.group(0)
         get = lambda pat: (re.search(pat, card, re.S) or [None, ""])[1].strip()
@@ -97,7 +98,7 @@ def components(html):
         day = datetime.datetime.strptime(when.group(1), "%B %d, %Y").date()
         past = day < datetime.date.today()
         hours = re.sub(r'(\d)-(\d)', r'\1–\2', when.group(2) or "")   # a range takes the en dash: 18:00–20:00
-        cover = re.sub(r'^https://images\.lumacdn\.com/(?:cdn-cgi/image/[^/]+/)?', 'https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,width=288,height=288/', src)
+        cover = re.sub(r'^https://images\.lumacdn\.com/(?:cdn-cgi/image/[^/]+/)?', 'https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,trim=22;22;21;22,width=288,height=288/', src)
         out = f'href="{href}" target="_blank" rel="noopener"'
         return (f'<div class="event">\n<div class="callout">'
                 f'<span class="callout-label">{"Past event" if past else "Luma event"}</span>'
