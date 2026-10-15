@@ -27,13 +27,10 @@ const build = () => {
         wrap.innerHTML = '<nav class="rail" aria-label="Sections" data-no-swup><ol></ol></nav>';   // its links are its own (the router keeps out: two scrolls would fight)
         const r = { container, heads, wrap, nav: wrap.firstChild, items: [], current: -1 };
         // a post's way back (← Research, ← News) pins above the index once its own place in the head has scrolled away
-        // (variants, while choosing: a = a line above the index, c = an arrow as the index's first mark; b and d live in site.js)
-        const variant = document.documentElement.dataset.back;
-        const back = (variant === 'a' || variant === 'c') && container.classList.contains('post-content') && document.querySelector('.post-back');
+        const back = container.classList.contains('post-content') && document.querySelector('.post-back');
         if (back) {
-            const a = back.cloneNode(true); a.setAttribute('aria-hidden', 'true'); a.tabIndex = -1;   // the head's link stays the one for keyboards and readers
-            if (variant === 'a') { a.className = 'rail-back'; wrap.prepend(a); container.classList.add('has-back'); }
-            else { a.className = 'rail-arrow'; a.innerHTML = '<span class="rail-arrow-mark">←</span><span class="rail-arrow-text">Back to ' + back.textContent.replace(/^\W+/, '') + '</span>'; r.nav.prepend(a); }
+            const a = back.cloneNode(true); a.className = 'rail-back'; a.setAttribute('aria-hidden', 'true'); a.tabIndex = -1;   // the head's link stays the one for keyboards and readers
+            wrap.prepend(a); container.classList.add('has-back');
         }
         heads.forEach((h, i) => {
             if (!h.id) h.id = h.textContent.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
