@@ -115,9 +115,12 @@ html, body { overflow-x: clip; }
 .page > .page-content > .team-list { grid-column: 1 / -1; margin-top: 0; container-type: inline-size; }
 .team-list { display: flex; flex-direction: column; }
 .team-member { padding: 0 0 var(--s2); align-items: start; }
+/* the photo's top on the name's capitals: set in the name's size, half its line down, less the .364em Inter's capitals
+   rise above the middle of a line */
 .team-member-image {
     grid-column: 1 / 4; display: block; width: calc(2 * var(--col) + var(--gap)); aspect-ratio: 1;
     object-fit: cover; filter: grayscale(1);
+    font-size: var(--t1); margin-top: calc(var(--lh-text) / 2 - .364em);
 }
 .team-member:hover .team-member-image { filter: none; }
 .team-member-info { grid-column: 4 / 10; min-width: 0; }
@@ -176,7 +179,7 @@ html, body { overflow-x: clip; }
     .post-item > h3 { order: 1; }
     .post-item > .post-excerpt { order: 3; }
     .post-item > .read-more { order: 4; }
-    .team-member-image { width: calc(var(--line) * 5); margin-bottom: var(--s0); }
+    .team-member-image { width: calc(var(--line) * 5); margin-top: 0; margin-bottom: var(--s0); }
     .site-header .header-content { flex-direction: column; align-items: flex-start; gap: var(--s0); padding: var(--s0) 0; }
     body.post--sidenotes .sidenote { display: none; float: none; width: auto; margin: var(--s0) 0; }
     body.post--sidenotes input.margin-toggle:checked + .sidenote { display: block; }
@@ -885,7 +888,7 @@ svg.logo-image { display: block; color: var(--ink); filter: none !important; mix
     .home-content > p:nth-of-type(2)::before, .home-content > p:nth-of-type(2)::after { display: none !important; }
     .team-list { display: block !important; }
     html body .team-list .team-member { display: grid !important; grid-template-columns: 28mm 1fr !important; gap: 6mm !important; align-items: start; height: auto !important; min-height: 0 !important; padding: 0 0 6mm !important; margin: 0 !important; position: static !important; }
-    .team-member-image { width: 28mm !important; height: 28mm !important; object-fit: cover; position: static !important; }
+    .team-member-image { width: 28mm !important; height: 28mm !important; margin-top: 0 !important; object-fit: cover; position: static !important; }
     .team-member h2 { margin: 0 0 1mm !important; font-size: 11pt !important; }
     .team-member .role { margin: 0 0 2mm !important; }
 }
