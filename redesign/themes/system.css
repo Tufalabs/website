@@ -295,9 +295,7 @@ html.show-grid body::after {
 .spec-cell { display: grid; min-width: 0; font-variant-numeric: tabular-nums; }
 .spec-line { display: block; line-height: var(--line); }
 .spec-line b { font: 600 var(--t0) / var(--line) var(--display); color: var(--ink); white-space: nowrap; }
-/* the head row names the systems: a step up the scale (t1, display leading on the quarter line), so it reads as the
-   columns' heading and not as one more value */
-.spec-names .spec-line b { font-size: var(--t1); line-height: calc(var(--line) * 1.25); }
+/* the head row names the systems in the values' own type: the tint behind them is what marks it as the heading */
 .spec-line i { font: 400 var(--t-1) / var(--line) var(--mono); font-style: normal; color: var(--ink-2); margin-left: 6px; }
 .spec-n { font: 400 var(--t-1) / 18px var(--mono); color: var(--ink-3); }
 .spec-line sup { font: 400 0.625rem / 0 var(--mono); margin-left: 3px; vertical-align: 0.7em; }

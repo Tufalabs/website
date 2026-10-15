@@ -27,6 +27,8 @@ SYSTEM_HEAD = """<link rel="preconnect" href="https://fonts.googleapis.com"><lin
 <script src="/themes/router.js?v={{STAMP}}" defer></script>""".replace("{{FONTS}}", TOKENS["type"]["google_fonts"].replace("&", "&amp;"))
 RULES = (ROOT / "rules.html").read_text()
 import sys; sys.path.insert(0, str(ROOT / "identity")); import page as identity_page
+import html as H
+sys.path.insert(0, str(ROOT / "vendor/identity/tools")); from cite import cite, check_reference, C as CITE
 sys.path.insert(0, str(ROOT / "tools")); from prerender import prerender
 FIRST = f'<meta name="color-scheme" content="light"><style>html{{background:{PAPER};color-scheme:light}}html[data-theme="dark"]{{background:{PAPER_DARK};color-scheme:dark}}</style>'   # the ground from the first byte: no dark flash between pages (or inside a dark embedding frame)
 # draft copy proposed for the redesign (not on the live site yet): page -> lede
@@ -82,9 +84,20 @@ def components(html):
         return (f'<blockquote class="callout">' + (f'<span class="callout-label">{label}</span>' if label else '')
                 + f'<p class="callout-title">{title}</p>' + body[head.end():] + '</blockquote>')
     html = re.sub(r'<blockquote>(.*?)</blockquote>', callout, html, flags=re.S)
+    # the citation section, written from the post itself (title, byline, date, address) in the identity's format
     def citation(m):
-        sec = re.sub(r'<p>\s*(Please cite[^<]*?):?\s*</p>(\s*)<p>', r'<p class="citation-label">\1</p>\2<p class="citation-ref">', m.group(0), count=1)
-        return sec
+        title = re.sub(r"<[^>]+>|\s+", " ", (re.search(r'<h1 class="post-title"[^>]*>(.*?)</h1>', html, re.S) or [None, ""])[1]).strip()
+        meta = re.search(r'<div class="post-meta">(.*?)</div>', html, re.S)
+        date = (re.search(r'datetime="([\d-]{10})', meta.group(1)) or [None, ""])[1] if meta else ""
+        who = re.findall(r'<span(?: class="post-author")?>([^<]+)</span>', meta.group(1)) if meta else []
+        url = (re.search(r'<link rel="canonical" href="([^"]+)"', html) or [None, ""])[1]
+        if not (title and date and who and url): return m.group(0)
+        authors = [a.strip() for a in re.split(r",\s*|\s+and\s+|\s*&\s*", who[0]) if a.strip()]
+        text, bib = cite(title, authors, date, url)
+        rest = re.search(r'(?=<hr)', m.group(0)[m.group(0).index("</h2>"):])
+        tail = m.group(0)[m.group(0).index("</h2>") + (rest.start() if rest else len(m.group(0))):] if rest else ""
+        return (m.group(0)[:m.group(0).index("</h2>") + 5] + f'\n<p class="citation-label">{CITE["label"]}</p>\n<p class="citation-ref">{H.escape(text)}</p>\n'
+                f'<div class="language-bibtex highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{H.escape(bib)}</code></pre></div></div>\n' + tail)
     return re.sub(r'<h2 id="citation">.*?(?=<h2 |</div>\s*</article>|$)', citation, html, count=1, flags=re.S)
 
 
@@ -153,4 +166,8 @@ nf = nf.replace(' class="active"', "").replace("<title>Open Positions", "<title>
 # for the link-preview cards (tools/og.py): every page, and the identity's mark as the cards draw it
 (OUT / "system/pages.json").write_text(json.dumps(sorted("" if str(p.parent) == "." else str(p.parent) + "/" for p in PAGES)))
 shutil.copy2(ROOT / "vendor/identity/dist/mark/tufa-mark-ink.svg", OUT / "system/mark-ink.svg")
+for md in sorted((ROOT.parent / "site").glob("_posts/*.mark*")) + sorted((ROOT.parent / "site").glob("_posts/*.md")):
+    for note in re.findall(r"\{%\s*sidenote [^%]*%\}(.*?)\{%\s*endsidenote\s*%\}", md.read_text(), re.S):
+        if note.strip().startswith("["):
+            for problem in check_reference(note): print(f"reference ({md.name}): {problem}: {note.strip()[:80]}")
 print("themes:", THEMES)

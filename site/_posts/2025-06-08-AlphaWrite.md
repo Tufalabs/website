@@ -153,15 +153,15 @@ Alpha Writing demonstrates that creative tasks can benefit from systematic infer
 
 Please cite this work as:
 
-Simonds, Toby, “AlphaWrite: Inference-Time Compute Scaling for Writing.”, Tufa Labs Research, Jun 2025.
+Simonds, T. “AlphaWrite: Inference-Time Compute Scaling for Writing.” Tufa Labs Research, June 2025. https://tufalabs.ai/research/alphawrite/
 
 ```bibtex
 @article{simonds2025alphawrite,
-  title={AlphaWrite: Inference Time Compute Scaling for Writing},
-  author={Simonds, Toby},
-  journal={Tufa Labs Research},
-  year={2025},
-  month={June},
-  url={https://github.com/tamassimonds/AlphaEvolveWritting}
+  title   = {AlphaWrite: Inference-Time Compute Scaling for Writing},
+  author  = {Simonds, Toby},
+  journal = {Tufa Labs Research},
+  year    = {2025},
+  month   = {jun},
+  url     = {https://tufalabs.ai/research/alphawrite/}
 }
 ```
