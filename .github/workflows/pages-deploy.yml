@@ -1,6 +1,9 @@
-# Build the site (the identity's assets, the redesign, the link-preview cards, Jekyll) and publish it from the gh-pages
-# branch: main at its root (tufalabs.ai), every pull request at pr-preview/pr-<n>/ (tufalabs.ai/pr-preview/pr-<n>/, kept out
-# of search engines), with a comment on the pull request linking there; a preview is removed when its pull request closes.
+# Build the site (Jekyll). main deploys to tufalabs.ai. (The redesign, with the identity's assets and the link-preview
+# cards made in CI, is on the v2 branch.)
+# A pull request (into main, or into v2, the redesign's branch) is published as a preview to Tufalabs/website-previews
+# (GitHub Pages, private to the organisation) at pr-preview/pr-<n>/, with a comment on the pull request linking there;
+# the preview is removed when the pull request closes. Writing there needs the secret PREVIEWS_KEY (a deploy key of
+# website-previews with write access); without it the preview step is skipped.
 name: Pages deploy
 
 on:
@@ -10,6 +13,7 @@ on:
   pull_request:
     branches:
       - main
+      - v2
     types: [opened, reopened, synchronize, closed]
   workflow_dispatch:
 
@@ -17,6 +21,10 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   # where this build is served: the root for main, a pull request's own folder for its preview
   BASE: ${{ github.event_name == 'pull_request' && format('/pr-preview/pr-{0}', github.event.number) || '' }}
+  PREVIEWS: urban-carnival-kkllvv1.pages.github.io
+
+permissions:
+  contents: read
 
 concurrency:
   group: pages-deploy-${{ github.ref }}
@@ -33,6 +41,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -40,15 +52,6 @@ jobs:
 
       - name: Verify Bundler version
         run: bundle _4.0.3_ -v
-
-      # what the site takes from the pinned identity (redesign/vendor/identity): its icons and colours, then the
-      # link-preview cards drawn from the pages in a headless Chrome (preinstalled on the runner), so a new identity
-      # release or a new page needs no hand-made images
-      - name: Identity assets and link-preview cards
-        run: |
-          python3 redesign/tools/site_assets.py
-          python3 redesign/build.py
-          python3 redesign/tools/og.py --require
 
       - name: Build site
         run: |
@@ -70,27 +73,12 @@ jobs:
           grep -q "Introducing Tufa Talks" _site/news/index.html
           grep -q "<feed" _site/research/feed.xml
 
-      # a preview: served under its folder (the redesign's pages carry their own root paths), and kept out of search engines
+      # a preview: kept out of search engines
       - name: Preview paths and noindex
         if: github.event_name == 'pull_request'
         run: |
-          grep -rl '/v2-9dcd86d1/' _site/v2-9dcd86d1 | xargs -r sed -i "s|/v2-9dcd86d1/|$BASE/v2-9dcd86d1/|g"
           find _site -name '*.html' -exec sed -i '0,/<head>/s||<head><meta name="robots" content="noindex, nofollow">|' {} +
 
-      # the published root: the custom domain, and the branch served as built (previews included)
-      - name: Domain
-        if: github.event_name != 'pull_request'
-        run: |
-          echo tufalabs.ai > _site/CNAME
-          touch _site/.nojekyll
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: site
-          path: _site
-          include-hidden-files: true
-
-      # (until the Pages source is switched to the gh-pages branch: main also deploys as before)
       - name: Upload GitHub Pages artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
@@ -98,13 +86,18 @@ jobs:
           include-hidden-files: true
           path: _site
 
-  # the direct deployment, kept until an admin switches Settings → Pages → Source to the gh-pages branch; afterwards it
-  # fails harmlessly (continue-on-error) and can be removed
+      - name: Upload the preview
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: _site
+          include-hidden-files: true
+
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
-    continue-on-error: true
     permissions:
       contents: read
       pages: write
@@ -112,50 +105,62 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
 
-  # main: the site at the root of gh-pages (the pull requests' previews under pr-preview/ are left alone)
-  publish:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          name: site
-          path: _site
-      - uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: _site
-          branch: gh-pages
-          clean-exclude: pr-preview/
-
-  # a pull request: its build at pr-preview/pr-<n>/, linked from a comment; taken down when it closes
+  # a pull request: its build at pr-preview/pr-<n>/ in website-previews, linked from a comment; taken down when it closes
   preview:
     if: github.event_name == 'pull_request' && !cancelled() && (needs.build.result == 'success' || github.event.action == 'closed')
     needs: build
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
+    env:
+      HAS_KEY: ${{ secrets.PREVIEWS_KEY != '' }}
+      DIR: pr-preview/pr-${{ github.event.number }}
     steps:
-      - uses: actions/checkout@v5
+      - name: No key yet
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice::No preview: the secret PREVIEWS_KEY (a write deploy key of Tufalabs/website-previews) is not set"
+
+      - name: Check out the previews
+        if: env.HAS_KEY == 'true'
+        uses: actions/checkout@v5
+        with:
+          repository: Tufalabs/website-previews
+          ref: gh-pages
+          ssh-key: ${{ secrets.PREVIEWS_KEY }}
+          path: previews
+
       - uses: actions/download-artifact@v4
-        if: github.event.action != 'closed'
+        if: env.HAS_KEY == 'true' && github.event.action != 'closed'
         with:
           name: site
           path: _site
-      - uses: rossjrw/pr-preview-action@v1
+
+      - name: Publish or remove the preview
+        if: env.HAS_KEY == 'true'
+        run: |
+          cd previews
+          rm -rf "$DIR"
+          if [ "${{ github.event.action }}" != closed ]; then mkdir -p "$DIR" && cp -R ../_site/. "$DIR/"; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -qm "${{ github.event.action == 'closed' && 'Remove' || 'Preview' }} Tufalabs/website#${{ github.event.number }} (${{ github.event.pull_request.head.sha }})"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+
+      - name: Comment
+        if: env.HAS_KEY == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          source-dir: _site
-          preview-branch: gh-pages
-          umbrella-dir: pr-preview
-          pages-base-url: tufalabs.ai
-          comment: true
-          qr-code: false
+          header: preview
+          message: |
+            ${{ github.event.action == 'closed' && 'Preview removed.' || format(':eyes: **Preview** (private to the organisation): https://{0}/{1}/', env.PREVIEWS, env.DIR) }}
+
+            <sub>Built from ${{ github.event.pull_request.head.sha }}; updated on every push.</sub>

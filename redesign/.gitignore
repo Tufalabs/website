@@ -1,7 +1,0 @@
-# build outputs (python3 build.py → out/, deploy.py → dist/, share.py → share/) and third-party page snapshots used as reference
-/out/
-/dist/
-/share/
-/refs/
-__pycache__/
-.DS_Store
