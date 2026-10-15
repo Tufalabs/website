@@ -23,8 +23,30 @@ For news entries, `title`, `date`, `author`, and `description` are usually enoug
 - Set `sidenotes: true` in front matter to opt a post into the wider layout that supports custom sidenotes and margin notes.
 - See [site/_posts/2000-01-01-sidenote-demo.markdown](site/_posts/2000-01-01-sidenote-demo.markdown) for a compact example of the Liquid tag syntax and usage.
 
+## Design: the identity
+The site is built on the Tufa Labs identity ([Tufalabs/identity](https://github.com/Tufalabs/identity)): its colours,
+faces, type scale, grid, motion, base styles, components (tables, callouts, citations, code) and the animated mark. A
+tagged release of it is pinned in `identity/`; nothing there is edited by hand.
+
+- Take a release: `python3 tools/sync_identity.py v0.4.2`, then `python3 tools/site_assets.py`. The second installs it
+  into the site: the styles into `site/_includes/identity/`, the creature into `site/assets/js/`, the header's mark,
+  the icons and the values the templates read (`site/_data/identity.json`). CI runs it before every build.
+- The site's own styles are `site/_includes/system.css`; Jekyll joins them with the identity's into
+  `/assets/css/system.css`. Lengths, sizes, colours and durations come from the identity's tokens
+  (`var(--line)`, `var(--t2)`, `var(--ink)`, `var(--tau)`): use those rather than new numbers.
+- The scripts are in `site/assets/js/` (the header and menu, the page router (swup), the section index, the figures); the
+  head loads them in the order of `site/_data/scripts.yml`.
+- Callouts and citations come from Markdown: a blockquote opening with a bold **Label: statement** is a callout, and a
+  "Please cite this work as" section takes the citation's form (`site/_plugins/components.rb`). References to other
+  work go in margin notes as `[Title](link) (Authors, Year).`
+- Link-preview cards (`site/assets/og/`) are drawn from the built pages by `tools/og.py` (CI, on main).
+
 ## Deploy
-- GitHub Pages automatically deploys the site through the `Pages deploy` GitHub Actions workflow.
+- Pushing to `main` builds the site and deploys it to tufalabs.ai (the `Pages deploy` workflow).
+- Every pull request (into `main` or `v2`) is built the same way and previewed at
+  `https://urban-carnival-kkllvv1.pages.github.io/pr-preview/pr-<n>/` (Tufalabs/website-previews, private to the
+  organisation); a comment on the pull request links there and follows each push, and the preview is removed when the
+  pull request closes.
 
 ## Local build and test
 1. Install `just` if it is not installed already:

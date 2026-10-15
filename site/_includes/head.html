@@ -1,10 +1,16 @@
     <meta charset="UTF-8">
+    {%- comment -%} the ground from the first byte (no flash of another colour between pages), light or dark as last chosen {%- endcomment %}
+    <meta name="color-scheme" content="light"><style>html{background:{{ site.data.identity.paper }};color-scheme:light}html[data-theme="dark"]{background:{{ site.data.identity.paper_dark }};color-scheme:dark}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% if page.noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
     <title>{% if page.meta_title %}{{ page.meta_title }}{% elsif page.title %}{{ page.title }} | {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
-    <link rel="stylesheet" href="{{ '/assets/css/syntax.css' | relative_url }}?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ site.data.identity.google_fonts | escape }}">
+    {%- comment -%} before the first paint: the menu as a menu, the build-up held until the page has loaded (1.5 s at most), its
+    waits shorter when moving on within the site, the theme last chosen {%- endcomment %}
+    <script>var d=document.documentElement;d.classList.add("js-nav","is-holding");var rel=function(){d.classList.remove("is-holding")};addEventListener("load",rel);setTimeout(rel,1500);try{var ins=+sessionStorage.getItem("tufa-inside");if(ins&&Date.now()-ins<15000)d.style.setProperty("--bt","0.35");if(localStorage.getItem("tufa-theme")==="dark"){d.setAttribute("data-theme","dark");document.querySelector('meta[name="color-scheme"]').content="dark"}}catch(e){}</script>
+    {%- assign v = site.time | date: '%Y%m%d%H%M%S' %}
+    <link rel="stylesheet" href="{{ '/assets/css/system.css' | relative_url }}?v={{ v }}">
     {%- comment -%} icons: .ico for old browsers, square PNGs in multiples of 48px (what Google shows in results), a 180px touch icon on the page colour, a manifest for Android {%- endcomment %}
     <link rel="icon" href="{{ '/favicon.ico' | relative_url }}" sizes="any">
     <link rel="icon" type="image/png" sizes="48x48" href="{{ '/assets/icons/favicon-48.png' | relative_url }}">
@@ -19,4 +25,8 @@
     {% if page.math %}
     {% include mathjax.html %}
     {% endif %}
-    <script src="{{ '/assets/js/logo.js' | relative_url }}" defer></script>
+    {%- comment -%} the scripts, in the order they build on each other: the section index, the creature, the page's parts, the
+    figures and the home page's, then the router (swup) that moves between pages without reloading {%- endcomment %}
+    {%- for js in site.data.scripts %}
+    <script src="{{ js | prepend: '/assets/js/' | relative_url }}?v={{ v }}" defer></script>
+    {%- endfor %}
