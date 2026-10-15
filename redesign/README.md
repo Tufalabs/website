@@ -60,6 +60,12 @@ Pushing to `main` runs the `Pages deploy` workflow (`.github/workflows/pages-dep
 and colours into the live site, draws the link-preview cards, builds the Jekyll site (the redesign folder included) and
 publishes it. It takes about a minute; the site caches pages for up to 10 minutes.
 
+### Pull requests
+
+Every pull request is built like main and published at `tufalabs.ai/pr-preview/pr-<n>/` (kept out of search engines);
+a comment on the pull request links there and follows each push, and the preview is removed when the pull request
+closes. main is published from the `gh-pages` branch's root.
+
 ### Change content (a post, a team member, a page)
 
 Content lives in the Jekyll site (`site/`, see the repository README). The redesign reads the *published* pages, so:

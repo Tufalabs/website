@@ -1,3 +1,6 @@
+# Build the site (the identity's assets, the redesign, the link-preview cards, Jekyll) and publish it from the gh-pages
+# branch: main at its root (tufalabs.ai), every pull request at pr-preview/pr-<n>/ (tufalabs.ai/pr-preview/pr-<n>/, kept out
+# of search engines), with a comment on the pull request linking there; a preview is removed when its pull request closes.
 name: Pages deploy
 
 on:
@@ -7,13 +10,13 @@ on:
   pull_request:
     branches:
       - main
+    types: [opened, reopened, synchronize, closed]
   workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
-permissions:
-  contents: read
+  # where this build is served: the root for main, a pull request's own folder for its preview
+  BASE: ${{ github.event_name == 'pull_request' && format('/pr-preview/pr-{0}', github.event.number) || '' }}
 
 concurrency:
   group: pages-deploy-${{ github.ref }}
@@ -21,6 +24,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,9 +32,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -52,7 +53,7 @@ jobs:
       - name: Build site
         run: |
           bundle _4.0.3_ exec jekyll clean --config site/_config.yml --source site --destination _site
-          bundle _4.0.3_ exec jekyll build --config site/_config.yml --source site --destination _site
+          bundle _4.0.3_ exec jekyll build --config site/_config.yml --source site --destination _site --baseurl "$BASE"
 
       - name: Check generated files
         run: |
@@ -69,25 +70,65 @@ jobs:
           grep -q "Introducing Tufa Talks" _site/news/index.html
           grep -q "<feed" _site/research/feed.xml
 
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          include-hidden-files: true
-          path: _site
+      # a preview: served under its folder (the redesign's pages carry their own root paths), and kept out of search engines
+      - name: Preview paths and noindex
+        if: github.event_name == 'pull_request'
+        run: |
+          grep -rl '/v2-9dcd86d1/' _site/v2-9dcd86d1 | xargs -r sed -i "s|/v2-9dcd86d1/|$BASE/v2-9dcd86d1/|g"
+          find _site -name '*.html' -exec sed -i '0,/<head>/s||<head><meta name="robots" content="noindex, nofollow">|' {} +
 
-  deploy:
+      # the published root: the custom domain, and the branch served as built (previews included)
+      - name: Domain
+        if: github.event_name != 'pull_request'
+        run: |
+          echo tufalabs.ai > _site/CNAME
+          touch _site/.nojekyll
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: _site
+          include-hidden-files: true
+
+  # main: the site at the root of gh-pages (the pull requests' previews under pr-preview/ are left alone)
+  publish:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
+      contents: write
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: _site
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: _site
+          branch: gh-pages
+          clean-exclude: pr-preview/
+
+  # a pull request: its build at pr-preview/pr-<n>/, linked from a comment; taken down when it closes
+  preview:
+    if: github.event_name == 'pull_request' && !cancelled() && (needs.build.result == 'success' || github.event.action == 'closed')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        if: github.event.action != 'closed'
+        with:
+          name: site
+          path: _site
+      - uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: _site
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          pages-base-url: tufalabs.ai
+          comment: true
+          qr-code: false
