@@ -39,10 +39,12 @@ pre code { background: none; padding: 0; }
     container-type: inline-size;
 }
 .home-content > *, .page > .page-content > *, .post-content > * { grid-column: 4 / 10; min-width: 0; }
-/* the margin rule: a vertical hairline in the gutter between label and text */
+/* the margin rule: a vertical hairline in the gutter between label and text, a quarter of the gutter left of its middle,
+   so the text keeps ¾ of a gutter from it and the label (padded by a quarter) half of one */
 .home-content, .page > .page-content, .post-content, .post-item, .team-member {
-    background: linear-gradient(var(--hair), var(--hair)) no-repeat calc((100% - 11 * var(--gap)) / 4 + 2.5 * var(--gap)) 0 / 1px 100%;
+    background: linear-gradient(var(--hair), var(--hair)) no-repeat calc((100% - 11 * var(--gap)) / 4 + 2.25 * var(--gap)) 0 / 1px 100%;
 }
+.home-content > h2, .page > .page-content > h2:not(.post-list-heading), .post-content > h2 { padding-right: calc(var(--gap) / 4); }
 /* ── sections: label in the margin, separated by space ────────────────── */
 /* A section starts two lines below the last; its label and first block share a top line. */
 .home-content > h2, .page > .page-content > h2:not(.post-list-heading), .post-content > h2 { grid-column: 1 / 4; margin-top: var(--s2); align-self: start; }
