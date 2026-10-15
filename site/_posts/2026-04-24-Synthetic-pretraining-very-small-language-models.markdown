@@ -164,15 +164,16 @@ This work is a first step toward understanding how to maximize token utility and
 
 Please cite this work as:
 
-Saponati, Matteo, "Synthetic pretraining for very small reasoning models.", Tufa Labs Research, Apr 2026.
+Saponati, M. “Synthetic pretraining for very small reasoning models.” Tufa Labs Research, April 2026. https://tufalabs.ai/research/enhancing-reasoning-small-language-models/
 
 ```bibtex
-@article{saponati2026enhancingreasoning,
-  author = {Matteo Saponati},
-  title = {Synthetic pretraining for very small reasoning models.},
+@article{saponati2026synthetic,
+  title   = {Synthetic pretraining for very small reasoning models},
+  author  = {Saponati, Matteo},
   journal = {Tufa Labs Research},
-  year = {2026},
-  note = {https://tufalabs.ai/research/enhancing-reasoning-small-language-models/},
+  year    = {2026},
+  month   = {apr},
+  url     = {https://tufalabs.ai/research/enhancing-reasoning-small-language-models/}
 }
 ```
 

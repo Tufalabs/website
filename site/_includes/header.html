@@ -1,3 +1,4 @@
+<a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header">
     <div class="container">
         <div class="header-content">
@@ -9,7 +10,7 @@
                 <ul>
                     {% for item in site.data.navigation.header %}
                     <li>
-                        <a href="{{ item.url | relative_url }}"{% if item.id == page.nav_id %} class="active"{% endif %}>{{ item.label }}</a>
+                        <a href="{{ item.url | relative_url }}"{% if item.id == page.nav_id %} class="active" aria-current="page"{% endif %}>{{ item.label }}</a>
                     </li>
                     {% endfor %}
                 </ul>

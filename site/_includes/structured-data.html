@@ -1,0 +1,17 @@
+{%- comment -%} The organisation behind every page, for search engines (schema.org JSON-LD). Facts as stated on the site:
+the legal name and registered address from the imprint, the logo, the site description, the lab's GitHub. jekyll-seo-tag
+describes the page itself (WebSite, WebPage, BlogPosting); this names who publishes it. {%- endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ResearchOrganization",
+  "@id": "{{ site.url }}/#organization",
+  "name": "{{ site.title }}",
+  "legalName": "Tufa Labs AG",
+  "url": "{{ site.url }}/",
+  "logo": "{{ site.url }}/assets/icons/favicon-512.png",
+  "description": {{ site.description | jsonify }},
+  "address": { "@type": "PostalAddress", "streetAddress": "Baarerstrasse 8", "postalCode": "6300", "addressLocality": "Zug", "addressCountry": "CH" },
+  "sameAs": ["https://github.com/Tufalabs"]
+}
+</script>

@@ -1,0 +1,17 @@
+---
+layout: null
+sitemap: false
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{%- assign pages = site.html_pages | where_exp: "p", "p.noindex != true" | where_exp: "p", "p.sitemap != false" %}
+{%- for p in pages %}
+  <url><loc>{{ p.url | absolute_url }}</loc></url>
+{%- endfor %}
+{%- for p in site.posts %}{% unless p.external_link or p.noindex %}
+  <url><loc>{{ p.url | absolute_url }}</loc><lastmod>{{ p.last_modified_at | default: p.date | date_to_xmlschema }}</lastmod></url>
+{%- endunless %}{% endfor %}
+{%- for p in site.news %}{% unless p.noindex %}
+  <url><loc>{{ p.url | absolute_url }}</loc><lastmod>{{ p.last_modified_at | default: p.date | date_to_xmlschema }}</lastmod></url>
+{%- endunless %}{% endfor %}
+</urlset>
