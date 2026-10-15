@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate per-theme copies of the mirrored live pages with the stylesheet swapped (local preview)."""
-import re, shutil, pathlib, time, json
+import re, shutil, pathlib, time, json, datetime
 ROOT = pathlib.Path(__file__).parent
 LIVE, OUT = ROOT / "live", ROOT / "out"
 STAMP = int(time.time())
@@ -71,7 +71,8 @@ def seo(html, rel):
 def components(html):
     """The identity's content components, from the posts' Markdown output: a blockquote opening with a bold "Label: statement"
     (or "Label - statement") is a callout (label, statement, reasoning); a citation section's "Please cite this work as"
-    and the reference that follows take the citation's classes; no highlighter colours (code is set in the inks)."""
+    and the reference that follows take the citation's classes; a Luma event card is a callout (what, when and where, the
+    way to Luma) with its cover in the aside; no highlighter colours (code is set in the inks)."""
     html = re.sub(r'\s*<link[^>]*assets/css/syntax\.css[^>]*>', '', html)
     def callout(m):
         body = m.group(1)
@@ -84,6 +85,30 @@ def components(html):
         return (f'<blockquote class="callout">' + (f'<span class="callout-label">{label}</span>' if label else '')
                 + f'<p class="callout-title">{title}</p>' + body[head.end():] + '</blockquote>')
     html = re.sub(r'<blockquote>(.*?)</blockquote>', callout, html, flags=re.S)
+    # the event card: an event over by the build's date says so and links to its page instead of registering; the cover
+    # comes from Luma's image service at the aside's size (12ℓ, twice for sharp screens) instead of the full upload
+    def event(m):
+        card = m.group(0)
+        get = lambda pat: (re.search(pat, card, re.S) or [None, ""])[1].strip()
+        href, src = get(r'href="([^"]+)"'), get(r'<img [^>]*src="([^"]+)"')
+        title, desc = get(r'external-event-card-title"><a [^>]*>(.*?)</a>'), get(r'external-event-card-description">(.*?)</p>')
+        when = re.match(r'([A-Z][a-z]+ \d{1,2}, \d{4})(?: · (\d[^·]*?))?(?: · (.+))?$', get(r'external-event-card-meta">(.*?)</p>'), re.S)
+        if not (href and title and when): return card
+        day = datetime.datetime.strptime(when.group(1), "%B %d, %Y").date()
+        past = day < datetime.date.today()
+        hours = re.sub(r'(\d)-(\d)', r'\1–\2', when.group(2) or "")   # a range takes the en dash: 18:00–20:00
+        cover = re.sub(r'^https://images\.lumacdn\.com/(?:cdn-cgi/image/[^/]+/)?', 'https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,width=288,height=288/', src)
+        out = f'href="{href}" target="_blank" rel="noopener"'
+        return (f'<div class="event">\n<div class="callout">'
+                f'<span class="callout-label">{"Past event" if past else "Luma event"}</span>'
+                f'<p class="callout-title"><a {out}>{title}</a></p>'
+                f'<p class="event-when"><time datetime="{day.isoformat()}">{when.group(1)}{" · " + hours if hours else ""}</time>'
+                + (f' <span>{when.group(3)}</span>' if when.group(3) else '') + '</p>'
+                + (f'<p>{desc}</p>' if desc else '')
+                + f'<a class="read-more" {out}>{"Event page on Luma" if past else "Register on Luma"}</a></div>\n'
+                + (f'<a class="event-cover" {out} tabindex="-1" aria-hidden="true"><img src="{cover}" alt="" width="288" height="288" loading="lazy" decoding="async"></a>\n' if src else '')
+                + '</div>')
+    html = re.sub(r'<div class="external-event-card">.*?</div>\s*</div>', event, html, flags=re.S)
     # the citation section, written from the post itself (title, byline, date, address) in the identity's format
     def citation(m):
         title = re.sub(r"<[^>]+>|\s+", " ", (re.search(r'<h1 class="post-title"[^>]*>(.*?)</h1>', html, re.S) or [None, ""])[1]).strip()
