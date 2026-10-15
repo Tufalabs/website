@@ -90,6 +90,33 @@ jobs:
           path: _site
           include-hidden-files: true
 
+      # (until the Pages source is switched to the gh-pages branch: main also deploys as before)
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          include-hidden-files: true
+          path: _site
+
+  # the direct deployment, kept until an admin switches Settings → Pages → Source to the gh-pages branch; afterwards it
+  # fails harmlessly (continue-on-error) and can be removed
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
   # main: the site at the root of gh-pages (the pull requests' previews under pr-preview/ are left alone)
   publish:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
