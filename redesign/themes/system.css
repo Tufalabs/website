@@ -564,8 +564,6 @@ a:hover { text-decoration-thickness: 2px; }
 .site-nav a.active::after { width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin-left: calc(var(--u) * -2); bottom: calc(var(--u) * -2); }
 .nav-mark { left: calc(var(--u) * -2); width: calc(var(--u) * 4) !important; height: calc(var(--u) * 4); margin-top: calc(var(--u) * -2); }
 .theme-toggle::before { width: calc(var(--u) * 8); height: calc(var(--u) * 8); margin: calc(var(--u) * -4) 0 0 calc(var(--u) * -4); border-width: var(--u); }
-:is(.page-content, .post-content, .home-content) ul:not([class]) > li::before { width: calc(var(--u) * 2); height: calc(var(--u) * 2); left: calc(-1 * var(--s0) - var(--u)); top: calc(var(--line) / 2 - var(--u)); }
-:is(.page-content, .post-content, .home-content) ul:not([class]) ul:not([class]) > li::before { width: var(--u); height: var(--u); left: calc(-1 * var(--s0) - var(--u) / 2); top: calc(var(--line) / 2 - var(--u) / 2); }
 /* rules page: the numbers as controls, the colours as swatches */
 .rules-numbers input[type="range"] { width: 100%; accent-color: var(--ink); margin: 0; }
 .rules-numbers output { font: 400 var(--t-1) / 18px var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
