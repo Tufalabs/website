@@ -103,14 +103,28 @@ pre code { background: none; padding: 0; }
 .post-image-grid img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; margin: 0; }
 body:not(.post--sidenotes) .post-content > .post-figure,
 body:not(.post--sidenotes) .post-content > table { grid-column: 4 / 13; }
-.post-content table { display: block; overflow-x: auto; border-collapse: collapse; font-size: 0.875rem; line-height: var(--line); font-variant-numeric: tabular-nums; }
-.post-content th, .post-content td { text-align: left; vertical-align: top; white-space: nowrap; padding: var(--s-1) var(--s1) var(--s-1) 0; border-bottom: 1px solid var(--hair); }
-.post-content th { font-weight: 500; }
-.post-content tr:last-child td { border-bottom: 0; }
-.post-content blockquote { margin-left: 0; padding-left: var(--s1); border-left: 1px solid var(--ink); color: var(--ink-2); }
-.research-callout { margin: var(--s1) 0; }
-.research-callout__label { color: var(--ink-2); text-transform: uppercase; }
-.research-callout p { margin: 0; font-size: var(--t1); line-height: var(--lh-text); }
+/* ── content components: one table, one callout, one citation, one code block, wherever text is set (the website's
+   pages and posts, the docs) ── */
+/* the table: the head in the label voice on the tint with a half-tone rule under it; hairlines between rows and, unbroken
+   from head to foot, between columns; figures tabular; the body half a step below text, on the line */
+:is(.post-content, .page-content, .docs) table { display: block; overflow-x: auto; border-collapse: collapse; font-size: var(--t-half); line-height: var(--line); font-variant-numeric: tabular-nums; }
+:is(.post-content, .page-content, .docs) :is(th, td) { text-align: left; vertical-align: top; padding: calc(var(--line) / 4) var(--s0); border-bottom: 1px solid var(--hair); }
+:is(.post-content, .page-content, .docs) :is(th, td) + :is(th, td) { border-left: 1px solid var(--hair); }
+:is(.post-content, .page-content, .docs) thead th { font: 400 var(--t-1) / var(--line) var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink-3); background: var(--tint); border-bottom: 1px solid color-mix(in oklch, var(--ink) 50%, var(--bg)); }
+:is(.post-content, .page-content, .docs) tbody tr:last-child td { border-bottom: 0; }
+.post-content td { white-space: nowrap; }   /* a post's data table scrolls rather than wraps its figures */
+/* the callout (a takeaway, a research question, a note): an inset block on a rule; its label in the label voice, the
+   statement in 600, the reasoning in ink 2 */
+:is(.post-content, .page-content, .docs) blockquote, .callout, .research-callout { margin: var(--s1) 0 var(--s2); padding: calc(var(--line) / 4) 0 calc(var(--line) / 4) var(--s1); border-left: 1px solid var(--ink); color: var(--ink-2); }
+:is(.callout-label, .research-callout__label) { display: block; font: 400 var(--t-1) / var(--line) var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink-3); }
+:is(.callout-title, .research-callout p) { margin: 0 0 calc(var(--line) / 2); font: 600 var(--t0) / var(--line) var(--sans); color: var(--ink); }
+:is(.post-content, .page-content, .docs) blockquote > :last-child, .research-callout > :last-child { margin-bottom: 0; }
+/* the citation: what to cite in the label voice, the reference as text, then BibTeX */
+.citation-label { font: 400 var(--t-1) / var(--line) var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink-3); margin-bottom: calc(var(--line) / 4); }
+.citation-ref { color: var(--ink); }
+/* code: in the inks only (no highlighter colours); comments recede */
+.highlight :not(pre) { color: inherit; background: none; font-style: normal; font-weight: inherit; }   /* the box keeps the tint */
+.highlight :is(.c, .c1, .cm, .cs, .cp) { color: var(--ink-3); }
 /* sidenotes live in the aside columns 10–12 */
 body.post--sidenotes .post-content { counter-reset: sidenote-counter; }
 body.post--sidenotes label.margin-toggle { cursor: pointer; }

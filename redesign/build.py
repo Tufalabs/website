@@ -66,9 +66,32 @@ def seo(html, rel):
         html = html.replace("</main>", "</main>\n" + FOOTER, 1)
     return access(html)
 
+def components(html):
+    """The identity's content components, from the posts' Markdown output: a blockquote opening with a bold "Label: statement"
+    (or "Label - statement") is a callout (label, statement, reasoning); a citation section's "Please cite this work as"
+    and the reference that follows take the citation's classes; no highlighter colours (code is set in the inks)."""
+    html = re.sub(r'\s*<link[^>]*assets/css/syntax\.css[^>]*>', '', html)
+    def callout(m):
+        body = m.group(1)
+        head = re.match(r'\s*<p>((?:<strong>.*?</strong>\s*)+)</p>', body, re.S)
+        if not head: return m.group(0)
+        text = re.sub(r'</?strong>', '', head.group(1)).strip()
+        lab = re.match(r'([^:\-–]{2,40}?)\s*(?::|\s[-–]\s)\s*(.+)$', text, re.S)
+        label, title = (lab.group(1).strip(), lab.group(2).strip()) if lab and len(lab.group(1).split()) <= 4 else ('', text)
+        title = title[:1].upper() + title[1:]   # a statement starts a sentence once its label is set apart
+        return (f'<blockquote class="callout">' + (f'<span class="callout-label">{label}</span>' if label else '')
+                + f'<p class="callout-title">{title}</p>' + body[head.end():] + '</blockquote>')
+    html = re.sub(r'<blockquote>(.*?)</blockquote>', callout, html, flags=re.S)
+    def citation(m):
+        sec = re.sub(r'<p>\s*(Please cite[^<]*?):?\s*</p>(\s*)<p>', r'<p class="citation-label">\1</p>\2<p class="citation-ref">', m.group(0), count=1)
+        return sec
+    return re.sub(r'<h2 id="citation">.*?(?=<h2 |</div>\s*</article>|$)', citation, html, count=1, flags=re.S)
+
+
 def render(theme, html):
     if theme == "system" and 'id="content"' not in html:   # every page's content is the router's container (and the skip link's target)
         html = re.sub(r'<main class="container( post-container)?">', lambda m: f'<main class="container{m.group(1) or ""}" id="content" tabindex="-1">', html, count=1)
+    if theme == "system": html = components(html)
     if theme == "system": html = prerender(re.sub(r'\s*<script[^>]*assets/js/logo\.js[^>]*></script>', '', html))   # the menu button, the page name and statement sizing, in the HTML: the first frame has the final layout (and no more logo.js: the creature replaces its wobble)
     if theme != "current":
         html = FONTS.sub("", html)

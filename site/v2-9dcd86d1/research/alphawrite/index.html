@@ -4,8 +4,7 @@
     <meta charset="UTF-8"><meta name="color-scheme" content="light"><style>html{background:#fdf4ec;color-scheme:light}html[data-theme="dark"]{background:#140d06;color-scheme:dark}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AlphaWrite: Inference-Time Compute Scaling for Writing | Tufa Labs</title>
-    <link rel="stylesheet" href="/v2-9dcd86d1/themes/system.css?v=1791990869">
-    <link rel="stylesheet" href="/assets/css/syntax.css?v=20260918172832">
+    <link rel="stylesheet" href="/v2-9dcd86d1/themes/system.css?v=1792051739">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="48x48" href="/assets/icons/favicon-48.png">
     <link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96.png">
@@ -47,15 +46,15 @@
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&amp;family=JetBrains+Mono:wght@400;500&amp;display=block"><script>document.documentElement.classList.add("js-nav");var d=document.documentElement;d.classList.add("is-holding");var rel=function(){d.classList.remove("is-holding")};addEventListener("load",rel);setTimeout(rel,1500);try{var ins=+sessionStorage.getItem("tufa-inside");if(ins&&Date.now()-ins<15000)d.style.setProperty("--bt","0.35");}catch(e){}var off=new URLSearchParams(location.search).get("off");try{if(off!==null)sessionStorage.setItem("tufa-off",off);else off=sessionStorage.getItem("tufa-off");}catch(e){}if(off)off.split(",").forEach(function(k){if(k)d.classList.add("off-"+k);});if(off){var ks=off.split(",");if(ks.indexOf("css")>=0)document.querySelectorAll('link[rel="stylesheet"]:not([href*="fonts.googleapis"])').forEach(function(l){l.disabled=true;l.remove();});if(ks.indexOf("fonts")>=0)document.querySelectorAll('link[href*="fonts.g"]').forEach(function(l){l.remove();});if(ks.indexOf("scheme")>=0){var m=document.querySelector('meta[name="color-scheme"]');if(m)m.remove();var st=document.querySelector("head > style");if(st&&/html\{background/.test(st.textContent))st.remove();}}try{var th=localStorage.getItem("tufa-theme");if(th==="dark"){d.setAttribute("data-theme","dark");var cm=document.querySelector('meta[name="color-scheme"]');if(cm)cm.content="dark";}var tr=JSON.parse(localStorage.getItem("tufa-rules")||"null");if(tr){var U={line:"px",u:"px",tau:"ms",ratio:"",h:"",tc:""};for(var k in tr)if(k in U)d.style.setProperty("--"+k,tr[k]+U[k]);if(tr.curve)d.style.setProperty("--ease","cubic-bezier("+tr.curve+")");var gf=function(n,w,b){var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family="+n.replace(/ /g,"+")+":wght@"+w+"&display=block";document.head.appendChild(l);};if(tr.font){gf(tr.font,tr.fontw||"400;500;600");var ff='"'+tr.font+'", '+(tr.serif?"Georgia, serif":"'Helvetica Neue', Arial, sans-serif");d.style.setProperty("--sans",ff);d.style.setProperty("--display",ff);}if(tr.mono){gf(tr.mono,tr.monow||"400;500",1);d.style.setProperty("--mono",'"'+tr.mono+'", ui-monospace, Menlo, monospace');}}if(localStorage.getItem("tufa-motion")==="off")document.documentElement.classList.add("no-motion")}catch(e){}</script>
-<script src="/v2-9dcd86d1/themes/sections.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/creature.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/site.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/figures.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/hero.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/vendor/swup.umd.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/vendor/swup-preload.umd.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/vendor/swup-scroll.umd.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/router.js?v=1791990869" defer></script><meta name="robots" content="noindex, nofollow"></head>
+<script src="/v2-9dcd86d1/themes/sections.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/creature.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/site.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/figures.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/hero.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup.umd.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup-preload.umd.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup-scroll.umd.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/router.js?v=1792051739" defer></script><meta name="robots" content="noindex, nofollow"></head>
 <body class="post-page">
     <a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header">
@@ -182,15 +181,15 @@
 
 <p>We further demonstrate the scalability of these methods by distilling the enhanced stories back into the base model, creating a stronger foundation for subsequent rounds of Alpha Writing. This recursive cycle—where improved outputs become training data for an enhanced model that can generate even better stories—offers promising potential for self-improving writing models.</p>
 
-<h1 id="methodology">Methodology</h1>
+<h2 id="methodology">Methodology</h2>
 
 <p><img src="/assets/posts/alphawrite/AlphaWriteProcess.png" alt="image.png" /></p>
 
-<h2 id="overview">Overview</h2>
+<h3 id="overview">Overview</h3>
 
 <p>Alpha Writing employs an evolutionary approach to improve story quality through iterative generation and selection. The process consists of four main stages: (1) diverse initial story generation, (2) pairwise comparison using Elo rankings, (3) evolutionary refinement of top-performing stories, and (4) repetition of stages (2) and (3) across multiple generations to progressively enhance narrative quality.</p>
 
-<h2 id="initial-story-generation">Initial Story Generation</h2>
+<h3 id="initial-story-generation">Initial Story Generation</h3>
 
 <p>To establish a diverse starting population, we generate a large corpus of initial stories with systematic variation. Each story is generated with two randomized parameters:</p>
 
@@ -201,7 +200,7 @@
 
 <p>This approach ensures broad exploration of the creative space and prevents early convergence on a single narrative style or structure.</p>
 
-<h2 id="judging-and-elo-ranking">Judging and Elo Ranking</h2>
+<h3 id="judging-and-elo-ranking">Judging and Elo Ranking</h3>
 
 <p>Stories are evaluated through pairwise comparisons using an LLM judge. The judge is provided with:</p>
 
@@ -213,7 +212,7 @@
 
 <p>The rubric improves consistency in judgments by providing clear evaluation criteria. Based on these pairwise comparisons, we update Elo ratings for each story, creating a dynamic ranking system that captures relative quality differences. We use base Elo of 1200 and K-factor of 32. For our experiments we use the same model as the judge and generator</p>
 
-<h2 id="story-evolution">Story Evolution</h2>
+<h3 id="story-evolution">Story Evolution</h3>
 
 <p>After establishing rankings through pairwise comparisons, we implement an evolutionary process to iteratively improve story quality:</p>
 
@@ -227,7 +226,7 @@
 
 <p><strong>5. Iteration</strong>: Repeat across generations, allowing successful elements to propagate</p>
 
-<h2 id="evaluation-protocol">Evaluation Protocol</h2>
+<h3 id="evaluation-protocol">Evaluation Protocol</h3>
 
 <p>Evaluating creative output presents significant challenges due to subjective preferences and high variance in story content. Our evaluation approach includes:</p>
 
@@ -245,7 +244,7 @@
 
 <p>We found quality differences were subtle in opening lines but became pronounced in longer stories, where structural coherence and narrative flow showed clear improvement. However, evaluating these stories remains genuinely difficult—they diverge so dramatically in theme, style, and approach that determining which is “better” becomes largely subjective and dependent on reader preference.</p>
 
-<h3 id="results">Results</h3>
+<h2 id="results">Results</h2>
 
 <p>For evaluation we used Llama 3.1 8B and generated 60 initial stories, selected the top 5 performers, and created 5 variants of each. This evolution process was repeated for 5 generations</p>
 
@@ -262,11 +261,11 @@
 
 <p><img src="/assets/posts/alphawrite/Demo.png" alt="image.png" /></p>
 
-<h1 id="recursive-self-improvement-through-alphawrite-distillation">Recursive Self-Improvement Through AlphaWrite Distillation</h1>
+<h2 id="recursive-self-improvement-through-alphawrite-distillation">Recursive Self-Improvement Through AlphaWrite Distillation</h2>
 
 <p>An intriguing possibility emerges when considering inference scaling techniques like AlphaEvolve or AlphaWrite: could we create a self-improving loop through using inference scaling to improve results then distill back down and repeat?</p>
 
-<h2 id="the-core-concept">The Core Concept</h2>
+<h3 id="the-core-concept">The Core Concept</h3>
 
 <p>The process would work as follows:</p>
 
@@ -276,7 +275,7 @@
   <li>Reapply AlphaWrite techniques to this improved base, continuing the cycle</li>
 </ol>
 
-<h2 id="experiments">Experiments</h2>
+<h3 id="experiments">Experiments</h3>
 
 <p>We explored this concept through preliminary testing:</p>
 
@@ -289,13 +288,13 @@
 
 <p>This recursive approach theoretically enables continuous self-improvement, where each iteration builds upon the strengths of the previous generation, potentially leading to increasingly sophisticated capabilities without additional human-generated training data.</p>
 
-<h2 id="results-1">Results</h2>
+<h3 id="results-1">Results</h3>
 
 <p><img src="/assets/posts/alphawrite/LLama3.1Results.png" alt="image.png" /></p>
 
 <p>We observed a 56% (95 % CI 47 % – 65 %) preference rate over the base model. While this improvement falls within the statistical significance range for this experiment, collecting sufficient preference data to achieve statistical significance would be prohibitively expensive.</p>
 
-<h2 id="limitations">Limitations</h2>
+<h3 id="limitations">Limitations</h3>
 
 <p><strong>Prompt Sensitivity</strong>: The quality and diversity of generated stories are highly dependent on the specific prompts used. Our choice of author styles and themes introduces inherent bias that may favor certain narrative approaches over others. Different prompt sets could yield substantially different results.</p>
 
@@ -303,7 +302,7 @@
 
 <p><strong>Convergence Risks</strong>: Extended evolution could lead to homogenization, where stories converge on particular “winning” formulas rather than maintaining true creative diversity. We observed early signs of this in later generations.</p>
 
-<h3 id="beyond-creative-writing">Beyond Creative Writing</h3>
+<h2 id="beyond-creative-writing">Beyond Creative Writing</h2>
 
 <p>The Alpha Writing framework extends far beyond narrative fiction. We’ve already employed it in drafting sections of this paper, demonstrating its versatility across writing domains. The approach can be adapted for:</p>
 
@@ -315,13 +314,17 @@
 
 <p>This positions Alpha Writing not just as a tool for end-users, but as potentially a fundamental technique for advancing the writing capabilities of AI systems themselves.</p>
 
-<h3 id="conclusion">Conclusion</h3>
+<h2 id="conclusion">Conclusion</h2>
 
 <p>Alpha Writing demonstrates that creative tasks can benefit from systematic inference-time compute scaling through evolutionary approaches. Our results show consistent improvements over both baseline generation and sequential prompting methods, suggesting that the apparent intractability of scaling compute for creative domains may be addressable through appropriate algorithmic frameworks.</p>
 
 <p><strong>Code Repository</strong>: <a href="https://github.com/tamassimonds/AlphaEvolveWritting">AlphaWrite on GitHub</a></p>
 
-<h3 id="citation">Citation</h3>
+<h2 id="citation">Citation</h2>
+
+<p class="citation-label">Please cite this work as</p>
+
+<p class="citation-ref">Simonds, Toby, “AlphaWrite: Inference-Time Compute Scaling for Writing.”, Tufa Labs Research, Jun 2025.</p>
 
 <div class="language-bibtex highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">@article</span><span class="p">{</span><span class="nl">simonds2025alphawrite</span><span class="p">,</span>
   <span class="na">title</span><span class="p">=</span><span class="s">{AlphaWrite: Inference Time Compute Scaling for Writing}</span><span class="p">,</span>

@@ -4,8 +4,7 @@
     <meta charset="UTF-8"><meta name="color-scheme" content="light"><style>html{background:#fdf4ec;color-scheme:light}html[data-theme="dark"]{background:#140d06;color-scheme:dark}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Synthetic pretraining for very small reasoning models. | Tufa Labs</title>
-    <link rel="stylesheet" href="/v2-9dcd86d1/themes/system.css?v=1791990869">
-    <link rel="stylesheet" href="/assets/css/syntax.css?v=20260918172832">
+    <link rel="stylesheet" href="/v2-9dcd86d1/themes/system.css?v=1792051739">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="48x48" href="/assets/icons/favicon-48.png">
     <link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96.png">
@@ -62,15 +61,15 @@
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&amp;family=JetBrains+Mono:wght@400;500&amp;display=block"><script>document.documentElement.classList.add("js-nav");var d=document.documentElement;d.classList.add("is-holding");var rel=function(){d.classList.remove("is-holding")};addEventListener("load",rel);setTimeout(rel,1500);try{var ins=+sessionStorage.getItem("tufa-inside");if(ins&&Date.now()-ins<15000)d.style.setProperty("--bt","0.35");}catch(e){}var off=new URLSearchParams(location.search).get("off");try{if(off!==null)sessionStorage.setItem("tufa-off",off);else off=sessionStorage.getItem("tufa-off");}catch(e){}if(off)off.split(",").forEach(function(k){if(k)d.classList.add("off-"+k);});if(off){var ks=off.split(",");if(ks.indexOf("css")>=0)document.querySelectorAll('link[rel="stylesheet"]:not([href*="fonts.googleapis"])').forEach(function(l){l.disabled=true;l.remove();});if(ks.indexOf("fonts")>=0)document.querySelectorAll('link[href*="fonts.g"]').forEach(function(l){l.remove();});if(ks.indexOf("scheme")>=0){var m=document.querySelector('meta[name="color-scheme"]');if(m)m.remove();var st=document.querySelector("head > style");if(st&&/html\{background/.test(st.textContent))st.remove();}}try{var th=localStorage.getItem("tufa-theme");if(th==="dark"){d.setAttribute("data-theme","dark");var cm=document.querySelector('meta[name="color-scheme"]');if(cm)cm.content="dark";}var tr=JSON.parse(localStorage.getItem("tufa-rules")||"null");if(tr){var U={line:"px",u:"px",tau:"ms",ratio:"",h:"",tc:""};for(var k in tr)if(k in U)d.style.setProperty("--"+k,tr[k]+U[k]);if(tr.curve)d.style.setProperty("--ease","cubic-bezier("+tr.curve+")");var gf=function(n,w,b){var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family="+n.replace(/ /g,"+")+":wght@"+w+"&display=block";document.head.appendChild(l);};if(tr.font){gf(tr.font,tr.fontw||"400;500;600");var ff='"'+tr.font+'", '+(tr.serif?"Georgia, serif":"'Helvetica Neue', Arial, sans-serif");d.style.setProperty("--sans",ff);d.style.setProperty("--display",ff);}if(tr.mono){gf(tr.mono,tr.monow||"400;500",1);d.style.setProperty("--mono",'"'+tr.mono+'", ui-monospace, Menlo, monospace');}}if(localStorage.getItem("tufa-motion")==="off")document.documentElement.classList.add("no-motion")}catch(e){}</script>
-<script src="/v2-9dcd86d1/themes/sections.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/creature.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/site.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/figures.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/hero.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/vendor/swup.umd.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/vendor/swup-preload.umd.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/vendor/swup-scroll.umd.js?v=1791990869" defer></script>
-<script src="/v2-9dcd86d1/themes/router.js?v=1791990869" defer></script><meta name="robots" content="noindex, nofollow"></head>
+<script src="/v2-9dcd86d1/themes/sections.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/creature.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/site.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/figures.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/hero.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup.umd.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup-preload.umd.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup-scroll.umd.js?v=1792051739" defer></script>
+<script src="/v2-9dcd86d1/themes/router.js?v=1792051739" defer></script><meta name="robots" content="noindex, nofollow"></head>
 <body class="post-page post--sidenotes">
     <a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header">
@@ -226,8 +225,7 @@
 
 <p><a id="main-takeaway"></a></p>
 
-<blockquote>
-  <p><strong>Main Takeaway: synthetic pretraining improves few-shot performance on both GSM8K and MATH500 for very small language models.</strong></p>
+<blockquote class="callout"><span class="callout-label">Main Takeaway</span><p class="callout-title">Synthetic pretraining improves few-shot performance on both GSM8K and MATH500 for very small language models.</p>
 
   <p>Gains scale with the number of demonstrations (<strong>2–3× larger than with the original dataset</strong>), suggesting that synthetic pretraining strengthens in-context learning capabilities.</p>
 </blockquote>
@@ -241,8 +239,7 @@
 
 <p><a id="ablation-experiment"></a></p>
 
-<blockquote>
-  <p><strong>Ablation experiment: Few-shot performance gains are robust to the choice and ordering of demonstrations.</strong></p>
+<blockquote class="callout"><span class="callout-label">Ablation experiment</span><p class="callout-title">Few-shot performance gains are robust to the choice and ordering of demonstrations.</p>
 
   <p>When CoT examples are randomly sampled per question, synthetic pretraining continues to show consistent improvements over the original dataset.</p>
 </blockquote>
@@ -260,8 +257,7 @@
 
 <p><a id="takeaway-2"></a></p>
 
-<blockquote>
-  <p><strong>Takeaway 2 - Does synthetic data improve reasoning?</strong> <strong>Yes.</strong></p>
+<blockquote class="callout"><span class="callout-label">Takeaway 2</span><p class="callout-title">Does synthetic data improve reasoning? Yes.</p>
 
   <p>Models trained on synthetic data show clear gains in reasoning and numeric problem-solving, confirming the benefit goes beyond learning output formatting.</p>
 </blockquote>
@@ -275,8 +271,7 @@
 
 <p><a id="takeaway-3"></a></p>
 
-<blockquote>
-  <p><strong>Takeaway 3 - Do gains emerge during pretraining?</strong> <strong>Yes.</strong></p>
+<blockquote class="callout"><span class="callout-label">Takeaway 3</span><p class="callout-title">Do gains emerge during pretraining? Yes.</p>
 
   <p>Improvements from synthetic pretraining are visible from early training checkpoints, particularly on MATH500. In terms of token efficiency, synthetic pretrained models match the final performance of the original model using <strong>3–6× fewer training tokens on GSM8K and ~2.5× fewer training tokens on MATH500</strong></p>
 </blockquote>
@@ -290,8 +285,7 @@
 
 <p><a id="takeaway-4"></a></p>
 
-<blockquote>
-  <p><strong>Takeaway 4 - Does performance depend on the generation prompt?</strong> <strong>Yes, but in interesting ways.</strong></p>
+<blockquote class="callout"><span class="callout-label">Takeaway 4</span><p class="callout-title">Does performance depend on the generation prompt? Yes, but in interesting ways.</p>
 
   <p>Test-time reasoning gains vary across generation prompts, but all synthetic pretraining runs show significant improvements over the original dataset, regardless of the specific synthetic data configuration (number of synthetic tokens or data style).</p>
 </blockquote>
@@ -313,8 +307,7 @@
 
 <p><a id="takeaway-5"></a></p>
 
-<blockquote>
-  <p><strong>Takeaway 5 - Does the generator need to be stronger than the student?</strong> <strong>No.</strong></p>
+<blockquote class="callout"><span class="callout-label">Takeaway 5</span><p class="callout-title">Does the generator need to be stronger than the student? No.</p>
 
   <p>A same-size generator (0.8B, non-thinking mode) yields clear benefits, showing that effective synthetic data generation does not require a larger or computationally heavier model.</p>
 </blockquote>
@@ -323,8 +316,7 @@
 
 <p><a id="takeaway-6"></a></p>
 
-<blockquote>
-  <p><strong>Takeaway 6 - Does the source dataset need to be low-quality to observe gains with synthetic pretraining?</strong> <strong>No.</strong></p>
+<blockquote class="callout"><span class="callout-label">Takeaway 6</span><p class="callout-title">Does the source dataset need to be low-quality to observe gains with synthetic pretraining? No.</p>
 
   <p>We observe strong gains from synthetic data augmentation even when applied to MegaMath-Web-Pro-Max, a heavily filtered and curated corpus.</p>
 </blockquote>
@@ -347,9 +339,9 @@
 
 <h2 id="citation">Citation</h2>
 
-<p>Please cite this work as:</p>
+<p class="citation-label">Please cite this work as</p>
 
-<p>Saponati, Matteo, “Synthetic pretraining for very small reasoning models.”, Tufa Labs Research, Apr 2026.</p>
+<p class="citation-ref">Saponati, Matteo, “Synthetic pretraining for very small reasoning models.”, Tufa Labs Research, Apr 2026.</p>
 
 <div class="language-bibtex highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">@article</span><span class="p">{</span><span class="nl">saponati2026enhancingreasoning</span><span class="p">,</span>
   <span class="na">author</span> <span class="p">=</span> <span class="s">{Matteo Saponati}</span><span class="p">,</span>
