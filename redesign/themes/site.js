@@ -1,3 +1,10 @@
+// the way back from a post, while choosing among variants (?back=a|b|c|d, remembered for the visit)
+(() => {
+    const q = new URLSearchParams(location.search).get('back');
+    let v = 'c';
+    try { if (q) sessionStorage.setItem('tufa-back', q); v = sessionStorage.getItem('tufa-back') || v; } catch (e) { v = q || v; }
+    document.documentElement.dataset.back = v;
+})();
 var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN(n) ? 120 : /ms$/.test(v) || !/s$/.test(v) ? n : n * 1000; };   // the beat in ms ("120ms", or ".12s" after minifying)
 // Site behaviour that needs a script: the page lifecycle the router drives, the header (menu, nav point, theme), each
 // page's parts (statement sizing, page name, compute sheet, build-up, privacy policy) and the creature.
@@ -368,4 +375,21 @@ window.tufaPage = (() => {
     const ro = new ResizeObserver(soon); ro.observe(pc);
     wide.addEventListener('change', soon); document.fonts?.ready.then(lay); lay();
     return () => { ro.disconnect(); wide.removeEventListener('change', soon); cancelAnimationFrame(raf); };
+});
+
+// variants b (in the header) and d (at the foot of the label column): the way back shows once the post's head has scrolled
+// under the header
+(window.__tufaPages ||= []).push(() => {
+    const v = document.documentElement.dataset.back, back = document.querySelector('.post-back');
+    if (!back || (v !== 'b' && v !== 'd')) return;
+    const a = back.cloneNode(true); a.className = v === 'b' ? 'head-back' : 'foot-back'; a.setAttribute('aria-hidden', 'true'); a.tabIndex = -1;
+    (v === 'b' ? document.querySelector('.site-header .logo-container') : document.body)[v === 'b' ? 'after' : 'append'](a);
+    const header = document.querySelector('.site-header'), title = document.querySelector('.post-title') || back;
+    const content = document.querySelector('.post-content, .page-content') || document.querySelector('main');
+    const check = () => {
+        document.documentElement.classList.toggle('is-past-head', title.getBoundingClientRect().bottom < header.getBoundingClientRect().bottom);
+        if (v === 'd') a.style.left = `${Math.round(content.getBoundingClientRect().left)}px`;   // on the label column's edge, wherever the page sits
+    };
+    addEventListener('scroll', check, { passive: true }); addEventListener('resize', check); check();
+    return () => { removeEventListener('scroll', check); removeEventListener('resize', check); a.remove(); document.documentElement.classList.remove('is-past-head'); };
 });

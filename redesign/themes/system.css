@@ -948,3 +948,27 @@ svg:has(.m-creature) { overflow: visible; }
    two read as two things, not one run of mono */
 .post-meta time { font: 400 var(--t-1) / var(--line) var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink-3); }
 .post-meta > span:not([aria-hidden]), .post-meta .post-author { font: 400 var(--t0) / var(--line) var(--sans); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
+
+/* the way back from a post, variants while choosing (data-back on the root) */
+/* c: an arrow above the index's first mark; hovering it names where it goes */
+.rail .rail-arrow { padding: 0; }   /* not one of the index's points (.rail a): a line of its own */
+.rail-arrow { position: absolute; left: 0; bottom: 100%; display: flex; align-items: center; gap: var(--rail-gap); height: var(--line) !important; width: max-content !important; text-decoration: none; color: var(--ink-3); }
+.rail-arrow-mark { width: var(--rail); text-align: center; font: 400 var(--t-half) / var(--line) var(--mono); }
+.rail-arrow-text { font: 400 var(--t-half) / var(--line) var(--mono); letter-spacing: .02em; text-transform: uppercase; background: var(--bg); padding-right: var(--s0); opacity: 0; clip-path: inset(0 100% 0 0); }
+.rail-arrow:hover, .rail-arrow:focus-visible { color: var(--ink); }
+.rail-arrow:hover .rail-arrow-text { opacity: 1; clip-path: inset(0 0 0 0); }
+:root:not(.no-motion) .rail-arrow-text { transition: opacity var(--dur-1) var(--ease), clip-path var(--dur-2) var(--ease); }
+/* b: in the header, beside the mark */
+.site-header .header-content { position: relative; }
+.head-back { position: absolute; top: calc(var(--line) / 2); left: calc((100% - 11 * var(--gap)) / 4 + 3 * var(--gap)); height: calc(var(--line) * 2.5 - 2px); display: flex; align-items: center;   /* on the text column's edge, centred in the header's row */
+    font: 400 var(--t-half) / var(--line) var(--mono); letter-spacing: .02em; text-transform: uppercase; color: var(--ink-3); text-decoration: none; opacity: 0; visibility: hidden; }
+.is-past-head .head-back { opacity: 1; visibility: visible; }
+.head-back:hover { color: var(--ink); }
+:root:not(.no-motion) .head-back { transition: opacity var(--dur-2) var(--ease), visibility var(--dur-2); }
+/* d: at the foot of the label column, on the screen */
+.foot-back { position: fixed; z-index: 30; bottom: var(--s1); left: max(var(--pad), (100vw - var(--max)) / 2 + var(--pad)); font: 400 var(--t-half) / var(--line) var(--mono); letter-spacing: .02em; text-transform: uppercase;
+    color: var(--ink-3); text-decoration: none; background: var(--bg); padding-right: var(--s0); opacity: 0; visibility: hidden; }
+.is-past-head .foot-back { opacity: 1; visibility: visible; }
+.foot-back:hover { color: var(--ink); }
+:root:not(.no-motion) .foot-back { transition: opacity var(--dur-2) var(--ease), visibility var(--dur-2); }
+@media (max-width: 900px) { .foot-back, .head-back { display: none; } }   /* (desktop only while choosing) */
