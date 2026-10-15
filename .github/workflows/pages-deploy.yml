@@ -1,5 +1,4 @@
-# Build the site (Jekyll). main deploys to tufalabs.ai. (The redesign, with the identity's assets and the link-preview
-# cards made in CI, is on the v2 branch.)
+# Build the site (the identity's assets, the redesign, the link-preview cards, Jekyll). main deploys to tufalabs.ai.
 # A pull request (into main, or into v2, the redesign's branch) is published as a preview to Tufalabs/website-previews
 # (GitHub Pages, private to the organisation) at pr-preview/pr-<n>/, with a comment on the pull request linking there;
 # the preview is removed when the pull request closes. Writing there needs the secret PREVIEWS_KEY (a deploy key of
@@ -53,6 +52,15 @@ jobs:
       - name: Verify Bundler version
         run: bundle _4.0.3_ -v
 
+      # what the site takes from the pinned identity (redesign/vendor/identity): its icons and colours, then the
+      # link-preview cards drawn from the pages in a headless Chrome (preinstalled on the runner), so a new identity
+      # release or a new page needs no hand-made images
+      - name: Identity assets and link-preview cards
+        run: |
+          python3 redesign/tools/site_assets.py
+          python3 redesign/build.py
+          python3 redesign/tools/og.py --require
+
       - name: Build site
         run: |
           bundle _4.0.3_ exec jekyll clean --config site/_config.yml --source site --destination _site
@@ -73,10 +81,11 @@ jobs:
           grep -q "Introducing Tufa Talks" _site/news/index.html
           grep -q "<feed" _site/research/feed.xml
 
-      # a preview: kept out of search engines
+      # a preview: served under its folder (the redesign's pages carry their own root paths), and kept out of search engines
       - name: Preview paths and noindex
         if: github.event_name == 'pull_request'
         run: |
+          grep -rl '/v2-9dcd86d1/' _site/v2-9dcd86d1 | xargs -r sed -i "s|/v2-9dcd86d1/|$BASE/v2-9dcd86d1/|g"
           find _site -name '*.html' -exec sed -i '0,/<head>/s||<head><meta name="robots" content="noindex, nofollow">|' {} +
 
       - name: Upload GitHub Pages artifact
@@ -162,6 +171,6 @@ jobs:
         with:
           header: preview
           message: |
-            ${{ github.event.action == 'closed' && 'Preview removed.' || format(':eyes: **Preview** (private to the organisation): https://{0}/{1}/', env.PREVIEWS, env.DIR) }}
+            ${{ github.event.action == 'closed' && 'Preview removed.' || format(':eyes: **Preview** (private to the organisation): https://{0}/{1}/ · the redesign at https://{0}/{1}/v2-9dcd86d1/', env.PREVIEWS, env.DIR) }}
 
             <sub>Built from ${{ github.event.pull_request.head.sha }}; updated on every push.</sub>

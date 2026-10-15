@@ -1,0 +1,13 @@
+<!doctype html><meta charset=utf-8><style>body{margin:0;background:#f7f2ea;font:11px monospace;display:grid;grid-template-columns:repeat(3,400px);gap:8px;padding:8px;color:#1b1814;--mark-eye:#f7f2ea}
+figure{margin:0;position:relative}figure b{position:absolute;left:4px;top:4px}svg{width:400px;height:auto;display:block;background:#fff}</style>
+<!-- each part of the mark alone (ink) over a faint whole, the master's outline as a red hairline. Copy to out/ with mark.svg and the original master -->
+<script>(async()=>{
+const mark=await (await fetch('/mark.svg?'+Math.random())).text(), master=await (await fetch('/tufa_spider_white_master-original.svg?'+Math.random())).text();
+const md=master.match(/ d="([^"]+)"/)[1];
+const parts=[['hind legs','.m-hind'],['body','.m-body'],['legs','.m-legs'],['jaw','.m-jaw'],['left eye','.m-eye-l'],['right eye','.m-eye-r'],['whole','svg > *'],['on ink','svg > *']];
+for(const [name,sel] of parts){const f=document.createElement('figure');f.innerHTML=mark.replace('<svg ','<svg viewBox="-30 -30 1193 1176" ').replace(/viewBox="0 0 1133 1116"/,'');const s=f.querySelector('svg');
+ if(name!=='whole'&&name!=='on ink'){[...s.children].forEach(c=>{if(c.tagName!=='path'&&c.tagName!=='g')return;c.style.opacity=c.matches(sel)?1:.12;});}
+ if(name==='on ink'){s.style.background='#1b1814';s.style.color='#f7f2ea';s.style.setProperty('--mark-pupil','#1b1814');}
+ s.insertAdjacentHTML('beforeend',`<path d="${md}" fill="none" stroke="#e33" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`);
+ f.insertAdjacentHTML('beforeend',`<b>${name}</b>`);document.body.appendChild(f);}
+})();</script>

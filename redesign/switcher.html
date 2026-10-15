@@ -1,0 +1,13 @@
+<div id="theme-switch" style="position:fixed;right:12px;bottom:12px;z-index:9999;font:12px/1.2 ui-monospace,Menlo,monospace;background:#111;color:#fff;padding:6px 8px;display:flex;gap:6px;align-items:center;border-radius:2px">
+<span style="opacity:.6">design</span>
+<script>
+(function(){var cur="{{THEME}}",ts="{{THEMES}}".split(","),box=document.currentScript.parentNode;
+ts.forEach(function(t){var a=document.createElement("a");a.textContent=t;a.style.cssText="color:"+(t===cur?"#ff0":"#fff")+";text-decoration:none;padding:2px 4px;background:none";
+a.href=location.pathname.replace(/^\/[^\/]+/,"/"+t);box.appendChild(a);});
+if(cur==="current")return;
+var b=document.createElement("button"),r=document.documentElement;
+function lbl(){b.textContent="motion: "+(r.classList.contains("no-motion")?"off":"on")}
+b.style.cssText="font:inherit;color:#fff;background:#333;border:0;padding:2px 6px;margin-left:6px;cursor:pointer";
+b.onclick=function(){var off=!r.classList.contains("no-motion");r.classList.toggle("no-motion",off);try{localStorage.setItem("tufa-motion",off?"off":"on")}catch(e){}lbl();if(!off)location.reload()};
+lbl();box.appendChild(b);})();
+</script></div>

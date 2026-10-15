@@ -1,0 +1,81 @@
+/* Tufa Labs identity — motion: the build-up (fades in a measured order, letters written), the keyframes, and the
+ * reduced-motion policy (large movements stop, small ones stay). Needs tokens.css. */
+
+/* ── motion: colour and opacity only, ≤ 6px of travel, three durations ── */
+@view-transition { navigation: none; }
+/* no cross-page snapshot fade: it could catch a frame before fonts and flicker the navigation; pages have their own entrance */
+::view-transition-group(root) { animation-duration: var(--dur-2); }
+:root:not(.no-motion) {
+        a, .site-nav a, .post-link, .read-more { transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), text-decoration-color var(--dur-1) var(--ease); }
+        .read-more::after { transition: translate var(--dur-2) var(--ease); }
+        .post-item:hover .read-more::after, .read-more:hover::after { translate: 3px 0; }
+        .team-member-image, .cartoon-image, .links-list img { transition: filter var(--dur-3) var(--ease); }
+        .links-list li:hover img { filter: none; }
+
+        @supports (animation-timeline: view()) {
+            .post-item, .team-member, .compute-table tbody tr, .post-figure, .links-list li {
+                animation: settle linear both; animation-timeline: view(); animation-range: entry 0% entry 35%;
+            }
+        }
+    }
+@keyframes settle { from { opacity: 0; translate: 0 var(--travel); } }
+/* ── page build-up: once per load, under a second, in fades only (nothing travels). The header is the same on every page and stays
+ * put (only its active mark slides over from the last page, site.js); the statement arrives, the
+ * figure fades in, section lines draw across and the content follows in a quick stagger. */
+@keyframes build-rise { from { opacity: 0; } }
+/* appear: a fade, no travel (a blur on every block made Firefox paint a black frame when leaving mid build-up) */
+@keyframes build-text { from { color: transparent; } }
+/* the statement's words fade; its ground stays, covering the margin rule */
+@keyframes build-fade { from { opacity: 0; } }
+@keyframes build-word { from { opacity: 0; filter: blur(2.4px); } }
+/* write: a 2u blur */
+:root:not(.no-motion) .home-content > p:nth-of-type(2), :root:not(.no-motion) .page-lede,
+    :root:not(.no-motion) .page > .page-content > p:first-child { animation: build-text calc(var(--tau) * 4) var(--ease) calc(var(--tau) * 2 * var(--bt, 1)) backwards; }
+/* split text (site.js): the parent's own fade gives way to its pieces, each a fade from a slight blur */
+:root:not(.no-motion) .is-split { animation: none !important; }
+:root:not(.no-motion) .is-split .bw, :root:not(.no-motion) .band-kicker.is-split .bw { display: inline-block; animation: build-word calc(var(--tau) * 4) var(--ease) backwards; }
+/* the figure has its own reveal (figures.js: a noise-thresholded mask), so no CSS fade on the canvas */
+:root:not(.no-motion) .has-rail > .section-line, :root:not(.no-motion) .page > .page-content::before, :root:not(.no-motion) .post-content::before {
+        animation: build-fade calc(var(--tau) * 4) var(--ease) calc(var(--tau) * 2 * var(--bt, 1)) backwards;   /* rules appear: a fade, 4τ */
+    }
+:root:not(.no-motion) .home-content > :not(.section-line):not(.rail-wrap):not(p:nth-of-type(2)),
+    :root:not(.no-motion) .page > .page-content > :not(.section-line):not(.rail-wrap):not(:first-child),
+    :root:not(.no-motion) .post-content > *, :root:not(.no-motion) .post-list > li, :root:not(.no-motion) .team-list > * {
+        animation: build-rise calc(var(--tau) * 4) var(--ease) calc(var(--tau) * 4 * var(--bt, 1)) backwards;
+    }
+:root:not(.no-motion) .home-content > :nth-child(1):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(1):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(1), :root:not(.no-motion) .post-list > li:nth-child(1), :root:not(.no-motion) .team-list > :nth-child(1) { animation-delay: calc(175ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(2):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(2):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(2), :root:not(.no-motion) .post-list > li:nth-child(2), :root:not(.no-motion) .team-list > :nth-child(2) { animation-delay: calc(190ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(3):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(3):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(3), :root:not(.no-motion) .post-list > li:nth-child(3), :root:not(.no-motion) .team-list > :nth-child(3) { animation-delay: calc(205ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(4):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(4):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(4), :root:not(.no-motion) .post-list > li:nth-child(4), :root:not(.no-motion) .team-list > :nth-child(4) { animation-delay: calc(220ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(5):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(5):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(5), :root:not(.no-motion) .post-list > li:nth-child(5), :root:not(.no-motion) .team-list > :nth-child(5) { animation-delay: calc(235ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(6):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(6):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(6), :root:not(.no-motion) .post-list > li:nth-child(6), :root:not(.no-motion) .team-list > :nth-child(6) { animation-delay: calc(250ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(7):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(7):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(7), :root:not(.no-motion) .post-list > li:nth-child(7), :root:not(.no-motion) .team-list > :nth-child(7) { animation-delay: calc(265ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(8):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(8):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(8), :root:not(.no-motion) .post-list > li:nth-child(8), :root:not(.no-motion) .team-list > :nth-child(8) { animation-delay: calc(280ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(9):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(9):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(9), :root:not(.no-motion) .post-list > li:nth-child(9), :root:not(.no-motion) .team-list > :nth-child(9) { animation-delay: calc(295ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(10):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(10):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(10), :root:not(.no-motion) .post-list > li:nth-child(10), :root:not(.no-motion) .team-list > :nth-child(10) { animation-delay: calc(310ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(11):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(11):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(11), :root:not(.no-motion) .post-list > li:nth-child(11), :root:not(.no-motion) .team-list > :nth-child(11) { animation-delay: calc(325ms * var(--bt, 1)); }
+:root:not(.no-motion) .home-content > :nth-child(12):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .page > .page-content > :nth-child(12):not(.section-line):not(.rail-wrap), :root:not(.no-motion) .post-content > :nth-child(12), :root:not(.no-motion) .post-list > li:nth-child(12), :root:not(.no-motion) .team-list > :nth-child(12) { animation-delay: calc(340ms * var(--bt, 1)); }
+:root:not(.no-motion) .rail-wrap { animation: build-fade 500ms ease-out calc(400ms * var(--bt, 1)) backwards; }
+@keyframes theme-disc {
+    from { -webkit-mask-size: 0 0; mask-size: 0 0; -webkit-mask-position: var(--vx) var(--vy); mask-position: var(--vx) var(--vy); }
+    to { -webkit-mask-size: var(--vd) var(--vd); mask-size: var(--vd) var(--vd);
+         -webkit-mask-position: calc(var(--vx) - var(--vd) / 2) calc(var(--vy) - var(--vd) / 2); mask-position: calc(var(--vx) - var(--vd) / 2) calc(var(--vy) - var(--vd) / 2); }
+}
+/* write: letters from a 4u blur */
+@keyframes build-word { from { opacity: 0; filter: blur(calc(var(--u) * 4)); } }
+/* structure does not animate: every rule (the vertical margin rule, the line under the head, section hairlines) is
+   there from the first frame, like the page's frame; only content appears */
+:root:not(.no-motion) .has-rail > .section-line, :root:not(.no-motion) .page > .page-content::before, :root:not(.no-motion) .post-content::before,
+    :root:not(.no-motion) .home-content > p:nth-of-type(2)::after, :root:not(.no-motion) .page:not(:has(.page-lede)) > .page-content > p:first-child::after { animation: none !important; }
+/* the rules page draws its specimens with these (its own markup names them) */
+@keyframes anim-rule { from { transform: scaleX(0); } }
+@keyframes anim-word { from { opacity: 0; filter: blur(2.4px); } }
+/* reduced motion (the system asks): the large movements stop and the small ones stay. Pages still scroll and build up,
+ * but jump instead of gliding, and their fades carry no blur; the header keeps its life (site.js), the rest holds still */
+@media (prefers-reduced-motion: no-preference) {
+    :root:not(.no-motion) { scroll-behavior: smooth; }
+}
+@media (prefers-reduced-motion: reduce) {
+    @keyframes build-word { from { opacity: 0; } }
+    main img.is-loading { filter: none !important; }
+}

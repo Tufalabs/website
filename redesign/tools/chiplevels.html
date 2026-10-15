@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#fbf4ee;font:12px monospace}canvas{display:block}</style>
+<!-- every zoom level of the chip figure side by side: copy to out/ and open /chiplevels.html?z=1,10,100 -->
+<canvas id="c"></canvas>
+<script src="/themes/figures.js"></script>
+<script>
+const F=TufaFigures.F.chip, Z=(new URLSearchParams(location.search).get('z')||'1,2.4,6,20,60,200,1000,5000,30000,250000,1e6,4e6,2e7,1.2e8,6e8,3e9,1e11').split(',').map(Number);
+const W=400,H=300,cols=2,cv=document.getElementById('c'),dpr=2;cv.width=W*cols*dpr;cv.height=H*Math.ceil(Z.length/cols)*dpr;cv.style.width=W*cols+'px';cv.style.height=H*Math.ceil(Z.length/cols)+'px';
+const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);const C={ink:'#1a1410',ink2:'#4a4038',ink3:'#8a8078',hair:'#d8cfc6',accent:'#c33',bg:'#fbf4ee'};
+document.fonts.ready.then(()=>{Z.forEach((z,k)=>{const ox=(k%cols)*W,oy=Math.floor(k/cols)*H,R={x:ox+10,y:oy+10,w:W-20,h:H-20,fx:ox+20,vy0:oy+20,vy1:oy+H-20};const st=F.init(R);st.tgt=F.target(st,30,20);st.cx=st.tgt[0];st.cy=st.tgt[1];st.z=z;st.__labels=[];ctx.save();F.draw(ctx,R,1.3,C,st,false);ctx.restore();ctx.globalAlpha=1;ctx.fillStyle='#c33';ctx.fillText(z+'×',ox+12,oy+H-8);ctx.strokeStyle='#ddd';ctx.strokeRect(ox,oy,W,H);});});
+</script>

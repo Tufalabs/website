@@ -1,0 +1,129 @@
+/* A · Paper — a printed monograph: serif text, small caps, booktabs tables, one oxblood accent. */
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400&display=swap");
+@import url("../_structure.css");
+
+:root {
+    --measure: 720px;
+    --ink: #1b1b1b;
+    --muted: #6b6b6b;
+    --rule: #1b1b1b;
+    --hair: #d8d6d0;
+    --accent: #8a1c1c;
+    --tint: #f6f5f1;
+    --body-font: "Source Serif 4", Georgia, serif;
+    --mono-font: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+body { font-size: 19px; line-height: 1.6; font-feature-settings: "onum", "kern"; }
+
+a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.15em; }
+a:hover { color: var(--ink); }
+
+/* header: centered title block like a paper's front matter */
+.site-header { padding: 2.75rem 0 0; }
+.site-header .header-content { flex-direction: column; gap: 1.1rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--rule); }
+.logo-image { width: 34px; height: 34px; margin-right: 12px; }
+.logo-text { font-size: 1.55rem; font-weight: 600; letter-spacing: 0.02em; font-variant: small-caps; }
+.site-nav ul { gap: 0.4rem 1.6rem; justify-content: center; }
+.site-nav a { font-variant: all-small-caps; letter-spacing: 0.08em; font-size: 1.05rem; color: var(--muted); }
+.site-nav a:hover, .site-nav a.active { color: var(--ink); }
+.site-nav a.active { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.3em; }
+
+main.container { padding-top: 3rem; padding-bottom: 0; }
+
+h1, h2, h3, h4 { font-family: var(--body-font); font-weight: 600; color: var(--ink); line-height: 1.25; }
+h1 { font-size: 2.2rem; margin: 0 0 0.75rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.35rem; margin: 2.6rem 0 0.9rem; }
+h3 { font-size: 1.1rem; margin: 1.8rem 0 0.6rem; font-style: italic; font-weight: 400; }
+p, ul, ol, table, blockquote, pre { margin-bottom: 1.15rem; }
+ul, ol { padding-left: 1.3rem; }
+li { margin-bottom: 0.25rem; }
+li::marker { color: var(--muted); }
+
+/* numbered sections on content pages: "1  Research priorities" */
+.page-content, .home-content { counter-reset: sec; }
+.home-content > h2, .page > .page-content > h2:not(.post-list-heading) { counter-increment: sec; }
+.home-content > h2::before, .page > .page-content > h2:not(.post-list-heading)::before {
+    content: counter(sec); display: inline-block; width: 2rem; color: var(--accent); font-weight: 400;
+}
+
+.page-header, .post-header { margin-bottom: 2.25rem; text-align: center; }
+.page-lede { font-style: italic; color: var(--muted); margin: 0 auto; max-width: 34rem; }
+
+/* home: an abstract */
+.home-content > p:nth-of-type(2) {
+    font-size: 1.2rem; line-height: 1.55; text-align: center; font-style: italic;
+    max-width: 34rem; margin: 0 auto 2.5rem;
+}
+
+/* booktabs table */
+.compute-table { font-size: 0.82rem; line-height: 1.35; border-top: 1.5px solid var(--rule); border-bottom: 1.5px solid var(--rule); font-variant-numeric: lining-nums tabular-nums; }
+.compute-table th { font-weight: 600; padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--rule); }
+.compute-table td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--hair); }
+.compute-table sup a { text-decoration: none; }
+.per-cluster-note { color: var(--muted); font-style: italic; margin-top: 0.15rem; }
+.compute-footnote { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+.cartoon-image { margin: 3rem auto 0; width: 300px; border: 1px solid var(--hair); padding: 10px; background: #fff; }
+
+/* research & news: a reference list */
+.post-list-heading { font-variant: all-small-caps; letter-spacing: 0.1em; font-size: 1rem; color: var(--muted); font-weight: 400; border-bottom: 1px solid var(--hair); padding-bottom: 0.4rem; }
+.post-item { padding: 1.1rem 0 1.25rem; border-bottom: 1px solid var(--hair); }
+.post-item h3 { font-style: normal; font-weight: 600; font-size: 1.15rem; margin: 0 0 0.25rem; }
+.post-link:hover { color: var(--accent); }
+.post-meta { font-size: 0.88rem; color: var(--muted); font-style: italic; margin-bottom: 0.4rem; }
+.post-meta span[aria-hidden] { margin: 0 0.3rem; font-style: normal; }
+.post-excerpt { margin: 0.3rem 0 0.4rem; font-size: 1rem; }
+.read-more { font-variant: all-small-caps; letter-spacing: 0.08em; font-size: 0.95rem; text-decoration: none; }
+.external-indicator { font-variant: all-small-caps; letter-spacing: 0.08em; font-size: 0.85rem; color: var(--accent); font-weight: 400; margin-left: 0.4rem; }
+.external-indicator::before { content: "↗ "; }
+.research-chatter { margin-top: 2rem; padding: 1.25rem 1.5rem; background: var(--tint); }
+.research-chatter h3 { margin-top: 0; font-style: normal; }
+.research-chatter p { margin: 0; }
+
+/* team: a list of contributors */
+.team-list { gap: 0; }
+.team-member { gap: 1.5rem; padding: 1.75rem 0; border-bottom: 1px solid var(--hair); }
+.team-member:first-child { padding-top: 0; }
+.team-member-image { width: 104px; filter: grayscale(1); }
+.team-member:hover .team-member-image { filter: none; }
+.team-member-info h2 { font-size: 1.25rem; }
+.team-member-info h2::before { content: none; }
+.role { font-variant: all-small-caps; letter-spacing: 0.08em; color: var(--accent); margin: 0.1rem 0 0.5rem; font-size: 1rem; }
+.team-member-bio p { margin: 0 0 0.5rem; font-size: 0.98rem; }
+.team-member-links { font-size: 0.9rem; margin: 0.4rem 0; }
+.research-interests { font-style: italic; color: var(--muted); font-size: 0.95rem; }
+#public-team-notice { color: var(--muted); font-style: italic; font-size: 0.9rem; margin-top: 2rem; text-align: center; }
+
+.links-list li { gap: 0.8rem; margin-bottom: 0.9rem; }
+.links-list img { filter: grayscale(1); }
+.links-list a { font-size: 0.92rem; }
+.video-embed { margin-top: 2rem; }
+
+/* articles */
+.post-title { font-size: 2.3rem; margin-top: 0.5rem; }
+.post-header .post-meta { font-size: 1rem; }
+.post-content { margin: 2rem 0; }
+.post-content h2::before { content: none; }
+.post-content table { font-size: 0.88rem; border-top: 1.5px solid var(--rule); border-bottom: 1.5px solid var(--rule); font-variant-numeric: lining-nums tabular-nums; }
+.post-content th { border-bottom: 1px solid var(--rule); padding: 0.5rem 0.8rem; font-weight: 600; }
+.post-content td { padding: 0.45rem 0.8rem; }
+.post-figure figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 0.75rem; line-height: 1.45; }
+.post-content blockquote { margin-left: 0; padding-left: 1.2rem; border-left: 2px solid var(--accent); font-style: italic; }
+code, pre { font-family: var(--mono-font); font-size: 0.82em; }
+code { background: var(--tint); padding: 0.1em 0.3em; }
+pre { background: var(--tint); padding: 1rem; border-left: 2px solid var(--hair); }
+.research-callout { border-top: 1.5px solid var(--rule); border-bottom: 1.5px solid var(--rule); padding: 1rem 0; margin: 2rem 0; }
+.research-callout__label { font-variant: all-small-caps; letter-spacing: 0.1em; color: var(--accent); }
+.redirect-notice { background: var(--tint); }
+
+.site-footer { margin-top: 4rem; padding: 1.25rem 0 3rem; text-align: center; font-size: 0.85rem; color: var(--muted); }
+.site-footer .container { border-top: 1px solid var(--rule); padding-top: 1rem; }
+.site-footer a { color: var(--muted); font-variant: all-small-caps; letter-spacing: 0.08em; font-size: 1rem; text-decoration: none; }
+.site-footer a:hover { color: var(--ink); }
+
+@media (max-width: 720px) {
+    body { font-size: 17px; }
+    .site-header .header-content { align-items: center; }
+    h1, .post-title { font-size: 1.8rem; }
+    .team-member-image { width: 88px; }
+}

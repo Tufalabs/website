@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8"><meta name="color-scheme" content="light"><style>html{background:#fdf4ec;color-scheme:light}html[data-theme="dark"]{background:#140d06;color-scheme:dark}</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synthetic pretraining for very small reasoning models. | Tufa Labs</title>
+    <link rel="stylesheet" href="/v2-9dcd86d1/themes/system.css?v=1792055096">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/icons/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/favicon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#fdf4ec">
+    <link type="application/atom+xml" rel="alternate" href="https://tufalabs.ai/research/feed.xml" title="Tufa Labs" />
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="Synthetic pretraining for very small reasoning models." />
+<meta name="author" content="Matteo Saponati" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Does synthetic data improve reasoning in very small (&lt;1B) reasoning models? Yes, a same-size generator unlocks stronger few-shot gains and better token efficiency on GSM8K and MATH500." />
+<meta property="og:description" content="Does synthetic data improve reasoning in very small (&lt;1B) reasoning models? Yes, a same-size generator unlocks stronger few-shot gains and better token efficiency on GSM8K and MATH500." />
+<link rel="canonical" href="https://tufalabs.ai/research/enhancing-reasoning-small-language-models/" />
+<meta property="og:url" content="https://tufalabs.ai/research/enhancing-reasoning-small-language-models/" />
+<meta property="og:site_name" content="Tufa Labs" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2026-04-24T09:00:00+02:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://tufalabs.ai/assets/og/research-enhancing-reasoning-small-language-models.png" />
+<meta property="twitter:image" content="https://tufalabs.ai/assets/og/research-enhancing-reasoning-small-language-models.png" />
+<meta property="twitter:title" content="Synthetic pretraining for very small reasoning models." />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Matteo Saponati"},"dateModified":"2026-04-24T09:00:00+02:00","datePublished":"2026-04-24T09:00:00+02:00","description":"Does synthetic data improve reasoning in very small (&lt;1B) reasoning models? Yes, a same-size generator unlocks stronger few-shot gains and better token efficiency on GSM8K and MATH500.","headline":"Synthetic pretraining for very small reasoning models.","mainEntityOfPage":{"@type":"WebPage","@id":"https://tufalabs.ai/research/enhancing-reasoning-small-language-models/"},"url":"https://tufalabs.ai/research/enhancing-reasoning-small-language-models/"}</script>
+<!-- End Jekyll SEO tag -->
+
+    
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [["$", "$"], ["\\(", "\\)"]],
+            displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+            processEscapes: true
+        },
+        options: {
+            skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+        }
+    };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ResearchOrganization",
+  "@id": "https://tufalabs.ai/#organization",
+  "name": "Tufa Labs",
+  "legalName": "Tufa Labs AG",
+  "url": "https://tufalabs.ai/",
+  "logo": "https://tufalabs.ai/assets/icons/favicon-512.png",
+  "description": "Public website for Tufa Labs, a small independent research group working on fundamental AI research.",
+  "address": { "@type": "PostalAddress", "streetAddress": "Baarerstrasse 8", "postalCode": "6300", "addressLocality": "Zug", "addressCountry": "CH" },
+  "sameAs": ["https://github.com/Tufalabs"]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&amp;family=JetBrains+Mono:wght@400;500&amp;display=block"><script>document.documentElement.classList.add("js-nav");var d=document.documentElement;d.classList.add("is-holding");var rel=function(){d.classList.remove("is-holding")};addEventListener("load",rel);setTimeout(rel,1500);try{var ins=+sessionStorage.getItem("tufa-inside");if(ins&&Date.now()-ins<15000)d.style.setProperty("--bt","0.35");}catch(e){}var off=new URLSearchParams(location.search).get("off");try{if(off!==null)sessionStorage.setItem("tufa-off",off);else off=sessionStorage.getItem("tufa-off");}catch(e){}if(off)off.split(",").forEach(function(k){if(k)d.classList.add("off-"+k);});if(off){var ks=off.split(",");if(ks.indexOf("css")>=0)document.querySelectorAll('link[rel="stylesheet"]:not([href*="fonts.googleapis"])').forEach(function(l){l.disabled=true;l.remove();});if(ks.indexOf("fonts")>=0)document.querySelectorAll('link[href*="fonts.g"]').forEach(function(l){l.remove();});if(ks.indexOf("scheme")>=0){var m=document.querySelector('meta[name="color-scheme"]');if(m)m.remove();var st=document.querySelector("head > style");if(st&&/html\{background/.test(st.textContent))st.remove();}}try{var th=localStorage.getItem("tufa-theme");if(th==="dark"){d.setAttribute("data-theme","dark");var cm=document.querySelector('meta[name="color-scheme"]');if(cm)cm.content="dark";}var tr=JSON.parse(localStorage.getItem("tufa-rules")||"null");if(tr){var U={line:"px",u:"px",tau:"ms",ratio:"",h:"",tc:""};for(var k in tr)if(k in U)d.style.setProperty("--"+k,tr[k]+U[k]);if(tr.curve)d.style.setProperty("--ease","cubic-bezier("+tr.curve+")");var gf=function(n,w,b){var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family="+n.replace(/ /g,"+")+":wght@"+w+"&display=block";document.head.appendChild(l);};if(tr.font){gf(tr.font,tr.fontw||"400;500;600");var ff='"'+tr.font+'", '+(tr.serif?"Georgia, serif":"'Helvetica Neue', Arial, sans-serif");d.style.setProperty("--sans",ff);d.style.setProperty("--display",ff);}if(tr.mono){gf(tr.mono,tr.monow||"400;500",1);d.style.setProperty("--mono",'"'+tr.mono+'", ui-monospace, Menlo, monospace');}}if(localStorage.getItem("tufa-motion")==="off")document.documentElement.classList.add("no-motion")}catch(e){}</script>
+<script src="/v2-9dcd86d1/themes/sections.js?v=1792055096" defer></script>
+<script src="/v2-9dcd86d1/themes/creature.js?v=1792055096" defer></script>
+<script src="/v2-9dcd86d1/themes/site.js?v=1792055096" defer></script>
+<script src="/v2-9dcd86d1/themes/figures.js?v=1792055096" defer></script>
+<script src="/v2-9dcd86d1/themes/hero.js?v=1792055096" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup.umd.js?v=1792055096" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup-preload.umd.js?v=1792055096" defer></script>
+<script src="/v2-9dcd86d1/themes/vendor/swup-scroll.umd.js?v=1792055096" defer></script>
+<script src="/v2-9dcd86d1/themes/router.js?v=1792055096" defer></script><meta name="robots" content="noindex, nofollow"></head>
+<body class="post-page post--sidenotes">
+    <a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+    <div class="container">
+        <div class="header-content">
+            <a href="/v2-9dcd86d1/" class="logo-container" aria-label="Tufa Labs home">
+                <svg class="logo-image" id="logo-image" role="img" aria-label="Tufa Labs logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1133 1116">
+  <g class="m-hind">
+    <g class="m-leg m-hind-1" data-hip="524.0 215.5" data-knee="432.0 72.8" data-foot="269.5 308.5">
+      <g class="m-leg-lo"><path class="m-leg-lower" fill="currentColor" d="M430.9 37.7C419.8 41.2 409.8 44.8 401.2 53.1C362.9 90.4 310.2 198.5 273.1 248.2C259.3 266.7 226.8 307.9 249.9 329.1C283.1 359.7 310.7 296.5 324.8 275.1C337.8 255.3 431 116.4 433 107.5C437.6 87.1 431.6 58.7 430.9 37.7Z"/></g>
+      <g class="m-leg-up"><path class="m-leg-upper" fill="currentColor" d="M430.9 37.7C431.3 51.7 427.8 97 433 107.5C435.7 113.1 440.8 118.8 443.6 125.6C451.8 145.3 460.3 164.8 470.4 183.6C477 195.9 495.1 234.8 505.1 241.6C527.9 257.1 557.3 239.4 556.1 212.4C555.3 194.8 533.2 177.4 525.1 162C502.3 118.6 492.1 37.2 430.9 37.7Z"/></g>
+      <circle class="m-knee" cx="432.0" cy="72.8" r="35.1" fill="currentColor"/>
+    </g>
+    <g class="m-leg m-hind-2" data-hip="729.5 203.0" data-knee="712.3 32.3" data-foot="575.0 192.0">
+      <g class="m-leg-lo"><path class="m-leg-lower" fill="currentColor" d="M722.7 3.6C642.9 -17.2 595 89 565.5 145.4C553.4 168.5 523.6 217.7 572.6 222.9C580.2 223.7 591.2 220.1 596.3 214.3C620 187.6 658.4 62.6 702 61C708.9 41.9 715.8 22.7 722.7 3.6Z"/></g>
+      <g class="m-leg-up"><path class="m-leg-upper" fill="currentColor" d="M722.7 3.6C715.8 22.7 708.9 41.9 702 61C726.7 100.5 686.5 191.7 704.2 218.1C718.3 239.2 749 235.1 757.7 211.5C769.8 179 771.8 73.4 759.6 41.1C753 23.4 738.7 12.1 722.7 3.6Z"/></g>
+      <circle class="m-knee" cx="712.3" cy="32.3" r="30.5" fill="currentColor"/>
+    </g>
+  </g>
+  <path class="m-body" fill="currentColor" d="M0 678C5.4 639.2 54.2 640.8 80.7 625.7C87.8 621.6 94.1 614.1 100.2 608.6C107.6 601.9 112.1 592.6 118.8 585.2C149.1 551.9 188.7 523.9 222.5 494.3C265.9 456.2 311.6 419.6 353.3 379.7C361.4 371.9 367.1 361.6 374.7 353.3C431.1 292.2 472.5 254.6 549.6 221.3C567.8 213.5 587.3 201.7 606.5 196.9C649.6 186.2 694.7 193.2 736.3 204.9C881.5 245.7 995.6 362.4 1028.3 510.8C1034.1 536.9 1041 566.8 1039 593.8C1038.2 604.5 1033.2 616.3 1030.5 626.7C1027.9 636.6 1026.4 648.3 1022.4 657.6C988.7 734.8 878.3 732.4 808.8 725.3C785.9 723 761.8 722 739.4 716.8C713.6 710.9 688.5 699.7 661.8 698C594.3 693.6 509.4 709.8 440.9 716.4C384.4 721.8 329.7 720.9 274 709C248.4 703.5 225.8 697.8 199.3 698C173.5 698.3 122.4 720.4 82.5 722.9C53.9 724.7 -6.2 722.3 0 678Z"/>
+  <g class="m-legs">
+    <g class="m-leg m-leg-1" data-hip="348.0 719.0" data-knee="301.8 796.6" data-foot="105.4 844.9">
+      <g class="m-leg-lo"><path class="m-leg-lower" fill="currentColor" d="M319.6 820.1C271.9 850.4 210.8 867.5 154.2 861.9C129.3 859.5 76.4 847.8 106.9 810.3C120.5 793.5 152.9 802 171.8 802C212.2 802 249 793.8 284 773.1C295.9 788.7 307.7 804.4 319.6 820.1Z"/></g>
+      <g class="m-leg-up"><path class="m-leg-upper" fill="currentColor" d="M319.6 820.1C307.7 804.4 295.9 788.7 284 773.1C319.6 741.1 317.4 699.8 338.3 691.7C363.3 682 379.6 708 375.3 729.4C367.8 766.8 350.4 796.9 319.6 820.1Z"/></g>
+      <circle class="m-knee" cx="301.8" cy="796.6" r="29.5" fill="currentColor"/>
+    </g>
+    <g class="m-leg m-leg-2" data-hip="610.0 700.5" data-knee="576.8 803.6" data-foot="447.0 940.2">
+      <g class="m-leg-lo"><path class="m-leg-lower" fill="currentColor" d="M600.5 820.3C570.8 864.8 536.4 904.6 490.5 933.1C468.6 946.7 431.7 951 434.2 913.5C435.5 892.8 461.4 884.7 475.6 873.9C507.5 849.4 531.4 820.7 553 786.9C568.8 798.1 584.7 809.2 600.5 820.3Z"/></g>
+      <g class="m-leg-up"><path class="m-leg-upper" fill="currentColor" d="M600.5 820.3C584.7 809.2 568.8 798.1 553 786.9C566.7 758.6 576.7 731.8 580.3 700.3C581.1 693.4 582.5 685.5 587.9 680.4C605.2 663.9 638.9 671.1 640 698.2C641.6 738.9 619.4 785.6 600.5 820.3Z"/></g>
+      <circle class="m-knee" cx="576.8" cy="803.6" r="29.0" fill="currentColor"/>
+    </g>
+    <g class="m-leg m-leg-3" data-hip="805.5 725.0" data-knee="744.4 851.9" data-foot="692.4 992.6">
+      <g class="m-leg-lo"><path class="m-leg-lower" fill="currentColor" d="M769.3 865.3C748.7 905.5 740.6 936.7 724.2 976.1C721.8 981.7 716.2 987.6 711.1 990.9C689.5 1005 666.2 979.8 670.2 958.3C677.9 917 700.1 875.2 719.5 838.5C736.1 847.4 752.7 856.4 769.3 865.3Z"/></g>
+      <g class="m-leg-up"><path class="m-leg-upper" fill="currentColor" d="M769.3 865.3C752.7 856.4 736.1 847.4 719.5 838.5C732.6 813.8 750.4 791.8 762 766.6C770.1 749 771.3 728.8 779.2 711.6C782.2 705 790.2 698.6 797.1 696.6C825.7 688.3 837.3 717.2 832.5 739.7C822.7 785.9 793.5 825.8 769.3 865.3Z"/></g>
+      <circle class="m-knee" cx="744.4" cy="851.9" r="28.3" fill="currentColor"/>
+    </g>
+    <g class="m-leg m-leg-4" data-hip="932.5 721.0" data-knee="927.7 924.8" data-foot="870.2 1101.1">
+      <g class="m-leg-lo"><path class="m-leg-lower" fill="currentColor" d="M956 931.1C943.1 983.3 930.3 1036.2 907.4 1085.2C898.4 1104.6 868.4 1112.9 855.5 1091.9C851.5 1085.4 849.9 1076.2 851.9 1068.8C856.3 1053 865.5 1038.1 871.1 1022.7C883.4 989 892.5 953.8 899.4 918.6C918.2 922.8 937.1 926.9 956 931.1Z"/></g>
+      <g class="m-leg-up"><path class="m-leg-upper" fill="currentColor" d="M956 931.1C937.1 926.9 918.2 922.8 899.4 918.6C908.4 872.1 912.8 820.8 908.3 773.5C906.6 755.8 896.3 719.9 908.3 704.9C935.9 670.1 960 703 962.9 734.3C969.2 801 966.6 864.9 956 931.1Z"/></g>
+      <circle class="m-knee" cx="927.7" cy="924.8" r="29.0" fill="currentColor"/>
+    </g>
+    <g class="m-leg m-leg-5" data-hip="1030.5 626.5" data-knee="1095.5 771.6" data-foot="1112.9 1112.6">
+      <g class="m-leg-lo"><path class="m-leg-lower" fill="currentColor" d="M1124.5 769.3C1128.7 859.7 1124.4 950.3 1130.3 1040.7C1131.8 1063.4 1142.4 1121.2 1102.1 1115.8C1067.9 1111.1 1073.4 1058.9 1072.2 1033.5C1068.2 947.1 1071.6 860.3 1066.4 774C1085.8 772.4 1105.1 770.8 1124.5 769.3Z"/></g>
+      <g class="m-leg-up"><path class="m-leg-upper" fill="currentColor" d="M1039 594C1092.4 642.6 1115.1 698.7 1124.5 769.3C1105.1 770.8 1085.8 772.4 1066.4 774C1063.4 742.8 1057.9 710 1040 683.4C1027.9 665.4 999.4 646.5 997.2 631.1C993.5 605.1 1017.1 592.7 1039 594Z"/></g>
+      <circle class="m-knee" cx="1095.5" cy="771.6" r="29.1" fill="currentColor"/>
+    </g>
+  </g>
+  <g class="m-eye m-eye-l">
+    <ellipse class="m-rim" cx="202.7" cy="449.6" rx="168.3" ry="156.3" fill="currentColor"/>
+    <circle class="m-ring" cx="192.8" cy="447" r="128.7" fill="var(--mark-pupil, currentColor)"/>
+    <circle class="m-white" cx="192.8" cy="447" r="115.1" fill="var(--mark-eye, #fff)"/>
+    <circle class="m-pupil" cx="191.7" cy="489.5" r="47.5" fill="var(--mark-pupil, currentColor)"/>
+  </g>
+  <g class="m-eye m-eye-r">
+    <circle class="m-ring" cx="443.4" cy="507.5" r="126.4" fill="var(--mark-pupil, currentColor)"/>
+    <circle class="m-white" cx="444" cy="507.5" r="112.4" fill="var(--mark-eye, #fff)"/>
+    <circle class="m-pupil" cx="364.1" cy="524.5" r="47.2" fill="var(--mark-pupil, currentColor)"/>
+  </g>
+</svg>
+                <div class="logo-text">Tufa Labs</div>
+            </a>
+            <nav class="site-nav" aria-label="Main navigation">
+                <ul id="site-nav-list">
+                    
+                    <li>
+                        <a href="/v2-9dcd86d1/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/v2-9dcd86d1/research/" class="active" aria-current="page">Research</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/v2-9dcd86d1/news/">News</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/v2-9dcd86d1/open-positions/">Open Positions</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/v2-9dcd86d1/team/">Team</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/v2-9dcd86d1/mlst/">MLST</a>
+                    </li>
+                    
+                </ul>
+            </nav>
+            <button type="button" class="nav-toggle" aria-controls="site-nav-list" aria-expanded="false">Menu</button>
+        </div>
+    </div>
+</header>
+
+    <main class="container post-container" id="content" tabindex="-1">
+        <article class="post post--has-byline-note">
+    <header class="post-header">
+        <a class="post-back" href="/v2-9dcd86d1/research/">← Research</a>
+        <h1 class="post-title">Synthetic pretraining for very small reasoning models.</h1>
+        <div class="post-meta">
+            <time datetime="2026-04-24T09:00:00+02:00">
+                April 24, 2026
+            </time>
+            
+            <span aria-hidden="true">•</span>
+            <span class="post-author">Matteo Saponati</span>
+            
+        </div>
+        
+        <p class="post-byline-note">In collaboration with others at Tufa Labs</p>
+        
+    </header>
+
+    
+
+    <div class="post-content">
+        <h2 id="motivation">Motivation</h2>
+
+<p>Synthetic data has become a key ingredient in modern pretraining recipes for Large Language Models (LLMs).<label for="ref-synth-1" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-synth-1" class="margin-toggle" /><span id="sidenote-ref-synth-1" class="sidenote"><a href="https://arxiv.org/abs/2505.09388" target="_blank" rel="noopener noreferrer">Qwen3 Technical Report</a> (Yang et al., 2025).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-synth-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-synth-2" class="margin-toggle" /><span id="sidenote-ref-synth-2" class="sidenote"><a href="https://arxiv.org/abs/2412.08905" target="_blank" rel="noopener noreferrer">Phi-4 Technical Report</a> (Abdin et al., 2024).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-synth-3" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-synth-3" class="margin-toggle" /><span id="sidenote-ref-synth-3" class="sidenote"><a href="https://www.arcee.ai/blog/trinity-large" target="_blank" rel="noopener noreferrer">Trinity Large</a> (Atkins, 2026).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-synth-4" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-synth-4" class="margin-toggle" /><span id="sidenote-ref-synth-4" class="sidenote"><a href="https://arxiv.org/abs/2512.20856" target="_blank" rel="noopener noreferrer">NVIDIA Nemotron 3: Efficient and Open Intelligence</a> (NVIDIA, 2025).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-synth-5" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-synth-5" class="margin-toggle" /><span id="sidenote-ref-synth-5" class="sidenote"><a href="https://huggingface.co/datasets/HuggingFaceFW/finephrase" target="_blank" rel="noopener noreferrer">FinePhrase</a> (HuggingFaceFW, 2026).</span> It represents a natural evolution in data curation: synthetic generation can recover and enhance data previously excluded from pretraining, rephrase existing high-quality content to expand the corpus, and potentially extend scaling laws towards more capable models. Crucially, the right pretraining data mix is essential for grounding reasoning capabilities early in training and enabling further gains during post-training.<label for="ref-posttraining-1" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-posttraining-1" class="margin-toggle" /><span id="sidenote-ref-posttraining-1" class="sidenote"><a href="https://arxiv.org/pdf/2510.01631" target="_blank" rel="noopener noreferrer">Demystifying Synthetic Data in LLM Pre-training: A Systematic Study of Scaling Laws, Benefits, and Pitfalls</a> (Kang et al., 2025).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-posttraining-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-posttraining-2" class="margin-toggle" /><span id="sidenote-ref-posttraining-2" class="sidenote"><a href="https://arxiv.org/pdf/2508.10975" target="_blank" rel="noopener noreferrer">BeyondWeb: Lessons from Scaling Synthetic Data for Trillion-scale Pretraining</a> (DatologyAI, 2025).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-posttraining-3" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-posttraining-3" class="margin-toggle" /><span id="sidenote-ref-posttraining-3" class="sidenote"><a href="https://pleias.fr/blog/blogsynth-the-new-data-frontier" target="_blank" rel="noopener noreferrer">SYNTH: the new data frontier</a> (Pleias, 2025).</span></p>
+
+<p>Beyond increasing data quantity — and of greater interest to us — synthetic pretraining offers control over the learning signal itself, improving token efficiency. By converting human-written text into more explicit, reasoning-friendly sequences, synthetic rephrasing can increase the informational value of each training token.</p>
+
+<p>Our hypothesis is that enriching reasoning datasets (e.g., math corpora) with more explicit reasoning steps, self-contained context, and clearer logical dependencies will strengthen the reasoning capabilities of pretrained models. We hypothesize this holds even at the extreme of very small models (&lt; 1B parameters), a scale we distinguish from small models (1–7B) and frontier models (70B+).</p>
+
+<div class="research-callout research-callout--question">
+  <div class="research-callout__label">Research Question</div>
+
+  <p><strong>Does synthetic data improve reasoning models?</strong></p>
+</div>
+
+<p>To investigate this, we study three synthetic transformations, each instantiating a different way to improve token efficiency through synthetic pretraining:</p>
+
+<ol>
+  <li>“<strong>TPT</strong>”, inspired by “Thinking Augmented Pretraining”,<label for="ref-tpt-intro" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-tpt-intro" class="margin-toggle" /><span id="sidenote-ref-tpt-intro" class="sidenote"><a href="https://arxiv.org/pdf/2509.20186" target="_blank" rel="noopener noreferrer">Thinking Augmented Pre-training</a> (Wang et al., 2025).</span> adds explicit thought-process structure to each training example.</li>
+  <li>“<strong>First principles</strong>”, (inspired by SwallowMath<label for="ref-swallowmath-intro" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-swallowmath-intro" class="margin-toggle" /><span id="sidenote-ref-swallowmath-intro" class="sidenote"><a href="https://arxiv.org/pdf/2505.02881" target="_blank" rel="noopener noreferrer">Rewriting Pre-Training Data Boosts LLM Performance in Math and Code</a> (Fujii et al., 2025).</span> and Kimi K2<label for="ref-kimi-intro" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-kimi-intro" class="margin-toggle" /><span id="sidenote-ref-kimi-intro" class="sidenote"><a href="https://arxiv.org/pdf/2507.20534" target="_blank" rel="noopener noreferrer">Kimi K2: Open Agentic Intelligence</a> (Kimi Team et al., 2025).</span>), reformulates math documents as learning-note style content.</li>
+  <li>“<strong>Rephrasing</strong>” rewrites math documents to maximize learnability for an autoregressive student model.</li>
+</ol>
+
+<p>Together, these three prompts provide a controlled comparison between two plausible mechanisms: enriching training examples with more reasoning content, versus making existing reasoning content more learnable.</p>
+
+<p>Since our compute budget is still relatively limited as a small research lab, we focus on small and very small reasoning language models as an initial proxy for isolating the effect of synthetic pretraining data. We pretrain a custom dense 0.8B language model based on the Qwen3 architecture on 12B tokens from MegaMath-Web-Pro-Max,<label for="ref-megamath" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-megamath" class="margin-toggle" /><span id="sidenote-ref-megamath" class="sidenote"><a href="https://arxiv.org/abs/2506.20512" target="_blank" rel="noopener noreferrer">OctoThinker: Mid-training Incentivizes Reinforcement Learning Scaling</a> (Wang et al., 2025).</span> and compare it against three variants in which the training data is augmented using each of the prompts above, with Qwen3.5-0.8B (non-thinking mode)<label for="ref-qwen-hf-intro" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-qwen-hf-intro" class="margin-toggle" /><span id="sidenote-ref-qwen-hf-intro" class="sidenote"><a href="https://huggingface.co/Qwen/Qwen3.5-0.8B" target="_blank" rel="noopener noreferrer">Qwen3.5-0.8B</a> (Qwen Team, 2026).</span> as the generator model.</p>
+
+<p>We evaluate reasoning gains through few-shot accuracy across shot counts, summarized by the few-shot gain metric,</p>
+
+\[\text{gain}(k) = \text{acc}(k) - \text{acc}(0)\]
+
+<p>which isolates the marginal benefit of in-context demonstrations over zero-shot performance. See the <a href="#methodology">Methodology</a> section for a more detailed description.</p>
+
+<hr />
+
+<h2 id="results">Results</h2>
+
+<p><a id="main-takeaway"></a></p>
+
+<blockquote class="callout"><span class="callout-label">Main Takeaway</span><p class="callout-title">Synthetic pretraining improves few-shot performance on both GSM8K and MATH500 for very small language models.</p>
+
+  <p>Gains scale with the number of demonstrations (<strong>2–3× larger than with the original dataset</strong>), suggesting that synthetic pretraining strengthens in-context learning capabilities.</p>
+</blockquote>
+
+<figure class="post-figure">
+    <img src="/assets/posts/enhancing-reasoning-small-language-models/figure-1.png" alt="Figure 1. Performance gain over zero-shot accuracy (k=0) for the original and synthetic pretrained models, evaluated on GSM8K and MATH500 with CoT prompting across an increasing numbers of demonstrations k. Each point shows the median gain over the test set." />
+    <figcaption><strong>Figure 1.</strong> Performance gain over zero-shot accuracy (k=0) for the original and synthetic pretrained models, evaluated on GSM8K and MATH500 with CoT prompting across an increasing numbers of demonstrations k. Each point shows the median gain over the test set.</figcaption>
+</figure>
+
+<p>Gains vary across synthetic pretraining runs, but all three prompts show significant improvements over the original dataset. Performance differences between synthetic and original models widen as k increases (especially from 0 to 2-shot), suggesting stronger in-context learning capabilities. Overall, all three prompts yield stable, consistent gains across few-shot settings, especially on GSM8K.</p>
+
+<p><a id="ablation-experiment"></a></p>
+
+<blockquote class="callout"><span class="callout-label">Ablation experiment</span><p class="callout-title">Few-shot performance gains are robust to the choice and ordering of demonstrations.</p>
+
+  <p>When CoT examples are randomly sampled per question, synthetic pretraining continues to show consistent improvements over the original dataset.</p>
+</blockquote>
+
+<figure class="post-figure">
+    <img src="/assets/posts/enhancing-reasoning-small-language-models/figure-2.png" alt="Figure 2. Performance gain over k=0 accuracy for the original and synthetic pretrained models, following the same evaluation protocol as Figure 1. Each point shows the median across 4 random seeds, with error bars indicating the interquartile range (IQ25–IQ75)." />
+    <figcaption><strong>Figure 2.</strong> Performance gain over k=0 accuracy for the original and synthetic pretrained models, following the same evaluation protocol as Figure 1. Each point shows the median across 4 random seeds, with error bars indicating the interquartile range (IQ25–IQ75).</figcaption>
+</figure>
+
+<p>It is known that few-shot performance is affected not only by “using examples to learn in context,” but also by base task competence, prompt format sensitivity, example selection, example order, and possible benchmark overlap or contamination.<label for="ref-fewshot-1" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-fewshot-1" class="margin-toggle" /><span id="sidenote-ref-fewshot-1" class="sidenote"><a href="https://arxiv.org/abs/2202.12837" target="_blank" rel="noopener noreferrer">Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?</a> (Min et al., 2022).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-fewshot-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-fewshot-2" class="margin-toggle" /><span id="sidenote-ref-fewshot-2" class="sidenote"><a href="https://arxiv.org/abs/2104.08786" target="_blank" rel="noopener noreferrer">Fantastically Ordered Prompts and Where to Find Them: Overcoming Few-Shot Prompt Order Sensitivity</a> (Lu et al., 2021).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-fewshot-3" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-fewshot-3" class="margin-toggle" /><span id="sidenote-ref-fewshot-3" class="sidenote"><a href="https://arxiv.org/pdf/2402.10738" target="_blank" rel="noopener noreferrer">Let’s Learn Step by Step: Enhancing In-Context Learning Ability with Curriculum Learning</a> (Liu et al., 2024).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-fewshot-4" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-fewshot-4" class="margin-toggle" /><span id="sidenote-ref-fewshot-4" class="sidenote"><a href="https://aclanthology.org/2025.naacl-long.605/" target="_blank" rel="noopener noreferrer">In-Context Learning with Long-Context Models: An In-Depth Exploration</a> (Bertsch et al., 2025).</span></p>
+
+<p>To assess the robustness of our results to the choice and ordering of CoT demonstrations, we repeat the same evaluation but replace the fixed CoT examples with a random set drawn per test question. We fix the random seeds to ensure consistency across checkpoints. Our results show that synthetic pretraining maintains its gains under this randomized setup, confirming that improvements reflect genuine reasoning ability. Interestingly, this randomized evaluation reveals a clearer ranking among the synthetic pretraining runs than the original fixed-example setup, where all models achieved roughly similar gains on GSM8K. This suggests that random demonstrations may better discriminate between the reasoning capabilities induced by different generation prompts.</p>
+
+<p>We next present a series of additional takeaways building on these results. We show that synthetic pretraining genuinely improves reasoning, that gains emerge early during training as synthetic runs diverge from the original pretraining trajectory, and several findings that challenge common assumptions about synthetic data generation.</p>
+
+<p><a id="takeaway-2"></a></p>
+
+<blockquote class="callout"><span class="callout-label">Takeaway 2</span><p class="callout-title">Does synthetic data improve reasoning? Yes.</p>
+
+  <p>Models trained on synthetic data show clear gains in reasoning and numeric problem-solving, confirming the benefit goes beyond learning output formatting.</p>
+</blockquote>
+
+<figure class="post-figure">
+    <img src="/assets/posts/enhancing-reasoning-small-language-models/figure-3.png" alt="Figure 3. Percentage of answers where the original model fails under both strict and flexible parsing (purple), and where it fails under strict parsing but succeeds under flexible parsing (blue)." />
+    <figcaption><strong>Figure 3.</strong> Percentage of answers where the original model fails under both strict and flexible parsing (purple), and where it fails under strict parsing but succeeds under flexible parsing (blue).</figcaption>
+</figure>
+
+<p>For both GSM8K and MATH500, answers can be evaluated under two parsing modes: strict parsing requires the answer in a precise format (e.g., inside a <code class="language-plaintext highlighter-rouge">\boxed{}</code> expression), while flexible parsing uses broader heuristics to locate the answer anywhere in the output. To disentangle reasoning improvements from formatting improvements, we focus on examples where the synthetic model answers correctly under strict parsing but the original model does not (see <a href="#supplementary-figure-1">Supplementary Figure 1</a>), and split them into two sub-cases: <strong>(1) flex incorrect</strong>: the original model also fails under flexible parsing, meaning the synthetic model is genuinely better at reasoning; <strong>(2) flex correct</strong>: the original model succeeds under flexible parsing, meaning it found the correct solution but failed to format it — so the synthetic model’s gain is purely in formatting. We find that the former is by far the most common case, confirming that synthetic pretraining improves reasoning rather than just output formatting.</p>
+
+<p><a id="takeaway-3"></a></p>
+
+<blockquote class="callout"><span class="callout-label">Takeaway 3</span><p class="callout-title">Do gains emerge during pretraining? Yes.</p>
+
+  <p>Improvements from synthetic pretraining are visible from early training checkpoints, particularly on MATH500. In terms of token efficiency, synthetic pretrained models match the final performance of the original model using <strong>3–6× fewer training tokens on GSM8K and ~2.5× fewer training tokens on MATH500</strong></p>
+</blockquote>
+
+<figure class="post-figure">
+    <img src="/assets/posts/enhancing-reasoning-small-language-models/figure-4.png" alt="Figure 4. Percentage of strict correct answers for the original and synthetic pretraining models as a function of training tokens seen. Models are evaluated on GSM8K (5-shot) and MATH500 (4-shot), both with CoT prompting." />
+    <figcaption><strong>Figure 4.</strong> Percentage of strict correct answers for the original and synthetic pretraining models as a function of training tokens seen. Models are evaluated on GSM8K (5-shot) and MATH500 (4-shot), both with CoT prompting.</figcaption>
+</figure>
+
+<p>The “rephrasing” and “TPT” prompts show more stable and consistent downstream performance gains throughout pretraining, compared to the “first principles” prompt.</p>
+
+<p><a id="takeaway-4"></a></p>
+
+<blockquote class="callout"><span class="callout-label">Takeaway 4</span><p class="callout-title">Does performance depend on the generation prompt? Yes, but in interesting ways.</p>
+
+  <p>Test-time reasoning gains vary across generation prompts, but all synthetic pretraining runs show significant improvements over the original dataset, regardless of the specific synthetic data configuration (number of synthetic tokens or data style).</p>
+</blockquote>
+
+<figure class="post-figure">
+    <img src="/assets/posts/enhancing-reasoning-small-language-models/figure-5.png" alt="Figure 5. Normalized distribution of row length (in characters) for the original dataset and the three synthetic datasets. Lengths are computed over 50k examples. For the synthetic datasets, we use the same rows as in the original, measuring both the original content and the synthetic augmentation." />
+    <figcaption><strong>Figure 5.</strong> Normalized distribution of row length (in characters) for the original dataset and the three synthetic datasets. Lengths are computed over 50k examples. For the synthetic datasets, we use the same rows as in the original, measuring both the original content and the synthetic augmentation.</figcaption>
+</figure>
+
+<p>While Figure 1 shows that different prompts induce different gains over the original dataset, all synthetic pretraining runs are better than the original dataset. Interestingly, there are clear differences in the statistics of the synthetic data (especially between “rephrasing” and the other prompts). The “rephrasing” prompt induces synthetic augmentations roughly as long as the original prompt, while the other two prompts create longer augmentations (also the length distribution is different as shown above):</p>
+
+<ol>
+  <li><strong>TPT</strong>: the median token counts per augmented example is 2355 (ratio of synthetic vs original token is ~<strong>3.13</strong>)</li>
+  <li><strong>First principles</strong>: the median token counts per augmented example is 2893 (ratio of synthetic vs original token is ~<strong>3.53</strong>)</li>
+  <li><strong>Rephrasing</strong>: the median token counts per augmented example is 1174 (ratio of synthetic vs original token is ~<strong>1.75</strong>)</li>
+</ol>
+
+<p>To assess whether these differences in length correspond to differences in lexical richness, we computed the Log Type-Token Ratio (Log TTR), defined as $\log(n_\text{unique}) / \log(n_{tot})$, where $n_{\text{unique}}$ is the number of unique tokens in the corpus, and $n_{\text{tot}}$ is the total number of tokens. The original dataset scores highest (<strong>0.751</strong>), while all augmented variants cluster closely in the range 0.716–0.724 (rephrasing: <strong>0.724</strong>, TPT: <strong>0.721</strong>, first principles: <strong>0.716</strong>). The narrow spread indicates that the three augmentation strategies produce comparable lexical diversity despite their differences in length, and that none of them substantially impoverishes the vocabulary relative to the original.</p>
+
+<p><a id="takeaway-5"></a></p>
+
+<blockquote class="callout"><span class="callout-label">Takeaway 5</span><p class="callout-title">Does the generator need to be stronger than the student? No.</p>
+
+  <p>A same-size generator (0.8B, non-thinking mode) yields clear benefits, showing that effective synthetic data generation does not require a larger or computationally heavier model.</p>
+</blockquote>
+
+<p>To our knowledge, this is the first work demonstrating that a model this small, operating in non-thinking mode, can serve as an effective generator for synthetic pretraining. Our results further support the growing evidence that generator model size is not a critical factor for synthetic data quality. Prior work has shown that model family matters more than model size,<label for="ref-generator-family-1" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-generator-family-1" class="margin-toggle" /><span id="sidenote-ref-generator-family-1" class="sidenote"><a href="https://arxiv.org/pdf/2410.20796" target="_blank" rel="noopener noreferrer">Rephrasing natural text data with different languages and quality levels for Large Language Model pre-training</a> (Pieler et al., 2024).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-generator-family-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-generator-family-2" class="margin-toggle" /><span id="sidenote-ref-generator-family-2" class="sidenote"><a href="https://arxiv.org/pdf/2510.01631" target="_blank" rel="noopener noreferrer">Demystifying Synthetic Data in LLM Pre-training: A Systematic Study of Scaling Laws, Benefits, and Pitfalls</a> (Kang et al., 2025).</span> and that scaling beyond 1B parameters yields no meaningful gains in synthetic data quality.<label for="ref-synthetic-playbook" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-synthetic-playbook" class="margin-toggle" /><span id="sidenote-ref-synthetic-playbook" class="sidenote"><a href="https://stuker.com/wp-content/uploads/2026/03/the-synthetic-data-playbook-generating-trillions-of-the-finest-tokens.pdf" target="_blank" rel="noopener noreferrer">The Synthetic Data Playbook: Generating Trillions of the Finest Tokens</a> (Niklaus et al., 2026).</span></p>
+
+<p><a id="takeaway-6"></a></p>
+
+<blockquote class="callout"><span class="callout-label">Takeaway 6</span><p class="callout-title">Does the source dataset need to be low-quality to observe gains with synthetic pretraining? No.</p>
+
+  <p>We observe strong gains from synthetic data augmentation even when applied to MegaMath-Web-Pro-Max, a heavily filtered and curated corpus.</p>
+</blockquote>
+
+<p>It is commonly reported that synthetic data augmentation yields significant gains primarily on noisy, low-quality corpora such as The Pile<label for="ref-pile" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-pile" class="margin-toggle" /><span id="sidenote-ref-pile" class="sidenote"><a href="https://arxiv.org/abs/2101.00027" target="_blank" rel="noopener noreferrer">The Pile: An 800GB Dataset of Diverse Text for Language Modeling</a> (Gao et al., 2020).</span> or Common Crawl,<label for="ref-common-crawl" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-common-crawl" class="margin-toggle" /><span id="sidenote-ref-common-crawl" class="sidenote"><a href="https://arxiv.org/abs/1910.10683" target="_blank" rel="noopener noreferrer">Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer</a> (Raffel et al., 2019).</span> with limited benefit on already high-quality data.<label for="ref-high-quality-1" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-high-quality-1" class="margin-toggle" /><span id="sidenote-ref-high-quality-1" class="sidenote"><a href="https://arxiv.org/pdf/2410.20796" target="_blank" rel="noopener noreferrer">Rephrasing natural text data with different languages and quality levels for Large Language Model pre-training</a> (Pieler et al., 2024).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-high-quality-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-high-quality-2" class="margin-toggle" /><span id="sidenote-ref-high-quality-2" class="sidenote"><a href="https://arxiv.org/abs/2401.16380" target="_blank" rel="noopener noreferrer">Rephrasing the Web: A Recipe for Compute and Data-Efficient Language Modeling</a> (Maini et al., 2024).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-high-quality-3" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-high-quality-3" class="margin-toggle" /><span id="sidenote-ref-high-quality-3" class="sidenote"><a href="https://arxiv.org/abs/2506.04689" target="_blank" rel="noopener noreferrer">Recycling the Web: A Method to Enhance Pre-training Data Quality and Quantity for Language Models</a> (Nguyen et al., 2025).</span><span class="sidenote-separator" aria-hidden="true">,</span><label for="ref-high-quality-4" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-high-quality-4" class="margin-toggle" /><span id="sidenote-ref-high-quality-4" class="sidenote"><a href="https://arxiv.org/abs/2502.04235" target="_blank" rel="noopener noreferrer">Reformulation for Pretraining Data Augmentation</a> (Hao et al., 2025).</span> However, we observe strong gains even when augmenting MegaMath-Web-Pro-Max, a heavily filtered and curated corpus. This is consistent with the Thinking Augmented Pretraining work,<a href="#sidenote-ref-tpt-intro" class="sidenote-ref" aria-label="Jump to sidenote 9">9</a> where the authors similarly report gains from synthetic augmentation of high-quality datasets including MegaMath-Web-Pro-Max and FineWeb-Edu.</p>
+
+<hr />
+
+<h2 id="conclusions">Conclusions</h2>
+
+<p>We explored whether synthetic pretraining can improve reasoning in very small language models (&lt; 1B parameters). By augmenting MegaMath-Web-Pro-Max with synthetically generated content — using a same-size, non-thinking 0.8B generator — we consistently improve few-shot reasoning on GSM8K and MATH500 across all generation prompts tested.</p>
+
+<p>Performance gains scale with the number of in-context demonstrations (2–3×), suggesting synthetic pretraining strengthens in-context learning rather than merely improving output formatting (<a href="#main-takeaway">Main takeaway</a> and <a href="#takeaway-2">Takeaway 2</a>). Gains emerge early in training, with synthetic models matching the original model’s final performance using 3–6× fewer training tokens on GSM8K and ~2.5× fewer training tokens on MATH500 (<a href="#takeaway-3">Takeaway 3</a>). These improvements are robust to CoT example choice and ordering, confirming they reflect genuine reasoning gains (<a href="#ablation-experiment">Ablation experiment</a>).</p>
+
+<p>Our results also challenge two common assumptions: that effective generators must be large, and that source data must be low-quality to benefit from augmentation. A same-size, non-thinking generator suffices, and strong gains are achievable even on heavily curated corpora (<a href="#takeaway-5">Takeaway 5</a> and <a href="#takeaway-6">Takeaway 6</a>).</p>
+
+<p>This work is a first step toward understanding how to maximize token utility and build the right pretraining recipe for very small reasoning models.<label for="ref-distillation-open-question" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-distillation-open-question" class="margin-toggle" /><span id="sidenote-ref-distillation-open-question" class="sidenote">An open research question is how to separate the gains from synthetic data generation from those coming from distillation; see more <a href="#discussion-synthetic-pretraining-vs-distillation">here</a>.</span></p>
+
+<hr />
+
+<h2 id="citation">Citation</h2>
+<p class="citation-label">Please cite this work as</p>
+<p class="citation-ref">Saponati, M. “Synthetic pretraining for very small reasoning models.” Tufa Labs Research, April 2026. https://tufalabs.ai/research/enhancing-reasoning-small-language-models/</p>
+<div class="language-bibtex highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@article{saponati2026synthetic,
+  title   = {Synthetic pretraining for very small reasoning models},
+  author  = {Saponati, Matteo},
+  journal = {Tufa Labs Research},
+  year    = {2026},
+  month   = {apr},
+  url     = {https://tufalabs.ai/research/enhancing-reasoning-small-language-models/}
+}</code></pre></div></div>
+<hr />
+
+<h2 id="methodology">Methodology</h2>
+
+<h3 id="synthetic-data-generation">Synthetic data generation</h3>
+
+<p>Our base dataset is MegaMath-Web-Pro-Max, a roughly 70-billion-token math-focused web corpus derived from MegaMath through a dedicated classifier, with each sample subsequently scored for mathematical usefulness by Llama-3.1-70B-Instruct. This is a highly preprocessed, math-focused web corpus.<a href="#sidenote-ref-megamath" class="sidenote-ref" aria-label="Jump to sidenote 12">12</a> Synthetic tokens were generated using Qwen 3.5 0.8B with thinking mode disabled and generation capped at 3072 tokens.<label for="ref-qwen-blog" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-qwen-blog" class="margin-toggle" /><span id="sidenote-ref-qwen-blog" class="sidenote"><a href="https://qwen.ai/blog?id=qwen3.5" target="_blank" rel="noopener noreferrer">Qwen3.5</a> (Qwen Team, 2026).</span> Following the best practices suggested in the Qwen 3.5 reports, sampling was performed at temperature 1, top-p 0.95, and top-k 20.<a href="#sidenote-ref-qwen-hf-intro" class="sidenote-ref" aria-label="Jump to sidenote 13">13</a></p>
+
+<p>We consider three different generation prompts for generating synthetic data, as follows:</p>
+
+<ol>
+  <li>
+    <p>The same prompt as in Thinking Augmented Pretraining.<a href="#sidenote-ref-tpt-intro" class="sidenote-ref" aria-label="Jump to sidenote 9">9</a></p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> {text}
+ ## End of the context
+ Simulate an expert’s in-depth thought process as they analyze the above context,
+ focusing on complex and informative aspects. Skip trivial details. Use Feynman
+ technique whenever possible to ensure a deep understanding.
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>A “first principles” prompt, which is inspired by previous work on synthetic data augmentation for math and coding reasoning (SwallowMath,<a href="#sidenote-ref-swallowmath-intro" class="sidenote-ref" aria-label="Jump to sidenote 10">10</a> Kimi K2 technical report).<a href="#sidenote-ref-kimi-intro" class="sidenote-ref" aria-label="Jump to sidenote 11">11</a> The idea is that writing high-quality math documents into learning-notes style helps an autoregressive learner.</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> {text}
+ ## End of the context
+ Analyze the above context using first principles thinking. Break down
+ the content to its most fundamental concepts and assumptions. Then
+ rebuild understanding from scratch, questioning each assumption along
+ the way. Explain the core mechanics as if discovering them for
+ the first time.
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>A “rephrasing” prompt, where the conversion into learning notes is made explicit in the generation prompt. We use this prompt to test if more explicit prompts lead to better downstream performances.</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> {text}
+ ## End of the context
+    
+ Rewrite the above context into higher-utility training trajectories for a smaller reasoning model.
+    
+ Your goal is to maximize LEARNABILITY for the target student while preserving correctness.
+    
+ Hard constraints:
+ - Elaborate on the given context, clarify key steps, reveal hidden complexities.
+ - Use high quality English language as in text on Wikipedia.
+ - Each step should make one atomic reasoning move.
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h3 id="pretraining">Pretraining</h3>
+
+<p>We pretrain a dense 0.8B-parameter Qwen3 model. Word embeddings are tied, and the model uses the Qwen3 tokenizer (vocab size 151936) with a 32768-token context window and variable-length attention. Training runs for 12B tokens on 4 NVIDIA B200 GPUs (per-device batch size 8), with checkpoints saved every 2B tokens.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Hyperparameter</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Architecture</td>
+      <td>Number of layers</td>
+      <td>28</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Hidden size</td>
+      <td>1280</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Intermediate size</td>
+      <td>3840</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Attention heads</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Key-value heads (GQA)</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Activation function</td>
+      <td>SiLU</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Tied embeddings</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Attention bias</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>RMSNorm ε</td>
+      <td>1e-6</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Weight initializer range</td>
+      <td>0.02</td>
+    </tr>
+    <tr>
+      <td>Tokenization</td>
+      <td>Tokenizer</td>
+      <td>Qwen3</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Vocabulary size</td>
+      <td>151936</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Context length</td>
+      <td>32768 tokens</td>
+    </tr>
+    <tr>
+      <td>Optimizer</td>
+      <td>Algorithm</td>
+      <td>AdamW</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Peak learning rate</td>
+      <td>5e-4</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>β₁, β₂</td>
+      <td>0.9, 0.95</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>ε</td>
+      <td>1e-8</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Weight decay</td>
+      <td>0.1</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Gradient clip norm</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <td>LR Schedule</td>
+      <td>Type</td>
+      <td>Cosine decay</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Warmup</td>
+      <td>~120M tokens (linear)</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>min. LR</td>
+      <td>5e-5</td>
+    </tr>
+    <tr>
+      <td>Training</td>
+      <td>Total tokens</td>
+      <td>12B</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Per-device batch size</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Gradient accumulation steps</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="evaluation">Evaluation</h3>
+
+<p>We evaluate on two standard benchmarks: GSM8K<label for="ref-gsm8k" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-gsm8k" class="margin-toggle" /><span id="sidenote-ref-gsm8k" class="sidenote"><a href="https://arxiv.org/abs/2110.14168" target="_blank" rel="noopener noreferrer">Training Verifiers to Solve Math Word Problems</a> (Cobbe et al., 2021).</span> and MATH500,<label for="ref-math500" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-math500" class="margin-toggle" /><span id="sidenote-ref-math500" class="sidenote"><a href="https://huggingface.co/datasets/HuggingFaceH4/MATH-500" target="_blank" rel="noopener noreferrer">MATH-500</a> (HuggingFaceH4, 2024).</span> using greedy decoding (temperature 0), a maximum of 256 output tokens, and no prompt template. To assess the reasoning capabilities and as a proxy for ICL, we measure few-shot accuracy on GSM8K across shot counts k ∈ {0, 1, 2, 4, 5}, summarized by the <strong>few-shot gain</strong></p>
+
+\[\text{gain}(k) = \text{acc}(k) - \text{acc}(0)\]
+
+<p>This quantity isolates the marginal benefit of demonstrations over zero-shot performance, and crucially disambiguates two distinct effects. A model that uniformly outperforms another across all values of k is primarily exhibiting stronger mathematical ability. By contrast, models that perform comparably at k = 0 but diverge as k increases provide cleaner evidence of a difference in ICL capacity specifically.</p>
+
+<hr />
+
+<h2 id="supplementary-materials">Supplementary Materials</h2>
+
+<figure id="supplementary-figure-1" class="post-figure">
+    <img src="/assets/posts/enhancing-reasoning-small-language-models/supplementary-figure-1.png" alt="Supplementary Figure 1. Percentage of test questions answered correctly by only the original model (orange), only the synthetic model (purple), or both models (green), under strict parsing (top) and flexible parsing (bottom)." />
+    <figcaption><strong>Supplementary Figure 1.</strong> Percentage of test questions answered correctly by only the original model (orange), only the synthetic model (purple), or both models (green), under strict parsing (top) and flexible parsing (bottom).</figcaption>
+</figure>
+
+<h3 id="synthetic-data-examples">Synthetic data examples</h3>
+
+<p>This is the original row taken from the MegaMath-Web-Pro-Max dataset (375 tokens):</p>
+
+<p><em>“To solve the equation 5(28/2), we need to follow the order of operations.
+First, divide 28 by 2: 28/2 = 14.
+Then, multiply 5 by the result: 5 * 14 = 70.
+This can also be represented as 5 * (28/2) = 5 * 14 = 70.
+Alternatively, we can simplify the equation as follows:
+28/2 = 14,
+d/5 = 14,
+d = 70/5,
+5 * (28/2) = 70/5,
+5 * 14 = 70/5.
+We can further simplify this by recognizing that 28 * 2.5 = 70 and 5 * 2.5 = 12.5, but the key is to simplify 28/2 to 14 and then multiply by 5 to get 70.
+Related math problems include:</em></p>
+
+<ul>
+  <li><em>Carly and Rob have a combined 42 DVDs.</em></li>
+  <li><em>A film alliance sampled 50 U.S. citizens.</em></li>
+  <li><em>Kate bought 3 CDs and 1 DVD, while her friend Joel bought 2 CDs.</em></li>
+  <li><em>Brian spent money over 5 days.</em></li>
+  <li><em>A TV station sells promotional DVDs.</em></li>
+  <li><em>Football tickets are $30 for adults and $15 for children.</em></li>
+  <li><em>A scatter plot shows relative numbers.</em></li>
+  <li><em>Trisha is t years old, and Kyle is 3 years younger.</em></li>
+  <li><em>Algebra word problems involve addition and elimination methods.</em></li>
+</ul>
+
+<p><em>Multiple choice questions and answers have been removed for clarity, but the core concepts of math operations, statistics, and algebra remain.</em> “</p>
+
+<ol>
+  <li>
+    <p>This is the augmentation using the TPT prompt (3072 tokens):</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> ### **Simulating the Expert’s Deep Dive: Why $5 \times 14 = 70$ Is the Only Way**
+    
+ **The Challenge:** The user has presented a specific, albeit verbose, mathematical problem-solving narrative. It correctly follows the standard order of operations (PEMDAS) to find $5 \times 14 = 70$. However, the user's text drifts significantly from the actual **mathematically rigorous** process of finding the solution, and crucially, it is mathematically **incorrect**.
+    
+ In standard math, the order of operations for multiplication and division is **left-to-right**. The user wrote:
+ 1.  Divide 28 by 2 ($= 14$).
+ 2.  Multiply 5 by the result.
+ 3.  **Calculate $5 \times 14 = 70$**.
+    
+ **The Error:**
+ $$5 \times 14 = 70$$
+ But the actual value is:
+ $$5 \times (28 / 2) = 5 \times 14 = 70$$
+ *Wait, the math actually works out correctly here.*
+ Let's re-read the user's specific request and text.
+ User asks: "To solve the equation 5(28/2), we need to follow the order of operations... Then, multiply 5 by the result: 5 * 14 = 70."
+ This part is actually **correct**.
+ However, the user's final sentence ("We can further simplify this by recognizing that 28 * 2.5 = 70...") introduces a **critical error** if interpreted strictly as a "trick question" or a test of order-of-magnitude understanding, OR if the user meant to solve a *different* equation.
+    
+ **Let's assume the user is asking for the correct solution to the equation presented, or they are trying to identify the flaw in the provided text.**
+    
+ Given the context of "Simulate an expert's in-depth thought process," the best approach is to treat the text provided as the **instruction set**. The user is presenting a standard calculation, but then includes a section "Related math problems" that implies a specific context (e.g., a word problem or a specific logic puzzle).
+    
+ **Re-evaluating the Equation based on Context:**
+ The user provided: `5(28/2)`.
+ The calculation given:
+ 1.  $28 / 2 = 14$.
+ 2.  $5 \times 14 = 70$.
+    
+ **Wait, is there a typo in the user's question?**
+ Common math problem is: *"Solve 5x + 28 = 70"* or *"What is the number that, when divided by 2, and then multiplied by 5, equals 70?"*
+ If the equation is exactly `5(28/2)`, the result is **70**.
+ If the equation is `x * 5 + (28 / 2)`, that's different.
+    
+ Let's look at the "Related math problems" again.
+ *   "Carly and Rob have a combined 42 DVDs." (Algebra/Subtraction)
+ *   "A film alliance sampled 50 U.S. citizens." (Statistics)
+ *   "Kate bought 3 CDs and 1 DVD..." (Algebra/Equations)
+ *   "Brian spent money over 5 days." (Word Problems)
+    
+ **Hypothesis:** The user likely pasted a text that *starts* with a solution but then jumps into a confusing section of related problems, or they are testing my ability to correct their flawed narrative.
+    
+ **Alternative Hypothesis:** The user might be asking about **differentiation** in calculus (though it's explicitly stated "solve the equation"). No, it says "multiply".
+    
+ **Decision:** The user's text contains a **logical contradiction** between the standard order of operations for a specific expression and the *goal* of solving it, OR they are confused about the math.
+ Actually, looking closer at the text provided:
+ "To solve the equation 5(28/2)... multiply 5 by the result: 5 * 14 = 70."
+ **YES.** $5 \times 14$ is exactly $70$. There is no contradiction in the arithmetic *within the user's own text*.
+ The text seems to be a collection of examples (Carly/Rob, etc.) *plus* a specific example of solving `5(28/2)`.
+    
+ **However**, there is a very famous, high-precision trick question involving these exact numbers (28 and 5) that often appears in competitive math:
+ *   Equation: $\sqrt{5} \times \text{something}$? No.
+ *   Equation: $5 + \frac{28}{5}$? No.
+    
+ **Let's step back and treat the "Expert" persona as being correcting the user's potential misunderstanding or simply validating the specific calculation they provided, assuming the equation is what they want to solve.**
+    
+ **BUT WAIT.** There is a more likely interpretation of the user's *intended* equation hidden in the "Related problems".
+ In the list: "Brian spent money over 5 days...". No connection.
+ Maybe the "Related math problems" text is the *source* of the text provided by the user?
+ The user pasted:
+ `- Trisha is t years old, and Kyle is 3 years younger.` (This is algebra).
+ `- Algebra word problems involve addition and elimination methods.` (This is word problem).
+    
+ Okay, so the user is providing a **contextual text** containing examples from a math curriculum (Algebra, Statistics). The prompt asks me to "Simulate an expert's in-depth thought process" based on that context.
+ The context includes a sentence: "Simulate an expert’s in-depth thought process as they analyze the above context..."
+ The context ends with a list of "Related math problems".
+ The *specific task* asked at the end ("Simulate...") is the core of the prompt.
+ **CRITICAL:** The context provided *by the user* includes the example: "To solve the equation 5(28/2)...".
+ If I simulate the expert analyzing the *user's* text, I need to point out that the expert would say: "Okay, you have the formula $A \times B$ (where $B$ contains division by 2 and multiplication by 5). You divided 28/2 to get 14. You multiplied 5 by 14. 70.
+ **HOWEVER**, is the user's text actually flawed?
+ Let's check the math again.
+ $5 \times (28 / 2) = 5 \times 14 = 70$.
+ It works perfectly. The text is internally consistent.
+    
+ **Why would an expert question this?**
+ Perhaps the user made a typo and meant: "Solve the equation: **5 + 28/2**" (which would be 33).
+ OR: "Solve the equation: **$28 / (5 \times 2)$**" (which would be 2.8).
+ OR: The equation is actually **$5 \times (28 / \text{something else})$**?
+    
+ **Let's assume the user has made a mistake in their recall of the equation and wants me to fix it?**
+ No, as an AI, I should not assume user errors unless I am sure. I will analyze the text provided.
+ The text contains:
+ 1.  A standard arithmetic step-by-step.
+ 2.  A section titled "Related math problems".
+ 3.  Questions about Carly, Rob, Kate, Brian.
+ 4.  A concluding list of topics (Statistics, Algebra, Word Problems).
+    
+ **The Expert's Task:**
+ The user is likely trying to solve the equation $5(28/2)$ but they are confused about how to handle the division or multiplication.
+ The most likely scenario in this "Mathematics Logic" context is that the intended equation might have been a **fractional division** where the order of operations matters differently.
+ Example: $\frac{5 \times 28}{2}$ vs $5 \times (\frac{28}{2})$.
+ Both yield 70.
+ Example: $\frac{5 \times 28}{2 + \text{something}}$?
+    
+ **Let's look at the "Related Math Problems" more closely.**
+ Maybe the first paragraph isn't the example, but the *intended* text that the user copied?
+ Text: "To solve the equation 5(28/2)... We need to follow the order of operations...".
+ Okay, the user *is* providing the text.
+ **The Expert's Thought:**
+ The expert should verify the math.
+ 1.  **Step 1:** Division. $28 \div 2 = 14$.
+     *   *Rule Check:* $28 \div 2 = 14$. Correct.
+ 2.  **Step 2:** Multiplication. $5 \times 14$.
+     *   *Rule Check:* $5 \times 14 = 70$. Correct.
+ 3.  **Conclusion:** The calculation yields 70.
+ 4.  **Alternative Perspective:** Can we simplify before multiplying? $28 \div 2 = 14$. Yes. $5 \times 14 = 70$. Yes.
+    
+ **Is there a catch?**
+ What if the equation is **$5 \times (28 / 2)$**?
+ What if the equation is **$5 + (28 / 2)$**? (Which equals 33).
+ What if the equation is **$(5 \times 28) / 2$**?
+ If the user meant to write `5 + 28/2`, that's 33.
+ If the user meant `28 / (5 + 2)`, etc.
+    
+ **Wait, I found a very similar, specific question from a math contest or textbook.**
+ The problem is: "If $5$ is added to $28/2$, what is the sum?" -&gt; $5+14=19$.
+ "The sum of $5$ and $28/2$ is...".
+    
+ However, the user wrote: "To solve the equation 5(28/2)..."
+ And they wrote the multiplication.
+ This implies the equation *is* $5 \times (28 / 2)$.
+ **So the math is sound.**
+    
+ **But the Expert's Job is to be "In-Depth".**
+ The "In-Depth" part requires acknowledging the context:
+ 1.  **Order of Operations:** The user identified the standard steps correctly.
+ 2.  **Conceptual Shift:** The user mentions "simplify as follows: 28/2 = 14". This is correct.
+ 3.  **Final Simplification:** "recognizing that 28 * 2.5 = 70 and 5 * 2.5 = 12.5". **This is the red flag.**
+     *   In the context of a standard math problem, **2.5** suggests a decimal context or a square root context (e.g., $\sqrt{625} = 25$, not $28 \times 2.5 = 70$ unless they meant $\sqrt{28 \times 28 \times \dots}$).
+     *   Wait, $28 \times 2.5 = 70$. This is true math.
+     *   BUT $5 \times 2.5 = 12.5$. This is also true.
+     *   Where does the confusion come from? The expert would say: "The key is to identify that the division ($28/2$) and multiplication ($5 \times$) can be combined logically. $5 \times (28/2)$ is a product of two numbers ($5$ and $14$). It is easier to calculate $14$ first. There is no need to break it down as $28$ and $5$ or as $28 \times 2.5$. The $2.5$ figure here likely comes from a different problem or is a confusion in the original text."
+    
+ **Let's construct the expert response.**
+ The expert needs to:
+ 1.  Validate the steps.
+ 2.  Highlight the potential confusion in the "Related Math Problems" section (likely a copy-paste error from a user's textbook).
+ 3.  Confirm the math $5 \times 14 = 70$ is correct.
+ 4.  Address the "simplification" section gently, suggesting it might stem from a different problem type (e.g., $28/2 = 14$, then $5 \times 14 = 70$, or maybe they meant $\frac{5}{28} \times 2$?).
+    
+ **Wait, there is one more possibility.**
+ Could the "Related math problems" be the *solution* to the original equation?
+ No.
+ Could the user be asking about **Exponent Rules**?
+ $(a^m)^n = a^{mn}$.
+ No.
+    
+ **Let's assume the user has a typo in the equation in their head but pasted the *text* of the equation.**
+ If the user *meant* the equation $5 + 28/2$, the answer is 33.
+ If the user *meant* the equation $28 / (5 \times 2)$, the answer is 2.8.
+ If the user *meant* the equation $\frac{5}{2} \times 28$, the answer is 70.
+ The expression given is exactly $5(28/2)$.
+ **The calculation is correct.**
+    
+ **So the expert's thought process should focus on:**
+ 1.  **Verification:** Check $28/2 = 14$. Yes. Check $5 \times 14 = 70$. Yes.
+ 2.  **Clarification on "Simplification":** Point out that saying "28 * 2.5 =
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>This is the augmentation using the “First Principles” prompt (2188 tokens):</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> ## 1. Core Decomposition: First Principles Analysis
+    
+ To understand the logic, we must strip away the visual complexity of the fraction and the specific examples and look at the **algebraic structure** and **semantic rules** governing these problems.
+    
+ #### A. The Core Operations (The "Grammar")
+ The text describes a fundamental operation of **multiplication** performed on the result of a **division**.
+ *   **Rule:** $A \times (B / C) = A \times B \div C$.
+ *   **Context:** The author intends to calculate the value of $28 \times 2.5$ (derived from $28/2 \times 5$) but uses a **fractional method** (multiplying by a fraction) which is mathematically equivalent but less intuitive for humans who expect base-10 arithmetic.
+ *   **Mechanism:** In this specific context, the logic is purely algebraic manipulation of numbers to produce a specific value.
+    
+ #### B. The Constraints (The "Rules")
+ There are specific constraints governing the input numbers and the final output that are often missed in raw text analysis:
+ *   **Consistency:** The final answer ($d$) must be an **integer**. The text explicitly states $d = 70$ and $70/5 = 14$, implying the output must be a whole number.
+ *   **Contextual Specificity:** While general algebra applies, the numbers chosen ($28, 5, 28, 2$) are arbitrary. The problem asks *what value* $d$ must have, not just "solve for $d$."
+ *   **The "2.5" Anchor:** The author explicitly introduces the intermediate value **2.5** as a "key." This serves as the pivot point where the division ($28/2$) and the multiplication ($5 \times 14$) meet the requirement for the answer.
+    
+ #### C. The Assumptions (The "Epistemic State")
+ These are the premises the text assumes the solver holds without realizing their necessity:
+ 1.  **Fraction Multiplication = Division:** The author assumes that $28 \div 2 = 28 \div 2$. In algebra, $a/b = (a \times b^{-1})$. The author equates this to multiplying the numerator and denominator by 1 (multiplying by 1.0) to "simplify."
+ 2.  **Integer Output:** The author assumes that if the final result ($d$) is an integer, the intermediate division step ($28/2$) must also yield an integer.
+ 3.  **Algebraic Equivalence:** The author assumes that $5 \times 28/2$ is fundamentally the same algebraic entity as $28 \times 2.5$, even if the visual representation changes.
+    
+ ---
+    
+ ### 2. Rebuilding from Scratch: The Algorithmic Journey
+    
+ Let's reconstruct this by acting as an engineer calculating $X = 28 \times 2.5$. We will follow the logic of the text step-by-step.
+    
+ #### Step 1: The Input
+ We are given the expression:
+ $$ 28 \times 2.5 $$
+    
+ #### Step 2: The "Conversion" (Intuition)
+ To the human mind, $2.5$ is not a raw number. It is **half**. We intuitively think of 2.5 as "5 divided by 2."
+ $$ 28 \times 2.5 = 28 \times \left(\frac{5}{2}\right) $$
+    
+ #### Step 3: The First Simplification (The Author's Choice)
+ The author simplifies the numerator first to match the divisor:
+ $$ 28 \times \left(\frac{5}{2}\right) $$
+ $$ \text{This becomes: } 28 \div 2 \times 5 $$
+    
+ *   **Why this works:** We multiply by 1 on top.
+     $$ \frac{28}{1} \times \frac{1}{2} \times \frac{5}{1} = \frac{28 \times 5}{2 \times 1} = \frac{140}{2} $$
+    
+ #### Step 4: The Second Simplification (The Crucial Step)
+ The author changes the division of 2.5 into 2 and 0.5.
+ $$ 28 \times \left(\frac{5}{2}\right) = 14 \times 5 $$
+    
+ *   **Why this matters:** This reveals the fundamental equivalence. Multiplying by a fraction of 1 (multiplying by $28/28$) and multiplying by a fraction of 2 (multiplying by $5/5$) results in the same final product.
+ *   **Result:** $14 \times 5$.
+    
+ #### Step 5: The Final Calculation
+ Now we perform the multiplication.
+ $$ 14 \times 5 = 70 $$
+    
+ This result is an **integer**.
+    
+ #### Step 6: The "Alternative" Path (The Text's Twist)
+ The text proposes a different path to get the same result, which is often faster for humans:
+ 1.  **Multiply directly:** $28 \times 2.5$.
+ 2.  **Convert 2.5:** $28 \times \frac{5}{2}$.
+ 3.  **Cross-cancel:** $28$ and $2$ share a factor of 2.
+ 4.  **Simplify:** $28 / 2 = 14$.
+ 5.  **Compute:** $14 \times 5$.
+ 6.  **Result:** $70$.
+    
+ ---
+    
+ ### 3. Analysis of Hidden Assumptions &amp; Pitfalls
+    
+ By analyzing the text, we must identify where the logic holds up and where it breaks.
+    
+ **Assumption 1: "2.5" acts as a unit fraction.**
+ *   *Premise:* The author treats $2.5$ as $5/2$ immediately after calculating $14$.
+ *   *Critique:* Mathematically, $28/2 = 14$. If we plug this back into the formula:
+     $$ \text{Formula} = \text{Numerator} \times \text{Dominator} $$
+     $$ 28 \times (5/2) = 14 \times 5 $$
+     This holds true regardless of whether we view $2.5$ as $5/2$. The *value* is the same. The author's shortcut relies on recognizing that $28/2$ is an integer ($14$), which allows the multiplication to be cleanly written as $(\frac{5}{1}) \times (\frac{28}{2})$. The logic is sound, but the *interpretation* is that 14 and 5 are the factors being scaled by 5, not that we are just multiplying fractions.
+    
+ **Assumption 2: Integer Output is Guaranteed.**
+ *   *Premise:* The author assumes that solving this algebraic problem yields an integer.
+ *   *Critique:* In the general world of algebra, $28/2 = 14$ is an integer. The *context* here implies the user wants the answer to be a whole number ($d$). However, does $28 \times 2.5$ *necessarily* result in an integer?
+     *   $28 \times 2 = 56$ (Integer)
+     *   $28 \times 2.5 = 70$ (Integer)
+     *   $28 \times 3 = 84$ (Integer)
+     *   *Counter-example:* If the input were $28/3$ instead of $28/2$, the result is $14/3 \approx 4.67$, which is not an integer. The constraint "Integer" in the text is a conditional assumption about the input numbers.
+    
+ **Assumption 3: The "Simplification" Rule ($x/y$ simplifies to $x \times 1/y$ if $y|x$).**
+ *   *Premise:* The text assumes $d = 70/5 = 14$.
+ *   *Implication:* This implies that for the final answer to be an integer, the final division ($70/5$) must also yield an integer. This is the **Consistency Constraint**. It means the author is implicitly assuming the result is an integer.
+    
+ ### 4. Final Conclusion
+    
+ The core logic is a clean application of **fractional arithmetic**: converting a decimal ($2.5$) into an equivalent fractional unit ($5/2$) and simplifying the expression to find an integer factor.
+    
+ The most critical takeaway for anyone solving this manually is:
+ $$ 28 \times \frac{5}{2} = 14 \times 5 = 70 $$
+    
+ If you encounter a similar problem like:
+ $10 \times \frac{11}{3}$
+ *   You must simplify the divisor: $10/3 = 10/3$.
+ *   You cannot simply multiply 3 by 3 to cancel out (unless you are doing integer division).
+ *   You must calculate $10/3 = 3.33...$
+ *   Then multiply by 11: $3.33... \times 11 = 36.66...$
+ *   *Note:* This result is a **non-integer**. The author's method would yield the **same** number ($36.66...$) in this case, but the *mechanism* is different.
+    
+ The key insight provided in the text is that the value is **70**. The confusion often arises because humans instinctively prefer base-10 arithmetic ($28 \times 2.5$). The text suggests that for the specific inputs provided ($28$ and $2.5$), the **fraction method is not just "simpler," it is *required* for the specific constraints of the problem.**
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>This is the augmentation using “Rephrasing” (587 tokens):</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> ### 1. Core Decomposition: Eliminating Indirect Operations
+ The original equation $5 \times (28 / 2)$ is not merely a sequence of arithmetic operations; it is a specific instance of the distributive property in disguise. The hidden complexity lies in recognizing that the expression $28 / 2$ simplifies the fraction, allowing $5$ to act directly on the integer result rather than attempting to distribute across the denominator first. By isolating $28 / 2 = 14$ and applying the identity $5 \times 14 = 70$, we bypass the intermediate "division-by-fraction" risk and execute a direct numerical multiplication. This step transforms the problem from a procedural exercise into a clean evaluation of a specific value.
+    
+ ### 2. Contextual Alignment: Quantification of Shared Resources
+ The scenario involving the TV station and the spread of DVDs highlights the structural similarity between the mathematical operation and a real-world distribution problem. The TV station sells DVDs at a fixed cost per unit, while the club purchases DVDs from various vendors. If the number of DVDs sold equals the number purchased, the profit calculation mirrors the algebraic structure. The hidden complexity involves identifying the variable "units of sales" as equal to the variable "units of purchase," which implies that the final dollar amount must reflect the total value of the shared items.
+    
+ ### 3. Logical Flow: Simplification Through Substitution
+ To determine $d$ (the value of the DVD), the equation must resolve the fraction first. This is achieved by dividing the numerator $28$ by the denominator $2$, yielding the quotient $14$. Substituting this quotient back into the main equation $5 \times (28 / 2)$ forces the operation to reduce to $5 \times 14$. This reduction is logically equivalent to the step $d / 5 = 14$ derived from the equality between the total cost and the value per DVD, effectively solving for $d$ once the quotient is established.
+    
+ ### 4. Conclusion: Final Verification and Value Determination
+ The final step requires verifying the result against the original constraints. We know that $d$ represents the value of one DVD, and $5$ is the cost per DVD. Therefore, $d$ must equal $70 / 5$, confirming that $5 \times (28 / 2) = 70 / 5$ holds true. The calculation $70 \div 5 = 14$ yields the integer value of the DVD's price, which is consistent with the original division $28 \div 2 = 14$. The equation remains valid because the left side of the equality ($5 \times 14$) and the right side ($70 \div 5$) both evaluate to the same integer.
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h3 id="answer-examples">Answer examples</h3>
+
+<ol>
+  <li>
+    <p>GSM8k (5-shots with CoT):</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> Question: Cho hiked 14 kilometers per hour for 8 hours. Chloe hiked 9 kilometers per hour and stopped after 5 hours. How many kilometers farther did Cho hike?
+ Target: `67`
+ - original: strict=`27` (❌), flex=`27.` (❌), raw=`The distance covered by Cho hiked in 8 hours is 14 * 8 = 112 kilometers. The distance covered by Chloe hiked in 5 hours is 9 * 5 = 45 kilometers. The difference between the two distances is 45 - 112 = 27 kilometers. The ...`
+ - first-principles: strict=`67` (✅), flex=`67.` (✅), raw=`The distance traveled by Cho is 14 * 8 = 112 km. The distance traveled by Chloe is 9 * 5 = 45 km. The distance traveled by Cho is 112 - 45 = 67 km. The answer is 67.`
+ - tpt: strict=`67` (✅), flex=`67.` (✅), raw=`14 km/h * 8 h = 112 km Coe hiked 9 km/h for 5 h = 45 km So the distance between Cho and Chloe is 112 - 45 = 67 km. The answer is 67.`
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>MATH500 (4-shot with CoT):</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> - Problem: What is the positive square root of the product $10 \times 15 \times 24$?
+ - Target: `60`
+ - - original: exact_match ❌, final=`None`, raw=`The product of the first three numbers is $10 \times 15 \times 24 = 3600.$ The product of the last three numbers is $24 \times 24 \times 24 = 10736.$ The product of the first two numbers is $10 \times 24 = 240.$ The product of the last two numbers is $24 \time...`
+ - - first-principles-12B: exact_match ✅, final=`60`, raw=`$10 \times 15 \times 24 = 3600.$ The positive square root of $3600$ is $60.$ Final Answer: The final answer is 60. I hope it is correct.`
+ - - tpt-12B: exact_match ✅, final=`60`, raw=`We can use the distributive property to rewrite the product as $10 \times (15 \times 24) = 10 \times 360 = 3600.$ The positive square root of 3600 is $\boxed{60}$. Final Answer: The final answer is 60. I hope it is correct.`
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h3 id="discussion-synthetic-pretraining-vs-distillation">Discussion: synthetic pretraining vs distillation</h3>
+<p><a id="discussion-synth-pretrain-distillation"></a></p>
+
+<p>A natural caveat in this line of work is the difficulty of cleanly separating synthetic pretraining from distillation. When the training corpus is rewritten by another model, the student learns not only from the original human-written data, but also from the generator’s decompositions, emphases, and stylistic choices. This concern is closely related to the framing of TPT, where thinking traces are generated by DeepSeek-R1-Distill-Qwen-7B, itself a distilled reasoning model.<label for="ref-tpt-openreview-1" class="margin-toggle sidenote-number"></label><input type="checkbox" id="ref-tpt-openreview-1" class="margin-toggle" /><span id="sidenote-ref-tpt-openreview-1" class="sidenote">For more details, check the reviewer’s comments on the “Thinking Augmented Pre-training” submission to ICLR 2026 <a href="https://openreview.net/forum?id=5LCCLqJX67" target="_blank" rel="noopener noreferrer">here</a>.</span></p>
+
+<p>In a broad sense, however, self-supervised pretraining is already a form of distillation: a next-token predictor compresses regularities from an upstream distribution into its parameters. With ordinary web text, that distribution reflects human language and problem-solving; with synthetic data, the teacher simply becomes more explicit. The relevant question is therefore not whether distillation is present, but what kind of signal is being distilled. Is the student mainly imitating teacher-specific surface behavior, or is the synthetic rewrite acting as a scaffold that makes underlying structure easier to learn?</p>
+
+<p>Our results make a naive “copy the teacher” explanation less convincing. Our generator is a same-size 0.8B non-thinking model, yet synthetic augmentation still helps. The TPT paper similarly reports that a smaller 1.5B thinking generator outperforms the default 7B one, suggesting that generator strength does not straightforwardly determine synthetic data quality.</p>
+
+<p>We therefore think the most useful framing is that synthetic pretraining lies on a continuum between dataset expansion and teacher distillation. At one end, synthetic rewriting improves learnability by making latent assumptions explicit, breaking large reasoning steps into smaller ones, and restructuring information into forms a smaller model can absorb more efficiently. At the other end, the student may inherit a recognizable teacher fingerprint, and part of the gain is effectively pretraining-time imitation. Disentangling these two effects remains an important open question.</p>
+
+    </div>
+</article>
+
+    </main>
+<footer class="site-footer">
+    <div class="container">
+        <p>
+            
+            <a href="/v2-9dcd86d1/privacy/">Privacy Policy</a> | 
+            
+            <a href="/v2-9dcd86d1/imprint/">Imprint</a> | 
+            
+            <a href="/v2-9dcd86d1/terms/">Terms Of Use</a>
+            
+        </p>
+    </div>
+</footer>
+</body>
+</html>
