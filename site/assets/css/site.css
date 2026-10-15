@@ -555,6 +555,15 @@ a:hover {
     border-left: 1px solid #d9e4ea;
 }
 
+.post-content .architecture-table th,
+.post-content .architecture-table td {
+    white-space: normal;
+}
+
+.post-content .architecture-table code {
+    white-space: nowrap;
+}
+
 .post-content thead th {
     background: #eef6f9;
     border-top: 1px solid #d9e4ea;

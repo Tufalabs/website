@@ -1,0 +1,188 @@
+---
+layout: post
+title: "tufazip: Learning to Compress a Billion Bytes of Wikipedia"
+date: 2026-10-14 00:00:00 +0200
+permalink: /research/tufazip/
+author: Tommy He
+description: "Compressing one billion bytes of Wikipedia into 105.39 MB with a Transformer that learns online and an offline trained initialization."
+math: true
+sidenotes: true
+---
+
+## Summary
+
+I took **#2 on the Large Text Compression Benchmark**{% sidenote ref-ltcb %}[Large Text Compression Benchmark](https://www.mattmahoney.net/dc/text.html) (Matt Mahoney).{% endsidenote %}, a benchmark that has been running for 20+ years, with [tufazip](https://github.com/Tufalabs/tufazip), the best-performing entry using a neural network as its sole prediction model. My final result compressed one billion bytes of Wikipedia into **105,388,353 bytes (105.39 MB)**, including the offline trained weights and decoder.
+
+The final system uses a 12-layer, 163M-parameter Transformer, initialized from a 34M-parameter offline model quantized to 4.33 MB. Two offline trained blocks are copied into twelve independent layers, which continue learning as the file is compressed. The decoder repeats the same learning process, so the full model's learned weights never need to be transferred.
+
+## Introduction
+
+What is intelligence? It’s an age-old question that remains difficult to answer. Let’s look at a few perspectives:
+
+- **Achieving goals:** Shane Legg and Marcus Hutter define intelligence as “an agent’s ability to achieve goals in a wide range of environments.”{% sidenote ref-universal-intelligence %}[Universal Intelligence: A Definition of Machine Intelligence](https://arxiv.org/abs/0712.3329) (Legg and Hutter, 2007).{% endsidenote %}
+- **Learning efficiently:** François Chollet emphasizes how efficiently a system acquires new skills, taking its prior knowledge and experience into account.{% sidenote ref-measure-intelligence %}[On the Measure of Intelligence](https://arxiv.org/abs/1911.01547) (Chollet, 2019).{% endsidenote %}
+- **Finding useful representations:** Kenneth Stanley’s work emphasizes how the choice of representation shapes the search for solutions.{% sidenote ref-cppn %}[Compositional pattern producing networks: A novel abstraction of development](https://link.springer.com/article/10.1007/s10710-007-9028-8) (Stanley, 2007).{% endsidenote %}
+- **Compression:** Matt Mahoney argues that compression is equivalent to general intelligence.{% sidenote ref-compression-rationale %}[Rationale for a Large Text Compression Benchmark](https://mattmahoney.net/dc/rationale.html) (Mahoney, 2009), section “Compression is Equivalent to General Intelligence.”{% endsidenote %}
+
+We focus on the compression perspective. For text, the connection between prediction and compression is especially stark. If a model assigns probability $p$ to the next token, its ideal encoding cost is $-\log_2 p$ bits. Doubling the probability assigned to the token that actually occurs saves one bit. For a fixed tokenization, **next-token prediction and compression have the same objective**: the summed cross-entropy loss in bits is exactly the ideal compressed length. This equivalence is explored by Delétang and colleagues in *Language Modeling Is Compression*.{% sidenote ref-language-modeling %}[Language Modeling Is Compression](https://arxiv.org/abs/2309.10668) (Delétang et al., 2023).{% endsidenote %} Learning spelling, grammar, facts, and relationships can all help a model anticipate the text and save bits.
+
+Modern language models also give us a way to study the broader connection empirically. In *Compression Represents Intelligence Linearly*,{% sidenote ref-compression-intelligence %}[Compression Represents Intelligence Linearly](https://arxiv.org/abs/2404.09937) (Huang et al., 2024).{% endsidenote %} Huang and colleagues find that compression of external text closely correlates with average downstream benchmark performance across the language models they study. Compression on one file is a limited measure of intelligence, but it gives us a concrete way to study how well a model captures structure.
+
+That motivation underlies the Hutter Prize,{% sidenote ref-hutter-prize %}[Prize for Compressing Human Knowledge](https://www.hutter1.net/prize/) (Marcus Hutter).{% endsidenote %} which rewards lossless compression of Wikipedia. For this project, I used Matt Mahoney’s Large Text Compression Benchmark{% sidenoteref ref-ltcb %} and its billion-byte Wikipedia file, enwik9. I also used enwik8, the first 100 million bytes of enwik9, to compare configurations and select candidates for full enwik9 runs. The benchmark task is to represent the entire billion-byte file as compactly as possible while recovering every byte exactly. Under the benchmark’s scoring rules,{% sidenote ref-ltcb-rules %}[Rules for the Large Text Compression Benchmark](https://www.mattmahoney.net/dc/textrules.html) (Matt Mahoney).{% endsidenote %} the score includes the compressed text plus a zipped decoder bundle containing any offline trained weights it needs. This makes the cost of a model part of the problem: better predictions must save more space than the model adds.
+
+Text compressors exploit structure in different ways. It helps to distinguish representation, prediction, and coding: a compressor can first transform the text, then estimate probabilities, then encode likely outcomes with fewer bits. Arithmetic coding handles that last step; the predictions must come from a model.{% sidenote ref-data-compression %}[Data Compression Explained](https://www.mattmahoney.net/dc/dce.html) (Matt Mahoney), especially the chapters on coding, modeling, and transforms.{% endsidenote %} When the benchmark began in May 2006, it inherited several decades of work:{% sidenoteref ref-ltcb %}
+
+1. **General-purpose foundations: repeated strings and block sorting.** Gzip’s DEFLATE format combines LZ77 string matching with Huffman coding: repeated byte sequences become references to earlier occurrences, and common literals and references receive shorter codes.{% sidenote ref-deflate %}[GNU gzip overview](https://www.gnu.org/s/gzip/manual/html_node/Overview.html) and [DEFLATE format specification, RFC 1951](https://www.rfc-editor.org/rfc/rfc1951) (Deutsch, 1996).{% endsidenote %} Bzip2 takes another route, using the Burrows–Wheeler transform to group bytes with similar surrounding text before further encoding, also with Huffman coding.{% sidenote ref-bzip2 %}[bzip2 manual](https://sourceware.org/bzip2/manual/manual.html) (Julian Seward), introduction and algorithm references.{% endsidenote %} These methods exploit repetition and byte statistics without needing an English dictionary or grammar.
+
+2. **1980s–2000s: statistical next-character prediction.** PPM, introduced by Cleary and Witten in 1984, counts which characters follow previously seen contexts, falling back to shorter contexts for unseen continuations. It combines those probabilities with arithmetic coding and adapts as it reads the file.{% sidenote ref-ppm %}[Data Compression Using Adaptive Coding and Partial String Matching](https://doi.org/10.1109/TCOM.1984.1096090) (Cleary and Witten, 1984); Mahoney’s [PPM explanation](https://www.mattmahoney.net/dc/dce.html) describes the context counts and escape mechanism.{% endsidenote %} PPMd and PPMonstr brought increasingly refined versions of this approach to the benchmark. Learning from the input was already central, even though the predictors were statistical tables.{% sidenoteref ref-data-compression %}
+
+3. **2000s: context mixing.** The PAQ family developed ensembles of predictors using different clues, including recent bytes, whole words, and long matches. PAQ7 and PAQ8 used neural networks to combine their predictions, then arithmetic-coded the resulting bit probabilities.{% sidenote ref-paq-history %}[The PAQ Data Compression Programs](https://www.mattmahoney.net/dc/paq.html) (Matt Mahoney), with model histories in [Data Compression Explained](https://www.mattmahoney.net/dc/dce.html).{% endsidenote %} PAQ8h led `enwik9` when the Hutter Prize launched in August 2006.{% sidenoteref ref-ltcb %}
+
+4. **2006: text-specific preprocessing was already important.** XML-WRT replaced common words and XML fragments with compact symbols before another compressor, such as PPMonstr, processed them. The PAQ8HP entries also used dictionary transforms: words became short codes, while markers preserved capitalization. Some versions grouped dictionary words by grammatical or semantic similarity. These reversible transformations made linguistic structure easier for the downstream models to exploit; the required dictionaries counted toward the compressed size.{% sidenote ref-text-preprocessing %}The [benchmark’s XML-WRT and PAQ8HP descriptions](https://www.mattmahoney.net/dc/text.html) document their transforms, dictionary organization, and dictionary-inclusive results.{% endsidenote %}
+
+5. **2014–2019: larger ensembles and LSTM predictors.** Byron Knoll’s cmix, first released in 2014, extended the mixture approach with more predictors, a larger mixing network, and text preprocessing.{% sidenote ref-cmix %}[cmix](https://www.byronknoll.com/cmix.html) (Byron Knoll), release history and architecture description.{% endsidenote %} It included an LSTM by 2016. In 2017, Knoll’s lstm-compress kept the preprocessing but removed the other predictors, leaving the LSTM to model the sequence.{% sidenote ref-lstm-history %}See the cmix and lstm-compress entries in the [benchmark](https://www.mattmahoney.net/dc/text.html), and Knoll’s [lstm-compress description](https://github.com/byronknoll/lstm-compress).{% endsidenote %} Bellard’s NNCP followed in 2019 with larger neural predictors, retaining arithmetic coding and using a subword preprocessor for its larger models.{% sidenote ref-nncp-original %}[Lossless Data Compression with Neural Networks](https://bellard.org/nncp/nncp.pdf) (Bellard, 2019).{% endsidenote %}
+
+6. **2021–2023: Transformers and replay.** Bellard had tested Transformers in 2019, but they initially compressed worse than his LSTMs.{% sidenoteref ref-nncp-original %} NNCP v2 surpassed cmix on `enwik9` in 2021 with an improved Transformer and replay: periodically training again on earlier text. It retained preprocessing and arithmetic coding. The encoder and decoder repeated the same learning, so the learned weights did not need to be transferred.{% sidenote ref-nncp %}[NNCP v2: Lossless Data Compression with Transformer](https://bellard.org/nncp/nncp_v2.1.pdf) (Bellard, 2021).{% endsidenote %} By 2023, NNCP v3.2 reached 107.26 MB, including its decoder bundle.{% sidenoteref ref-ltcb %}
+
+7. **2026: hybrid systems and automated research.** Recent entries combine compact neural models with the statistical machinery developed over decades. fx2-cmix-transformer uses a 6M-parameter, offline trained Transformer with four-bit weights alongside PPMd and context mixing, retaining text preprocessing and arithmetic coding.{% sidenote ref-fx2-transformer %}[fx2-cmix-transformer writeup](https://github.com/astOwOlfo/fx2-cmix-transformer-v1/blob/main/writeup.md) (Vladimir Ivanov, 2026).{% endsidenote %} cmix-neif combines a Transformer with an online LSTM, statistical predictors, and further changes to article ordering and metadata handling.{% sidenote ref-cmix-neif %}[cmix-neif description](https://github.com/marwoelk/cmix-neif-1.0) (Marcus Wölk, 2026).{% endsidenote %} Alongside these entries, automated research is emerging: an `enwik8` collaboration uses autonomous LLM agents to explore preprocessing and model choices, run experiments, and share results. Compression supplies a concrete score for this research loop: propose a change, measure its effect, and iterate.{% sidenote ref-compression-autoresearch %}[Compression is Intelligence: agent collaboration on enwik8](https://ml-intern-explorers-hutter-prize-dashboard.hf.space/). The separate [cm autoresearch project](https://github.com/10d9e/cm) also lets agents modify a compressor and score their changes on a fixed corpus.{% endsidenote %}
+
+I wanted to explore how far NNCP’s approach could go with a simple Transformer as the sole prediction model.
+
+The result is tufazip. Starting from NNCP, I improved the model and training recipe to reach 105.98 MB using online learning alone, then reduced that to 105.39 MB with an offline trained initialization, including the weights and decoder. tufazip took #2 on the Large Text Compression Benchmark and became the best-performing entry using a neural network as its sole prediction model.
+
+## Tufazip: Learn without transferring the weights (and later offline transfer)
+
+tufazip combines a Transformer predictor with an arithmetic coder. The text is converted reversibly into tokens, and the Transformer assigns probabilities to the next token using text already known to the decoder.
+
+Arithmetic coding turns those probabilities into a compressed stream. Conceptually, it starts with an interval from zero to one, divides it into pieces proportional to the next-token probabilities, and keeps the piece corresponding to the actual token. Repeating this process narrows the interval; the compressed bits identify a point inside it. More probable tokens leave wider intervals, requiring fewer bits. The decoder uses the same probabilities to reverse these choices and recover the tokens.{% sidenoteref ref-data-compression %}
+
+<figure class="post-figure">
+    <a href="{{ '/assets/posts/tufazip/arithmetic_coding.svg' | relative_url }}"><img src="{{ '/assets/posts/tufazip/arithmetic_coding.svg' | relative_url }}" alt="Arithmetic coding narrows the interval from zero to one to zero to 0.6, then 0.48 to 0.54, then 0.534 to 0.54. Each row zooms into the preceding selected interval; a black dot marks the encoded value." loading="lazy"></a>
+    <figcaption><strong>Figure 1.</strong> Four symbols—A, B, C, and an end marker—have probabilities 0.6, 0.2, 0.1, and 0.1. The highlighted ranges encode A → C → end. Each row zooms into the selected range; the dot marks the encoded value. tufazip updates these probabilities as it learns with gradient descent.{% sidenote ref-arithmetic-diagram %}[Arithmetic encoding diagram](https://commons.wikimedia.org/wiki/File:Arithmetic_encoding.svg) by Dcoetzee (2007), released into the public domain.{% endsidenote %}</figcaption>
+</figure>
+
+For the online run, the encoder and decoder start from identical randomly initialized weights and repeat the same learning process, following NNCP:{% sidenoteref ref-nncp %}
+
+1. **Predict:** both models produce the same next-token probabilities from the text they already know.
+2. **Encode or decode:** the encoder writes the actual token using those probabilities; the decoder recovers it from the compressed stream.
+3. **Learn:** now that both sides know the token, they perform the same training update before making further predictions.
+
+The decoder therefore reconstructs the evolving model as it reconstructs the text. **The weights learned online never need to be transferred.** A large model can contribute to compression while its storage cost is replaced by the computation needed to reproduce its learning.
+
+Replay gives the model more opportunities to learn. Periodically, both sides revisit a window of earlier text and perform additional training before continuing. All of that text has already been decoded, so replay requires no additional training data in the archive. It can improve later predictions, at the cost of more computation during both compression and decompression.{% sidenoteref ref-nncp %}
+
+We also explored offline transfer: train a compact initialization in advance, transfer it, and then continue to learn online. The decoder starts from those same supplied weights and repeats the subsequent updates. This gives the model a trained starting point, but introduces a storage cost: the initialization must save more compressed text than it adds in weight bytes.
+
+## Ablations: What actually helped?
+
+Replay gave us a clear way to improve compression: spend more compute learning from text the decoder already has. Larger vocabularies and larger models were less consistent wins. All sizes below use decimal MB; payload means the compressed data, while total also includes the decoder and its required files.
+
+With the same 163M-parameter model and 4K vocabulary, increasing the replay window from 15M to 35M tokens reduced the full `enwik9` payload from 107.22 to 105.92 MB. That saved 1.30 MB, or 1.21%, for about 40% more estimated model FLOPs: $7.45 \times 10^{19}$ to $1.04 \times 10^{20}$ operations, including online learning and replay. The decoder must repeat the learning, so this improvement also carries a decompression cost.
+
+<figure class="post-figure">
+    <a href="{{ '/assets/posts/tufazip/replay_compute.svg' | relative_url }}"><img src="{{ '/assets/posts/tufazip/replay_compute.svg' | relative_url }}" alt="Ten completed enwik9 replay runs show payload size versus estimated model FLOPs, grouped into 163M/4K, 188M/16K, and 267M/16K configurations." loading="lazy"></a>
+    <figcaption><strong>Figure 2.</strong> Replay-window ablations: ten full <code>enwik9</code> runs. Each line holds the model and training recipe fixed while varying window size. Labels show replay-window tokens.</figcaption>
+</figure>
+
+A smaller vocabulary helped. In a separate comparison with 5M-token replay, the 4K word tokenizer beat both 8K and 16K. Dedicated XML/wiki tokens made compression worse, despite the abundance of markup in the input. This compares complete tokenizer configurations: changing tokenization also changes how much source text fits into a fixed number of context or replay tokens.
+
+<figure class="post-figure">
+    <a href="{{ '/assets/posts/tufazip/tokenization.svg' | relative_url }}"><img src="{{ '/assets/posts/tufazip/tokenization.svg' | relative_url }}" alt="The 4K word tokenizer produces the smallest payload; structured XML/wiki tokens produce the largest." loading="lazy"></a>
+    <figcaption><strong>Figure 3.</strong> Tokenizer comparison on <code>enwik9</code>, using a 5M-token replay window. Lower is better.</figcaption>
+</figure>
+
+More parameters did not help in the matched `enwik9` comparisons. With a fixed 16K vocabulary, the 267M model produced slightly larger payloads than the 188M model at both 10M and 15M replay windows.
+
+On `enwik8`, a separate sweep with a fixed 4K vocabulary and 15M-token replay window showed gains from 14M to 77M parameters. Compression changed little at 163M and worsened at 336M.
+
+<figure class="post-figure">
+    <a href="{{ '/assets/posts/tufazip/model_capacity_enwik9.svg' | relative_url }}"><img src="{{ '/assets/posts/tufazip/model_capacity_enwik9.svg' | relative_url }}" alt="Four full enwik9 runs compare 188M and 267M models with a fixed 16K vocabulary. The larger model produces a slightly larger payload at both 10M and 15M replay windows." loading="lazy"></a>
+    <a href="{{ '/assets/posts/tufazip/model_capacity_enwik8.svg' | relative_url }}"><img src="{{ '/assets/posts/tufazip/model_capacity_enwik8.svg' | relative_url }}" alt="Five full enwik8 runs compare 14M, 32M, 77M, 163M, and 336M models with a fixed 4K vocabulary and 15M-token replay window. Payload shrinks up to 77M, changes little at 163M, then grows at 336M." loading="lazy"></a>
+    <figcaption><strong>Figure 4.</strong> Model capacity across four full <code>enwik9</code> runs (top) and five full <code>enwik8</code> runs (bottom). Each line holds the training recipe and replay window fixed while varying model size.</figcaption>
+</figure>
+
+Our best online run used a 12-layer, 163M-parameter Transformer with a 4K word vocabulary, 192-token context, 35M-token replay window, and 0.25 replay dropout. It compressed the full `enwik9` to 105.92 MB of payload, or **105.98 MB including the decoder** (0.848 bits per byte). This is the online baseline for the offline-transfer experiments below.
+
+## Offline transfer: Can offline trained initialization pay for itself?
+
+Online learning avoids transferring weights, but it starts without a trained model. Could offline training give it a useful head start? We explored several ways to turn a model trained on the target corpus into a prior:
+
+- **Full-precision models:** provide an empirical lower-bound reference for compressed-text size before quantization, using models from 14M to 336M parameters on `enwik8` and 96M to 367M on `enwik9`.
+- **Quantization-aware training:** train with low-precision weights, and vary how many bits different parts of the model receive. We also tested which layers and tensors contributed most to prediction quality.
+- **LoRA and quantized LoRA:** learn small, low-rank corrections to a quantized model. Both the base model and the corrections count toward the total; our quantized LoRA variant stores the corrections at four bits.
+- **Different ways to learn low-bit weights:** directly transfer offline trained weights, lower precision in stages, train from scratch, or distill predictions from a full-precision teacher.
+- **Compact architectures expanded online:** vary stored depth across 3, 6, 9, and 12 layers, or share blocks across depth. The shared variants included one repeated block, cycles of two or three blocks, and repeated middle blocks between distinct first and last layers.
+
+The table summarizes the architectures we tried. In the compact layouts, each letter denotes a stored Transformer block; `·` denotes an inserted identity block that initially passes its input through unchanged. Repeated letters share weights offline, then become independent copies online. Each compact layout expands to twelve online layers.
+
+| Initialization | Explanation | Prior budget (MB) |
+| --- | --- | ---: |
+| Online baseline | Twelve independent, randomly initialized blocks: `ABCDEFGHIJKL` | 0 |
+| Dense models | Independent blocks; 14M, 32M, 77M, 163M, and 336M parameters on `enwik8`; 96M, 188M, and 367M on `enwik9`. | Varies with size and precision |
+| Loop1 | One block repeated twelve times: `AAAAAAAAAAAA` | 2.70 |
+| Cycle2 (C2) | Two blocks repeated six times: `ABABABABABAB` | 4.33 |
+| Cycle3 (C3) | Three blocks repeated four times: `ABCABCABCABC` | 5.96 |
+| Middle1 (M1) | Distinct first and last blocks around one repeated middle block: `ABBBBBBBBBBC` | 5.97 |
+| Middle2 (M2) | Distinct first and last blocks around two alternating middle blocks: `ABCBCBCBCBCD` | 7.59 |
+| Three-layer prior (L3) | Three independent blocks plus nine identity blocks: `A···B···C···` | 5.95 |
+| Six-layer prior (L6) | Six independent blocks plus six identity blocks: `A·B·C·D·E·F·` | 10.84 |
+| Nine-layer prior (L9) | Nine independent blocks plus three identity blocks: `ABC·DEF·GHI·` | 15.80 |
+| Twelve-layer prior (L12) | Full depth, with no sharing or inserted blocks: `ABCDEFGHIJKL` | 20.70 |
+{: .architecture-table }
+
+Compact-prior sizes above use the one-bit budgets for `enwik9`.
+
+Every approach faces the same budget:
+
+$$
+\text{transferred model} + \text{compressed text and decoder} < \text{online baseline}.
+$$
+
+Plotting transferred model size in the x-axis against the compressed text and decoder size in the y-axis shows a green triangle of our target region. Each extra megabyte spent on weights removes one megabyte from the remaining budget. If we can find a result in the green region, then we will have found an offline transfer that beats the online only training, which entail 15.152 MB for `enwik8`, or 105.979 MB for `enwik9` respectively.
+
+<figure class="post-figure">
+    <a href="{{ '/assets/posts/tufazip/offline_transfer_enwik8.svg' | relative_url }}"><img src="{{ '/assets/posts/tufazip/offline_transfer_enwik8.svg' | relative_url }}" alt="Enwik8 offline-transfer results across full-precision models, dense quantization, LoRA, quantized LoRA, eight low-bit training variants, and depth and repeated-block priors." loading="lazy"></a>
+    <figcaption><strong>Figure 5.</strong> On <code>enwik8</code>, the tested transferred priors remained outside the winning region. Strong unquantized predictions were difficult to preserve within the storage budget.</figcaption>
+</figure>
+
+Panel A puts every result on the same chart: the x-axis stays linear through the winning triangle, then switches to a logarithmic scale. The full-precision models show how small the text can become before quantization, with their actual stored weight sizes on the x-axis. Panel B enlarges the compact priors.
+
+Orange circles group all low-bit experiments, including quantization and adapters. Hollow circles pair unquantized prediction quality with a low-bit storage budget as an optimistic reference. Diamonds show compressed file sizes; the other filled points use prediction-based size estimates.
+
+Among the dense quantization and adapter experiments, 32M quantized LoRA had the best estimated total at 20.88 MB. The compact two-block and three-block priors, followed by online learning, reached 17.58 and 18.96 MB. Both still exceeded the 15.15 MB online baseline.
+
+Based on the partial `enwik8` results, we chose Cycle2 and the six-layer prior (L6) to continue on `enwik9`. The billion-byte file gives a fixed-size prior ten times as much data over which to recover its cost. Here, Cycle2 crossed the boundary.
+
+<figure class="post-figure">
+    <a href="{{ '/assets/posts/tufazip/offline_transfer_enwik9.svg' | relative_url }}"><img src="{{ '/assets/posts/tufazip/offline_transfer_enwik9.svg' | relative_url }}" alt="Enwik9 offline-transfer results across full-precision, shallow and repeated-block models, with Cycle2 inside the winning triangle and the six-layer prior outside it." loading="lazy"></a>
+    <figcaption><strong>Figure 6.</strong> Cycle2 saves enough compressed text to cover its model cost. The six-layer prior predicts better, but costs too much to transfer.</figcaption>
+</figure>
+
+Cycle2 trains two shared blocks repeated across twelve steps, stores them once each, then copies them into twelve independent layers. Online learning lets those copies specialize without adding to the transferred model. Results from full `enwik9` runs were:
+
+| Configuration | Payload MB | Decoder + weights MB | Total MB |
+| --- | ---: | ---: | ---: |
+| Online v1 | 105.924 | 0.055 | 105.979 |
+| Six-layer prior | **99.173** | 10.945 | 110.118 |
+| Cycle2 | 100.958 | 4.430 | **105.388** |
+
+The six-layer prior produced the smaller payload, but its larger weight bundle erased the savings. Cycle2 saved 4.97 MB of payload while adding 4.38 MB of decoder cost, leaving a net improvement of **0.59 MB, or 0.56%**, over online v1.
+
+## Discussion
+
+Some may question the value of this benchmark in the modern era, I still find this benchmark valuable in an era of automated research loops. Under the intelligence-as-compression perspective, a smaller complete artifact is evidence that we have found a more intelligent representation of the same corpus. Including the decoder and offline trained weights makes that meaningful: moving information from the payload into the model still has a cost.{% sidenoteref ref-compression-rationale %} This is a concrete way to study the ability to capture structure, even if a smaller artifact alone does not establish greater general intelligence.
+
+cmix makes the distinction between compression and general learning particularly interesting. Version 21 combines 2,077 predictors with preprocessing and learned mixing, drawing on many specialized models.{% sidenoteref ref-cmix %} Those models encode useful knowledge about structure, and their savings count just as much as savings from a Transformer for the benchmark. From the compression perspective, putting knowledge into harcoded code is a legitimate way to represent it. The score alone, however, does not reveal how much was learned from the input, supplied by a human designer, or discovered by a research agent. My interest in a single neural predictor is partly in studying how much structure a general learning procedure can recover.
+
+The Goodhart risk appears when we use compression on one fixed file as a proxy for intelligence more broadly: stronger optimization of a proxy need not keep improving the underlying property we care about.{% sidenote ref-goodhart %}[Categorizing Variants of Goodhart’s Law](https://arxiv.org/abs/1803.04585) (Manheim and Garrabrant, 2018).{% endsidenote %}
+
+Hill climbing a single objective through automated research loops can improve a score without explaining why a change worked or where it will work again. If we reward only the final number, we risk neglecting the reusable insights that make research valuable.
+
+Recent AI-generated proof submissions to the Erdős problems database raise a similar concern. Terence Tao argues that mathematical progress also requires people to understand and build on the ideas behind a proof.{% sidenote ref-tao-math-ai %}[Mathematics in the age of AI](https://arxiv.org/abs/2608.16753) (Tao, 2026), sections 6–7.{% endsidenote %} His *Math 2.0* proposal calls for using AI to explain opaque arguments, explore assumptions, and identify reusable principles.{% sidenote ref-tao-math-2 %}[Math 2.0](https://terrytao.wordpress.com/2026/10/10/math-2-0/) (Tao, October 2026), with examples in the [lecture slides](https://teorth.github.io/tao-web/slides/math-2-0-caltech-2026.pdf).{% endsidenote %}
+
+Compression offers the same opportunity. Our six-layer prior predicted better than Cycle2 but produced a larger artifact because its weights cost more. That tradeoff suggests a useful research question: how much predictive quality can a smaller representation retain? I would want an automated loop to investigate such questions and explain which findings carry over to other text.
+
+## Acknowledgments
+
+- Thanks to Jerome Sieber for mentorship and advice, and to Tufa Labs for providing the compute and capacity to work on this project!
+- Thanks to Matt Mahoney for creating and maintaining the Large Text Compression Benchmark{% sidenoteref ref-ltcb %} after 20+ years, and for his online textbook *Data Compression Explained*!{% sidenoteref ref-data-compression %}
