@@ -114,6 +114,7 @@ body:not(.post--sidenotes) .post-content > table { grid-column: 4 / 13; }
 :is(.post-content, .page-content, .docs) :is(th, td) + :is(th, td) { border-left: 1px solid var(--hair); }
 :is(.post-content, .page-content, .docs) thead th { font: 400 var(--t-1) / var(--line) var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink-3); background: var(--tint); border-bottom: 1px solid color-mix(in oklch, var(--ink) 50%, var(--bg)); }
 :is(.post-content, .page-content, .docs) tbody tr:last-child td { border-bottom: 0; }
+:is(.post-content, .page-content, .docs) tbody tr:hover > * { background: color-mix(in oklch, var(--tint) 50%, var(--bg)); }   /* the row under the pointer, whole, on half the tint */
 .post-content td { white-space: nowrap; }   /* a post's data table scrolls rather than wraps its figures */
 /* the callout (a takeaway, a research question, a note): an inset block on a rule; its label in the label voice, the
    statement in 600, the reasoning in ink 2 */

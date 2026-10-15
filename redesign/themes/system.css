@@ -603,8 +603,8 @@ a:hover { text-decoration-thickness: 2px; }
 .spec-row > .spec-k { padding-right: var(--s1); } .spec-row > .spec-cell { padding-right: var(--s0); }
 .spec-row > * { padding-block: var(--s0); }
 .spec-names > * { background: var(--tint); padding-right: var(--s0); }
-.spec-names > .spec-k { padding-left: var(--s0); }   /* the whole head row on the tint, its label inset like the names */
-.spec-row:not(.spec-names):hover > .spec-cell { background: color-mix(in oklch, var(--tint) 50%, var(--bg)); }
+.spec-row > .spec-k { padding-left: var(--s0); }   /* every label inset like the names, so the head row and a hovered row sit on the tint with room */
+.spec-row:not(.spec-names):hover > * { background: color-mix(in oklch, var(--tint) 50%, var(--bg)); }   /* the whole row, its label included */
 @media (max-width: 900px) {
   /* the line between the systems runs on through the labels above each pair (kept to the left column) */
   .spec-row > .spec-k { padding-bottom: 0; position: relative; padding-right: calc(50% + var(--s0)); }
