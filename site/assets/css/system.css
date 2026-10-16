@@ -1,0 +1,10 @@
+---
+# the site's one stylesheet: the identity's tokens, base and motion (site/_includes/identity/, from tools/site_assets.py),
+# then the site's own (site/_includes/system.css)
+layout: null
+sitemap: false
+---
+{% include identity/tokens.css %}
+{% include identity/base.css %}
+{% include identity/motion.css %}
+{% include system.css %}

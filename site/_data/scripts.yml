@@ -1,0 +1,10 @@
+# the site's scripts, in the order the head loads them (each builds on the ones before)
+- sections.js
+- creature.js
+- site.js
+- figures.js
+- hero.js
+- vendor/swup.umd.js
+- vendor/swup-preload.umd.js
+- vendor/swup-scroll.umd.js
+- router.js

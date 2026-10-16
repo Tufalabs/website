@@ -1,0 +1,535 @@
+/* ── header: pinned, carrying the site's one horizontal rule ──────────── */
+.site-header { position: sticky; top: 0; z-index: 30; background: var(--bg); }
+.site-header .header-content {
+    display: flex; justify-content: space-between; align-items: center; gap: var(--s1);
+    min-height: var(--head); border-bottom: 1px solid var(--ink);
+}
+.logo-container { display: flex; align-items: center; gap: var(--s0); text-decoration: none; color: var(--ink); }
+.logo-image { width: calc(var(--line) * 1.6); height: calc(var(--line) * 1.6); transition: transform var(--dur-1) var(--ease); }
+.logo-text { font: 600 var(--t1) / var(--line) var(--display); }
+.site-nav ul { display: flex; flex-wrap: wrap; gap: 0 calc(var(--line) * 1.25); list-style: none; margin: 0; padding: 0; }
+.site-nav li { margin: 0; }
+.site-nav a { font-size: var(--t-half); text-transform: uppercase; text-decoration: none; color: var(--ink-2); display: block; padding: var(--s-1) 0 calc(var(--s-1) - 1px); border-bottom: 1px solid transparent; }
+.site-nav a:hover, .site-nav a:active { color: var(--ink); }
+/* where we are is a point (2u, the ink) beside the active label, level with its text: drawn in CSS from the first paint,
+   and moved over from the last page's item by site.js (.nav-mark), which then stands in for it */
+.site-nav a.active { position: relative; color: var(--ink); border-bottom-width: 2px; padding-bottom: calc(var(--s-1) - 2px); }
+.site-nav a.active::after {
+    content: ''; position: absolute; right: calc(100% + var(--line) / 4); top: 50%;
+    width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin: calc(var(--u) * -2) calc(var(--u) * -2) 0 0;
+    border-radius: 50%; background: var(--ink);
+}
+.has-nav-mark .site-nav a.active::after { display: none; }
+/* the moving point blends (difference, so white is the operand, not a colour): passing behind other labels it inverts
+   their letters */
+.nav-mark {
+    position: absolute; left: calc(var(--u) * -2); top: 0; width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin-top: calc(var(--u) * -2);
+    border-radius: 50%; background: #fff; mix-blend-mode: difference; z-index: 2; pointer-events: none; transform-origin: center;
+}
+@media (min-width: 901px) { .js-nav .site-nav a.active { transition: none; } }
+@media (max-width: 900px) { .nav-mark { display: none; } }
+/* the dark switch: a ring (a closed line, u wide, radius 4u), filled on hover, in a line-square target; until site.js
+   adds it, its slot (the square and the gap) is held, so the labels never move */
+.theme-item { display: flex; align-items: center; }
+.theme-toggle { position: relative; width: var(--line); height: var(--line); padding: 0; border: 0; background: none; cursor: pointer; align-self: center; }
+.theme-toggle::before {
+    content: ''; position: absolute; left: 50%; top: 50%; box-sizing: border-box;
+    width: calc(var(--u) * 8); height: calc(var(--u) * 8); margin: calc(var(--u) * -4) 0 0 calc(var(--u) * -4);
+    border: var(--u) solid var(--ink); border-radius: 50%; background: transparent; transition: background-color var(--dur-1) var(--ease);
+}
+.theme-toggle:hover::before { background: var(--ink); }
+.theme-toggle:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+.js-nav .site-nav ul:not(:has(.theme-item))::after { content: ""; width: var(--line); height: var(--line); }
+@media (max-width: 900px) { .theme-item { padding: var(--s0) 0; } .js-nav .site-nav ul:not(:has(.theme-item))::after { display: none; } }
+main.container { padding-block: 0; }
+.site-footer { margin-top: var(--s4); color: var(--ink-3); text-transform: uppercase; }
+.site-footer .container > p { padding: 0 0 var(--s3); margin: 0; word-spacing: var(--s-1); }
+.site-footer a { color: var(--ink-2); text-decoration: none; word-spacing: normal; }
+.site-footer a:hover { color: var(--ink); }
+/* ── page head: one pattern for every page ─────────────────────────────
+ * title  t3, columns 1–9, four lines below the header
+ * second line (lede or byline) in the text column, one line below the title
+ * content starts two lines below                                        */
+.page-header, .post-header { padding: var(--s4) 0 var(--s2); }
+.page-title, .post-title { grid-column: 1 / 10; }
+.page-lede, .post-header .post-meta, .post-byline-note { grid-column: 4 / 10; margin: var(--s1) 0 0; }
+.page-lede { color: var(--ink-2); font-size: var(--t1); line-height: var(--lh-text); }
+.post-header .post-meta { color: var(--ink-3); }
+.post-header .post-meta span[aria-hidden] { margin: 0 var(--s-1); }
+.post-byline-note { color: var(--ink-3); margin-top: var(--s-1); }
+/* the home statement occupies the title slot */
+.home-content > p:empty { display: none; }
+.home-content > p:nth-of-type(2) {
+    grid-column: 1 / 10; position: relative; z-index: 1; background: var(--bg);
+    font: 600 var(--t3) / 1.15 var(--display); text-wrap: balance;
+    padding: var(--s4) 0 var(--s1); margin: 0;
+}
+/* section navigation (sections.js)
+ * The label column splits into an index strip (one line wide) and the title slot beside it. The current title sticks
+ * under the header; the index sits to its left: one point per section, a quarter line apart, centred in the strip (so
+ * the focus point is not clipped). Every point is a data point at ½; the current one a focus point (twice the size) at
+ * full ink, level with the pinned title. Hovering the index, the pinned title steps aside, the hovered point becomes the
+ * focus point and its title shows level with it, and the current point steps back to a data point meanwhile. */
+.has-rail { position: relative; --rail: var(--s0); --rail-gap: var(--s0); --pitch: calc(var(--line) / 4); }
+.has-rail > h2 {
+    position: sticky; top: calc(var(--head) + var(--s1)); align-self: start; z-index: 2;
+    padding-left: calc(var(--rail) + var(--rail-gap));
+    /* the whole title, wrapped (balanced) rather than cut short; an opaque text box, so an arriving title covers the pinned one */
+    text-wrap: balance; background: var(--bg); background-clip: content-box;
+}
+.has-rail > h2.is-pinned { color: var(--mark-text); }
+.has-rail > h2.is-past { visibility: hidden; }
+/* only the pinned title steps aside; titles further down stay (over the build animation's fill, hence important) */
+.has-rail:has(.rail:hover, .rail a:focus-visible) > h2.is-pinned { opacity: 0 !important; }
+/* abspos in the grid: spans the label columns */
+.has-rail > .rail-wrap { grid-column: 1 / 4 !important; }
+.rail-wrap { position: absolute; left: 0; bottom: 0; width: 100%; z-index: 40; pointer-events: none; }
+.rail {
+    position: sticky; top: calc(var(--head) + var(--s1)); width: var(--rail); padding-top: calc(var(--line) / 2 - var(--pitch) / 2);
+    pointer-events: auto; visibility: hidden; opacity: 0;
+    clip-path: inset(calc(-1 * var(--s1)) -100vw -100vh 0);   /* the index slides under the header line rather than over it */
+}
+.rail-on .rail { visibility: visible; opacity: 1; }
+.rail ol { list-style: none; padding: 0; margin: calc(var(--shift, 0) * -1 * var(--pitch)) 0 0; }
+/* the passed points slide up under the header line and fade as they near it: the band above the current point is one
+   line (four points), so each step towards the line takes a quarter of their tone; the entry under the pointer (or the
+   keyboard) is read in full however far up it is. Entries never move under the pointer: each is a solid hit block */
+.rail-item { margin: 0; opacity: clamp(0, calc(1 - (var(--shift, 0) - var(--i, 0)) / 4), 1); }
+.rail-item:hover, .rail-item:has(a:focus-visible) { opacity: 1; }
+.rail a { display: block; height: var(--pitch); width: calc(var(--rail) + var(--s0)); padding-top: calc(var(--pitch) / 2 - var(--u)); text-decoration: none; }
+.rail-item.is-current a { padding-top: calc(var(--pitch) / 2 - var(--u) * 2); }
+.rail-tick {
+    display: block; width: calc(var(--u) * 2); height: calc(var(--u) * 2); margin-left: calc(var(--rail) / 2 - var(--u));
+    border-radius: 50%; background: var(--ink); opacity: .5;
+}
+.rail-item.is-current .rail-tick, .rail-item a:hover .rail-tick, .rail-item a:focus-visible .rail-tick {
+    width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin-left: calc(var(--rail) / 2 - var(--u) * 2); opacity: 1;
+}
+.rail-item a:hover .rail-tick, .rail-item a:focus-visible .rail-tick { margin-top: calc(var(--u) * -1); }
+.rail:has(a:hover, a:focus-visible) .rail-item.is-current a:not(:hover):not(:focus-visible) .rail-tick {
+    width: calc(var(--u) * 2); height: calc(var(--u) * 2); margin-left: calc(var(--rail) / 2 - var(--u)); margin-top: var(--u); opacity: .5;
+}
+.rail-text {
+    position: absolute; left: calc(var(--rail) + var(--rail-gap)); top: 0;
+    width: max-content; max-width: calc(3 * var(--col) + 2 * var(--gap) - var(--rail) - var(--rail-gap));
+    font: 600 var(--t0) / var(--line) var(--display); color: var(--ink);
+    text-wrap: balance;   /* the whole title, wrapped, as the headings themselves */
+    background: var(--bg); padding-right: var(--s0);
+    opacity: 0; clip-path: inset(0 100% 0 0); pointer-events: none;
+}
+.rail-item.is-current .rail-text { color: var(--mark-text); }
+.rail-item:hover .rail-text, .rail-item:has(a:focus-visible) .rail-text { opacity: 1; clip-path: inset(0 0 0 0); }
+/* section lines: a hairline at the start of every section, spanning the grid like the header rule */
+html, body { overflow-x: clip; }
+.has-rail > .section-line {
+    position: absolute; z-index: 2; grid-column: 1 / -1 !important; left: 0; width: 100%; height: 1px;
+    background: var(--rule); pointer-events: none;
+}
+/* the index appears (a fade) and retracts in τ; its points fade in with it */
+:root:not(.no-motion) {
+    .rail { transition: opacity var(--dur-1) var(--ease), visibility 0s linear var(--dur-1); }
+    .rail-on .rail { transition: opacity var(--dur-1) var(--ease), visibility 0s; }
+    .rail ol { transition: margin-top var(--dur-2) var(--ease); }
+    .rail-item { transition: opacity var(--dur-2) var(--ease); }
+    .rail-tick { transition: opacity var(--dur-1) var(--ease); }
+    .has-rail:not(.rail-on) .rail-tick { opacity: 0; }
+    .rail-text { transition: opacity var(--dur-1) var(--ease), clip-path var(--dur-1) var(--ease); }
+    .has-rail > h2 { transition: color var(--dur-1) var(--ease), opacity var(--dur-1) var(--ease); }
+}
+@media (max-width: 900px) { .rail-wrap { display: none; } .has-rail > h2 { padding-left: 0; position: static; grid-row: auto !important; } }
+/* ── home ─────────────────────────────────────────────────────────────── */
+.home-content > .compute-table-wrap { grid-column: 4 / 13; }
+/* ── team ─────────────────────────────────────────────────────────────── */
+.page > .page-content > .team-list { grid-column: 1 / -1; margin-top: 0; container-type: inline-size; }
+.team-list { display: flex; flex-direction: column; }
+.team-member { padding: 0 0 var(--s2); align-items: start; }
+/* the photo's top on the name's capitals: set in the name's size, half its line down, less the .364em Inter's capitals
+   rise above the middle of a line */
+.team-member-image {
+    grid-column: 1 / 4; display: block; width: calc(2 * var(--col) + var(--gap)); aspect-ratio: 1;
+    object-fit: cover; filter: grayscale(1);
+    font-size: var(--t1); margin-top: calc(var(--lh-text) / 2 - .364em);
+}
+.team-member:hover .team-member-image { filter: none; }
+.team-member-info { grid-column: 4 / 10; min-width: 0; }
+.team-member-info h2 { font: 600 var(--t1) / var(--lh-text) var(--display); }
+.role { margin: 0 0 var(--s0); color: var(--ink-2); text-transform: uppercase; }
+.team-member-bio p { margin: 0 0 var(--s0); }
+.research-interests { color: var(--ink-3); }
+.research-interests p { margin: 0; }
+.page > .page-content > #public-team-notice { grid-column: 4 / 10; color: var(--ink-3); margin-top: 0; }
+/* ── mlst ─────────────────────────────────────────────────────────────── */
+.links-list { list-style: none; padding: 0; }
+.links-list li { display: flex; align-items: center; gap: var(--s0); margin: 0 0 var(--s0); }
+.links-list img { width: var(--line); height: var(--line); flex-shrink: 0; filter: grayscale(1); }
+.links-list div { display: flex; flex-direction: column; }
+.links-list strong { font-weight: 500; }
+.links-list a { font-family: var(--mono); font-size: var(--t-1); line-height: calc(var(--line) * .75); color: var(--ink-2); overflow-wrap: anywhere; }
+/* long URLs break instead of running off a phone screen */
+.video-embed { aspect-ratio: 16 / 9; width: 100%; margin-top: var(--s1); }
+.video-embed iframe { width: 100%; height: 100%; border: 0; }
+/* ── posts ────────────────────────────────────────────────────────────── */
+.post-container { max-width: calc(var(--max) + 2 * var(--pad)); }
+.post-content { margin: 0; }
+.post-content > h3 { margin-top: var(--s1); }
+/* an event (a post's Luma card, made a callout by _plugins/components.rb): the callout in the text columns, its cover in
+   the aside, a square as tall as the callout (taken out of flow, so the callout alone sets the height; no wider than the
+   aside); on phones the cover follows the callout, small. The cover is a drawing in ink on white: on ink it turns paper,
+   as the mark does */
+.post-content > .event { grid-column: 4 / 13; display: grid; grid-template-columns: subgrid; margin: var(--s1) 0 var(--s2); }
+.event > .callout { grid-column: 1 / 7; margin: 0; }
+.event .callout-title a { color: inherit; text-decoration: none; }
+.event .callout-title a:hover { color: var(--accent-text); }
+.event-when { margin-bottom: calc(var(--line) / 2); }
+.event-when time { margin-right: var(--s-1); }
+.event-cover { grid-column: 7 / 10; display: block; position: relative; pointer-events: none; }
+.post-content .event-cover img { position: absolute; left: 0; top: 0; width: auto; height: 100%; max-width: 100%; aspect-ratio: 1; object-fit: contain; object-position: left top; margin: 0; pointer-events: auto; }
+:root[data-theme="dark"] .post-content .event-cover img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+@media (max-width: 900px) {
+    .post-content > .event { grid-template-columns: minmax(0, 1fr); }
+    .event > .callout, .event-cover { grid-column: 1; }
+    .event-cover { width: calc(var(--line) * 8); margin-top: var(--s1); pointer-events: auto; }
+    .post-content .event-cover img { position: static; width: 100%; height: auto; }
+}
+/* ── narrow screens: one column, labels above their content ───────────── */
+@media (max-width: 900px) {
+    :root { --pad: 1rem; }
+    .home-content > *, .page > .page-content > *, .post-content > *, .post-item > *, .team-member > *, .team-member-info,
+    .page-title, .post-title, .page-lede, .post-header .post-meta, .post-byline-note, .research-chatter > * { grid-column: 1 / -1 !important; }
+    .home-content, .page > .page-content, .post-content, .post-item, .team-member { background: none !important; }
+    .home-content > h2 + *, .page > .page-content > h2:not(.post-list-heading) + *, .post-content > h2 + * { margin-top: var(--s0); }
+    .home-content > p:nth-of-type(2) { padding: var(--s2) 0 var(--s1); font-size: var(--t1); }
+    h1 { font-size: var(--t1); }
+    .page-header, .post-header { padding: var(--s2) 0 var(--s1); }
+    .post-item > .post-meta { grid-row: auto; flex-direction: row; flex-wrap: wrap; gap: 0 var(--s0); order: 2; }
+    .post-item > h3 { order: 1; }
+    .post-item > .post-excerpt { order: 3; }
+    .post-item > .read-more { order: 4; }
+    .team-member-image { width: calc(var(--line) * 5); margin-top: 0; margin-bottom: var(--s0); }
+    .site-header .header-content { flex-direction: column; align-items: flex-start; gap: var(--s0); padding: var(--s0) 0; }
+    body.post--sidenotes .sidenote { display: none; float: none; width: auto; margin: var(--s0) 0; }
+    body.post--sidenotes input.margin-toggle:checked + .sidenote { display: block; }
+    .post-image-grid { grid-template-columns: 1fr; }
+}
+/* ── one opening for every page: statement, then the line, then sections ─
+ * Page titles repeat the active nav item, so they are hidden visually (kept for screen readers).
+ * The statement is the page's first words: the home statement, a page's lede, or its first paragraph. */
+.page-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.page-lede, .page:not(:has(.page-lede)) > .page-content > p:first-child {
+    grid-column: 1 / 10; margin: 0; color: var(--ink);
+    font: 600 var(--t1) / var(--lh-text) var(--display); text-wrap: balance;
+}
+/* pages whose statement is their first paragraph draw the line under it, as the home page does */
+.page:not(:has(.page-lede)):has(> .page-content > p:first-child) > .page-header { padding: 0; }
+.page:not(:has(.page-lede)):has(> .page-content > p:first-child) > .page-content { padding-top: 0; }
+.page:not(:has(.page-lede)):has(> .page-content > p:first-child) > .page-content::before { content: none; }
+.page:not(:has(.page-lede)) > .page-content > p:first-child { position: relative; z-index: 1; background: var(--bg); padding: var(--s4) 0 var(--s1); }
+.page:not(:has(.page-lede)) > .page-content > p:first-child::after {
+    content: ""; position: absolute; bottom: 0; left: 0; width: 100cqw; height: 1px; background: var(--hair);
+}
+.page:not(:has(.page-lede)) > .page-content > p:first-child + h2,
+.page:not(:has(.page-lede)) > .page-content > p:first-child + h2 + * { margin-top: var(--s1); }
+.page:not(:has(.page-lede)) > .page-content > p:first-child + :not(h2) { margin-top: var(--s1); }
+@media (max-width: 900px) {
+    .page-lede, .page:not(:has(.page-lede)) > .page-content > p:first-child { font-size: var(--t1); grid-column: 1 / -1; }
+    .page:not(:has(.page-lede)) > .page-content > p:first-child { padding: var(--s2) 0 var(--s1); }
+}
+/* a page with no statement (Team) starts with the line two lines under the header */
+.page:not(:has(.page-lede)):not(:has(> .page-content > p:first-child)) > .page-header { padding: var(--s2) 0 0; }
+/* long statements (site.js: over 140 characters) step down to t1 on a narrower measure */
+.home-content > p.is-long, .page-lede.is-long, .page > .page-content > p.is-long:first-child {
+    font-size: var(--t1); line-height: var(--lh-text); grid-column: 1 / 9;
+}
+/* ── phone menu (site.js) ─────────────────────────────────────────────── */
+.nav-toggle { display: none; }
+@media (max-width: 900px) {
+    .site-header .header-content { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0; min-height: calc(var(--line) * 2.5); padding: 0; }
+    .nav-toggle {
+        display: block; order: 2; background: none; border: 0; padding: var(--s0) 0; margin: 0; cursor: pointer;
+        font: 400 var(--t-half) / var(--line) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink);
+    }
+    .js-nav .site-nav { order: 3; flex-basis: 100%; display: none; }
+    /* the first row (logo, Menu) is the same 60px whether the list is open or not: opening and closing never moves them */
+    .js-nav .site-header .header-content { align-content: flex-start; }
+    .js-nav .site-header .logo-container, .js-nav .nav-toggle { min-height: calc(var(--line) * 2.5 - 2px); }   /* the row inside the header's 2px rule */
+    .js-nav .nav-toggle { display: flex; align-items: center; padding-block: 0; }
+    .js-nav.nav-open .site-nav { display: block; }
+    .js-nav.nav-closing .site-nav { display: block; overflow: hidden; }   /* folding up (site.js) */
+    .site-nav ul { flex-direction: column; gap: 0; padding-bottom: var(--s0); padding-left: var(--s0); }
+    .site-nav a { font-size: var(--t0); padding: var(--s0) 0; border-bottom: 0; color: var(--ink-2); }
+    .site-nav a:hover { border-bottom: 0; color: var(--ink); }
+    .site-nav a.active { padding-bottom: var(--s0); border-bottom: 0; }
+    .site-nav a, .nav-toggle { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    :root:not(.js-nav) .nav-toggle { display: none; }   /* no script: the links show as they are, the button has nothing to do */
+    .page > .page-content > p.is-long:first-child, .page-lede.is-long { grid-column: 1 / -1; font-size: var(--t0); }
+}
+@media (max-width: 900px) {
+    :root:not(.no-motion).nav-open .site-nav { animation: settle var(--dur-2) var(--ease) both; }
+}
+/* white-ground images (charts, the cartoon, icons, the logo) take on the page tint; portraits stay as shot */
+.post-content img, .logo-image, .links-list img{ mix-blend-mode: multiply; }
+/* page heads carry a research figure (hero.js); the band is styled from the page's structure (not the class
+   hero.js adds), so it is right from the first frame */
+:is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { position: relative; z-index: 1; min-height: calc(var(--line) * 10); }
+.hero-canvas { position: absolute; left: 0; top: 0; z-index: -1; pointer-events: none; }
+/* the figure rests as a still frame; the hit area over columns 10–12 wakes it. The caption names the
+   paper in the mono label voice, its hint fading once the figure is live */
+.hero-hit { position: absolute; top: 0; z-index: 0; cursor: pointer; touch-action: none; }
+/* the citation sits a quarter line above the head's rule, flush right with column 12, and never reaches the rule: the
+   hint stays one line (cut with an ellipsis) and appears only once the pointer has rested on the figure a moment; the
+   opened reference may wrap, growing upward and leftward, set on the page ground over the figure */
+.hero-caption {
+    position: absolute; bottom: calc(var(--line) / 4); z-index: 1; margin: 0; display: flex; align-items: flex-end; justify-content: flex-end; gap: var(--s0);
+    font: 400 var(--t-1) / var(--line) var(--mono); letter-spacing: 0.01em; color: var(--ink-3); text-align: right;
+    white-space: nowrap; pointer-events: none;
+}
+.hero-caption .cite-mark { order: 2; }
+.hero-caption .cite-full, .hero-caption .cite-hint { order: 1; }
+.cite-mark { pointer-events: auto; font: inherit; color: var(--ink-2); background: none; border: 0; padding: 0; cursor: pointer; }
+.cite-mark:hover, .hero-caption.is-open .cite-mark { color: var(--ink); }
+.cite-full { display: none; pointer-events: auto; overflow: hidden; text-overflow: ellipsis; }
+.cite-full a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--hair); }
+.cite-full a:hover { color: var(--ink); border-bottom-color: currentColor; }
+.hero-caption.is-open .cite-full { display: inline; }
+.hero-caption.is-open .cite-hint { display: none; }
+.cite-hint { opacity: 0; transition: opacity var(--dur-2) var(--ease); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: calc(var(--line) * .75); }
+.hero-hint .cite-hint { opacity: 1; }
+/* the figure's reference, at the foot of the page */
+@media (max-width: 900px) { .hero-canvas, .hero-hit, .hero-caption { display: none; } :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: 0; } }
+/* page heads breathe: five lines above the statement, two below; every page's band is the same 17 lines
+   (the longest statement, Open Positions, fills about that), so the content always starts at one height */
+.page-header, .post-header { padding-top: var(--s5); padding-bottom: var(--s2); }
+.home-content > p:nth-of-type(2) { padding: var(--s5) 0 var(--s2); }
+.page:not(:has(.page-lede)) > .page-content > p:first-child { padding: var(--s5) 0 var(--s2); }
+:is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: calc(var(--line) * 17); }
+@media (max-width: 900px) {
+    .page-header, .post-header { padding-top: var(--s2); padding-bottom: var(--s1); }
+    .home-content > p:nth-of-type(2), .page:not(:has(.page-lede)) > .page-content > p:first-child { padding: var(--s2) 0 var(--s1); }
+    :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: 0; }
+}
+/* compute spec sheet (site.js): one row per system; the label column names it, values sit in cells. The table stays for
+   screen readers, off screen (block, since a table ignores height and would still extend the page). Lines as row and
+   column helpers: a hairline between rows, a half-tone line under the system names, a hairline at the start of each
+   system's column. The rows carry no padding, the cells do (stretched to the row), so each column's line runs from rule
+   to rule; the head row's names sit on the tint, a ground of their own, in the values' own type, and the row under the
+   pointer takes the tint faintly and the ink in its label */
+.compute-table.is-sheeted { display: block; position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.home-content > .compute-table-wrap { grid-column: 4 / 13; }
+.spec-sheet { display: grid; }
+.spec-row {
+    display: grid; grid-template-columns: minmax(0, 0.9fr) repeat(var(--systems, 2), minmax(0, 1.2fr)); column-gap: 0;
+    align-items: stretch; padding: 0; border-top: 1px solid var(--hair);
+}
+.spec-names { border-top: 0; border-bottom: 1px solid color-mix(in oklch, var(--ink) 50%, var(--bg)); }
+.spec-names + .spec-row { border-top: 0; }
+.spec-row > * { padding-block: var(--s0); }
+.spec-row > .spec-k { padding-inline: var(--s0) var(--s1); }
+.spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 1px solid var(--hair); padding-inline: var(--s0); }
+.spec-names > * { background: var(--tint); padding-right: var(--s0); }
+.spec-row:not(.spec-names):hover > * { background: color-mix(in oklch, var(--tint) 50%, var(--bg)); }
+.spec-row:hover .spec-k { color: var(--ink); }
+.spec-k { font: 400 var(--t-1) / var(--line) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); }
+.spec-cell { display: grid; min-width: 0; font-variant-numeric: tabular-nums; }
+.spec-line { display: block; line-height: var(--line); }
+.spec-line b { font: 600 var(--t0) / var(--line) var(--display); color: var(--ink); white-space: nowrap; }
+.spec-line i { font: 400 var(--t-1) / var(--line) var(--mono); font-style: normal; color: var(--ink-2); margin-left: calc(var(--line) / 4); }
+.spec-n { font: 400 var(--t-1) / calc(var(--line) * .75) var(--mono); color: var(--ink-3); }
+.spec-line sup { font: 400 var(--t-1) / 0 var(--mono); margin-left: calc(var(--u) * 2); vertical-align: 0.7em; }
+.spec-line sup a { color: var(--ink-3); text-decoration: none; }
+.spec-line sup a:hover { color: var(--accent-text); }
+/* phones: each measure's label sits above its pair of values, the first system at the page's edge; the line between the
+   systems runs on through the label (kept to the left column). The head row's label ("System") says what the names
+   already do: off screen, so the tinted names start where the line does */
+@media (max-width: 900px) {
+    .spec-row { grid-template-columns: repeat(var(--systems, 2), minmax(0, 1fr)); }
+    .spec-k { grid-column: 1 / -1; line-height: calc(var(--line) * .75); }
+    .spec-row > .spec-k { position: relative; padding-bottom: 0; padding-right: calc(50% + var(--s0)); }
+    .spec-row > .spec-k::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--hair); }
+    .spec-names > .spec-k { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; padding: 0; }
+    .spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 0; }
+    .spec-row > .spec-cell + .spec-cell { border-left: 1px solid var(--hair); }
+}
+/* short pages still fill the screen: the footer sits at the bottom */
+body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+body > .site-header, body > .site-footer { width: 100%; flex-shrink: 0; }
+body > main { flex: 1 0 auto; width: 100%; }
+/* with a figure, the statement takes columns 1–7 and the figure columns 8–12 (hero.js) */
+@media (min-width: 901px) {
+    .home-content > p:nth-of-type(2):nth-of-type(2), .page:not(:has(.page-lede)) > .page-content > p:first-child:first-child,
+    .page-header:has(.page-lede) > .page-lede.page-lede { grid-column: 1 / 8; }
+}
+.site-header .header-content { border-bottom-width: 2px; }
+.page > .page-content::before, .post-content::before,
+.page:not(:has(.page-lede)) > .page-content > p:first-child::after { background: var(--rule); }
+.home-content, .page > .page-content, .post-content, .post-item, .team-member {
+    background-image: linear-gradient(var(--rule), var(--rule));
+}
+a:hover { text-decoration-thickness: 2px; }
+::selection { background: var(--ink); color: var(--bg); }
+/* the title first: while the page's images and fonts are still arriving (head script: until load, at most 1.5s), only the
+ * title and statement build; everything else waits at its first frame, then builds once the page is all there */
+.is-holding main *, .is-holding .site-footer, .is-holding .site-footer * { animation-play-state: paused !important; }
+.is-holding main :is(.page-title, .post-title, .band-kicker, .band-brand, .page-lede, .post-back, .page > .page-content > p:first-child, .home-content > p:nth-of-type(2)), .is-holding main :is(.page-title, .post-title, .band-kicker, .band-brand, .page-lede, .post-back, .page > .page-content > p:first-child, .home-content > p:nth-of-type(2)) * { animation-play-state: running !important; }
+.hero-caption.is-open { white-space: normal; align-items: baseline; background: var(--bg); line-height: calc(var(--line) * .75); padding-top: calc(var(--line) / 4); }
+.hero-caption.is-open .cite-full { overflow: visible; text-overflow: clip; }
+/* ── the page head: the page name as the headline, the statement under it as a lede (hero.js adds the
+ * name as .band-kicker; the home page keeps its statement as the headline) */
+.band-kicker, .band-brand { display: block; font: 600 var(--t4) / 1.05 var(--display); color: var(--ink); margin-bottom: var(--s1); }
+:is(.page-header:has(.page-lede) > .page-lede, .page:not(:has(.page-lede)) > .page-content > p:first-child):has(.band-kicker) { font-size: var(--t1); line-height: var(--lh-text); color: var(--ink-2); }
+.home-content > p:nth-of-type(2) .band-kicker { display: none; }
+.home-content > p:nth-of-type(2):nth-of-type(2) { font-size: var(--t3); color: var(--ink); line-height: 1.15; }
+@media (max-width: 900px) { .band-kicker, .band-brand { font-size: var(--t3); } .home-content > p:nth-of-type(2):nth-of-type(2) { font-size: var(--t2); } }
+:root[data-theme="dark"] :is(.post-content img, .links-list img) { mix-blend-mode: normal; }
+/* the drawing's ink turns light, its white ground disappears */
+:root[data-theme="dark"] .logo-image { filter: invert(1); mix-blend-mode: screen; }
+/* articles: the way back to their section, above the title (post layout) */
+.post-back { grid-column: 1 / -1; justify-self: start; white-space: nowrap; display: inline-block; margin-bottom: var(--s1); font: 400 var(--t-half) / var(--line) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); text-decoration: none; }
+.post-back:hover { color: var(--ink); }
+/* article titles take the head's headline step (t3), so text uses t-1 · t0 · t1 · t3 · t4 only */
+.post-title { font-size: var(--t3); line-height: 1.1; }
+@media (max-width: 900px) { .post-title { font-size: var(--t2); } }
+:root:not(.no-motion) :is(.band-brand, .band-kicker).is-split .bw { display: inline-block; animation: build-word calc(var(--tau) * 4) var(--ease) backwards; }
+/* every head is the same height (see the measured note in the rules) */
+:is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: calc(var(--line) * 17); }
+@media (max-width: 900px) { :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: 0; } }
+/* the header shows only the mark */
+.logo-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* only the mark in the header; the name stays for screen readers */
+.logo-container { padding-left: var(--s0); }
+/* half a line before the mark */
+.logo-container { position: relative; }
+.logo-container::before { content: ""; position: absolute; left: var(--hit-l, 0); top: var(--hit-t, 0); width: var(--hit-w, 100%); height: var(--hit-h, 100%); }
+/* under the lab's name, the home statement takes the statement style of every other page (t1, secondary ink) */
+.home-content > p:nth-of-type(2):has(.band-brand) { font-size: var(--t1); line-height: var(--lh-text); color: var(--ink-2); }
+/* the theme switch: the new theme revealed through a disc growing from the ring, its edge soft over half its radius */
+.theme-flip .site-header { view-transition-name: none; }
+.theme-flip::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
+/* the disc is a mask that grows about the ring (its size and place animate, standard properties every engine animates;
+ * --vx, --vy: the ring, --vd: the disc's final width, set by site.js), 8τ on the one curve */
+.theme-flip::view-transition-new(root) {
+    mix-blend-mode: normal;
+    -webkit-mask-image: radial-gradient(closest-side, #000 50%, transparent); mask-image: radial-gradient(closest-side, #000 50%, transparent);
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    animation: theme-disc calc(var(--tau) * 8) var(--ease) both;
+}
+/* the home head's rule is drawn by CSS from the first frame, like every other page's (no script-made line that
+   would arrive late after a page change); the script's first section line is not drawn there */
+.home-content > p:nth-of-type(2)::after { content: ""; position: absolute; bottom: 0; left: 0; width: 100cqw; height: 1px; background: var(--rule); }
+.home-content > .section-line.is-first { display: none; }
+:root:not(.no-motion) .home-content > p:nth-of-type(2)::after { animation: build-fade calc(var(--tau) * 4) var(--ease) calc(var(--tau) * 2) backwards; }
+/* the privacy policy, adopted from its widget into the page: the date as metadata, sub-topics as h3, the widget's
+   own styles gone */
+.privacy-updated { grid-column: 4 / 10; margin: 0 0 var(--s1); font: 400 var(--t-1) / calc(var(--line) * .75) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); }
+.page-content > h3 { grid-column: 4 / 10; font: 600 var(--t0) / var(--line) var(--display); margin: var(--s1) 0 0; }
+privacybee-widget:empty, privacybee-widget.is-adopted { display: none; }
+/* while it renders (in stages, in its own styles) the widget is laid out at full width but unseen; adopted, it goes; never
+   adopted (its markup changed), it is shown as it is after a while (site.js) */
+privacybee-widget:not(.is-adopted):not(.is-raw) { visibility: hidden; height: 0; overflow: hidden; }
+.privacy-tag { font: 400 var(--t-1) / var(--line) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); margin-left: var(--s-1); }
+/* every head is exactly seventeen lines (its bottom padding takes up any slack from a long statement) */
+@media (min-width: 901px) { :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { height: calc(var(--line) * 17); box-sizing: border-box; } }
+/* focus: blur means not in focus yet, or no longer. Leaving a page, the page goes out of focus while the next one
+   loads (nothing waits for it); images come into focus as they load */
+:root:not(.no-motion) main img.is-loading { filter: blur(calc(var(--u) * 4)); opacity: 0; }
+:root:not(.no-motion) main img { transition: filter calc(var(--tau) * 4) var(--ease), opacity calc(var(--tau) * 4) var(--ease); }
+/* phones: focus effects are fades only (blurring many blocks, or the whole page, is costly on a phone's GPU) */
+@media (max-width: 900px) {
+    @keyframes build-rise { from { opacity: 0; } }
+    :root:not(.no-motion) main img.is-loading { filter: none; }
+}
+/* the header mark: inline artwork (was a PNG inverted for dark); its colour is the ink, the eyes follow the theme */
+svg.logo-image { display: block; color: var(--ink); filter: none !important; mix-blend-mode: normal !important; overflow: visible; }
+.off-figure .hero-canvas, .off-figure .hero-hit, .off-figure .hero-caption { display: none !important; }
+/* ── print: articles and pages on A4, black on white. The page's own head (mark and name) stays as a running header;
+   navigation, figures, the index and the footer go; links to other sites print their address; figures, tables and code
+   keep together; type in points on the print scale (9.5 pt base, r = 1.42, a 5 mm line) ── */
+@page { size: A4; margin: 18mm 18mm 20mm; }
+@media print {
+    :root, :root[data-theme="dark"] { --bg: #fff; --tint: #fff; --ink: #000; --ink-2: #333; --ink-3: #555; --hair: #bbb; --accent: #000; --mark-eye: #fff; --mark-pupil: #000; color-scheme: light; }
+    html, body { background: #fff !important; color: #000; font-size: 9.5pt; line-height: 14.2pt; }
+    *, *::before, *::after { animation: none !important; transition: none !important; filter: none !important; mix-blend-mode: normal !important; }
+    .skip-link, .site-nav, .nav-toggle, .theme-toggle, .nav-mark, #theme-switch, .hero-canvas, .hero-hit, .hero-caption, .id-headmark,
+    .rail-wrap, .section-line, .site-footer, .post-back, input.margin-toggle, .read-more, .cite-hint, canvas { display: none !important; }
+    .site-header { position: static !important; border: 0 !important; box-shadow: none !important; background: none !important; padding: 0 0 3mm !important; margin: 0 0 8mm !important; border-bottom: 0.5pt solid #000 !important; }
+    .site-header::before, .site-header::after, .header-content::before, .header-content::after { display: none !important; }
+    .site-header *, h1, h2, h3, h4, .page-header, .post-header, .band-kicker { background: none !important; box-shadow: none !important; }
+    .header-content { border: 0 !important; }
+    .site-header .container, .container { max-width: none !important; width: auto !important; padding: 0 !important; margin: 0 !important; }
+    .logo-container { padding: 0 !important; gap: 2mm; }
+    .logo-image { width: 9mm !important; height: auto !important; }
+    .logo-container .logo-text { display: inline !important; position: static !important; clip: auto !important; width: auto !important; height: auto !important; overflow: visible !important; font: 600 11pt/1 var(--display); }
+    /* every grid to one column: the label column becomes a heading above its text */
+    .page-content, .home-content, .post-content, .page-header, .post-header, main { display: block !important; grid-template-columns: none !important; }
+    .page-content > *, .home-content > *, .post-content > * { grid-column: auto !important; max-width: none !important; }
+    h1, .page-title, .post-title, .band-kicker, .band-brand { font: 600 22pt/1.1 var(--display) !important; margin: 0 0 4mm !important; color: #000 !important; }
+    .page-lede, .home-content > p:nth-of-type(2) { font: 400 13.5pt/1.3 var(--sans) !important; color: #333 !important; height: auto !important; min-height: 0 !important; margin: 0 0 6mm !important; padding: 0 !important; }
+    h2 { position: static !important; opacity: 1 !important; font: 600 13.5pt/1.2 var(--display) !important; margin: 7mm 0 2.5mm !important; break-after: avoid; }
+    h3, h4 { font: 600 10.5pt/1.3 var(--display) !important; margin: 5mm 0 2mm !important; break-after: avoid; }
+    p, li { orphans: 3; widows: 3; }
+    .post-meta, .post-author, time { font: 400 7pt/1.4 var(--mono) !important; color: #555 !important; text-transform: uppercase; letter-spacing: .02em; }
+    img, svg, figure, table, pre, blockquote, .post-image-grid, .compute-table-wrap, .team-member { break-inside: avoid; }
+    img { max-width: 100% !important; height: auto !important; }
+    pre, code { font-size: 8pt !important; white-space: pre-wrap !important; word-break: break-word; }
+    table { width: 100% !important; font-size: 8.5pt; }
+    a { color: #000 !important; text-decoration: underline; text-decoration-thickness: 0.5pt; text-underline-offset: 1.5pt; }
+    a[href^="http"]:not(:has(img))::after { content: " (" attr(href) ")"; font: 400 7pt/1 var(--mono); color: #555; word-break: break-all; text-decoration: none; }
+    .sidenote { display: block !important; float: none !important; width: auto !important; margin: 2mm 0 2mm 6mm !important; font-size: 8pt; color: #333; }
+    ul:not([class]) > li::before { background: #000 !important; }
+}
+@media print {
+    label.sidenote-number, .sidenote-ref { display: inline !important; }
+    .page-header, .post-header { border: 0 !important; padding: 0 !important; margin: 0 0 6mm !important; }
+    .page-header::after, .post-header::after, .page-header::before, .post-header::before { display: none !important; }
+}
+@media print {
+    .home-content > p:nth-of-type(2), .page-lede, .page-header, .post-header { background: none !important; box-shadow: none !important; }
+    .home-content > p:nth-of-type(2)::before, .home-content > p:nth-of-type(2)::after { display: none !important; }
+    .team-list { display: block !important; }
+    html body .team-list .team-member { display: grid !important; grid-template-columns: 28mm 1fr !important; gap: 6mm !important; align-items: start; height: auto !important; min-height: 0 !important; padding: 0 0 6mm !important; margin: 0 !important; position: static !important; }
+    .team-member-image { width: 28mm !important; height: 28mm !important; margin-top: 0 !important; object-fit: cover; position: static !important; }
+    .team-member h2 { margin: 0 0 1mm !important; font-size: 11pt !important; }
+    .team-member .role { margin: 0 0 2mm !important; }
+}
+/* parts view: each part alone over a faint copy of the whole */
+.id-parts span:is([data-part="hind"], [data-part="body"], [data-part="legs"], [data-part="eyes"]) svg > :is(.m-hind, .m-body, .m-legs, .m-eye) { opacity: .1; }
+.id-parts span:is([data-part="hind"], [data-part="body"], [data-part="legs"], [data-part="eyes"]) svg :is(.m-ring, .m-white, .m-pupil) { opacity: 1; }
+.id-parts span[data-part="hind"] svg > .m-hind, .id-parts span[data-part="body"] svg > .m-body, .id-parts span[data-part="legs"] svg > .m-legs, .id-parts span[data-part="eyes"] svg > .m-eye { opacity: 1; }
+/* the mark walks: while the pointer is on it, its five legs swing from their roots (1, 3, 5 together, 2 and 4 against
+   them), the hind legs sway a little behind the body, and body, eyes and hind legs bob once per step. --walk eases from
+   0 to 1 and back (4τ), so the walk starts and settles instead of jumping; a step takes 8τ. Roots are in the mark's
+   units (transform-box: view-box) */
+svg:has(.m-legs) { --walk: 0; transition: --walk calc(var(--tau) * 4) var(--ease); }
+svg:has(.m-legs) :is(.m-leg, .m-body, .m-eye, .m-hind) { transform-box: view-box; }
+.m-leg-1 { --a: 6; transform-origin: 348px 719px; }
+.m-leg-2 { --a: 8; transform-origin: 610px 700px; }
+.m-leg-3 { --a: 8; transform-origin: 805px 725px; }
+.m-leg-4 { --a: 8; transform-origin: 932px 721px; }
+.m-leg-5 { --a: 6; transform-origin: 1030px 626px; }
+.m-hind-1 { --a: 3; transform-origin: 397px 262px; }
+.m-hind-2 { --a: 3; transform-origin: 652px 197px; }
+/* a spider's step: the leg snaps forward lifted (a third of the cycle), sets down, then pushes back planted (the rest);
+   the legs ripple from front to back with alternate legs half a cycle apart (a metachronal wave), the body bobs twice
+   a cycle and rocks a little. --walk scales every amplitude, so the walk eases in and out */
+.m-leg-1 { --a: 9; }
+.m-leg-2 { --a: 11; }
+.m-leg-3 { --a: 11; }
+.m-leg-4 { --a: 11; }
+.m-leg-5 { --a: 8; }
+.m-hind-1, .m-hind-2 { --a: 2.5; }
+svg:has(.m-legs) :is(.m-body, .m-eye, .m-hind) { transform-origin: 600px 560px; }
+/* the creature group (added by script): it moves and crouches as one, from its feet; it may step outside its box */
+svg:has(.m-creature) { overflow: visible; }
+/* between pages (router.js, or a phone-menu tap before a full load): only the header stays until the next page is in */
+.is-leaving body > :not(.site-header):not(.skip-link):not(#theme-switch) { opacity: 0 !important; transition: none !important; }
+
+/* sidenotes on wide screens: placed beside the line that cites them in the aside columns 10–12, and stacked so none
+   overlaps the one before (site.js sets each one's top). Out of the flow, so a long note never holds its paragraph open
+   (a float inside a grid item would: the item grows to contain it, leaving a gap in the text). */
+@media (min-width: 901px) {
+    body.post--sidenotes .post-content { position: relative; }
+    body.post--sidenotes .sidenote { position: absolute; float: none; clear: none; margin: 0; left: calc(9 * (var(--col) + var(--gap))); width: calc(3 * var(--col) + 2 * var(--gap)); }
+}
+/* bylines and list entries: the date in the label voice (mono, capitals, ink 3), the name as text (Inter, ink 2), so the
+   two read as two things, not one run of mono */
+.post-meta time, .event-when time { font: 400 var(--t-1) / var(--line) var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink-3); }
+.post-meta > span:not([aria-hidden]), .post-meta .post-author { font: 400 var(--t0) / var(--line) var(--sans); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
