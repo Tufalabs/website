@@ -7,7 +7,7 @@
     const FIGURE = { home: 'descent', research: 'fold', news: 'scaling2', jobs: 'rlcont', team: 'chip', mlst: 'attnpat' };
     const PAPER = {
         scaling2: { cite: 'Scaling laws · Maloney et al. 2022', title: 'A Solvable Model of Neural Scaling Laws', href: 'https://arxiv.org/abs/2210.16859', hint: 'Seven models train live; the dotted line is the law fitted to them; drag a row to change the learning rate or the label noise' },
-        rlcont: { cite: 'REINFORCE · Williams 1992', title: 'Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning', href: 'https://doi.org/10.1007/BF00992696', hint: 'Click the arena to train; drag a row to change a setting, or the goal, walls and pits · double click: new arena' },
+        rlcont: { cite: 'REINFORCE · Williams 1992', title: 'Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning', href: 'https://doi.org/10.1007/BF00992696', hint: 'Click the arena to train; drag the goal, walls or pits, or a row to change a setting · last row: live or fast' },
         scaling: { cite: 'Chinchilla · Hoffmann et al. 2022', title: 'Training Compute-Optimal Large Language Models', href: 'https://arxiv.org/abs/2203.15556', hint: 'Drag the point or slide an axis' },
         rlenv: { cite: 'REINFORCE · Williams 1992', title: 'Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning', href: 'https://doi.org/10.1007/BF00992696', hint: 'Click to train, click a cell to move the goal' },
         attnpat: { cite: 'Sparse attention · Child et al. 2019', title: 'Generating Long Sequences with Sparse Transformers', href: 'https://arxiv.org/abs/1904.10509', hint: 'Click: next pattern, watch it train · hover a row' },
