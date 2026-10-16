@@ -1406,15 +1406,18 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
     };
 
-    // Folding space (after Montúfar et al., and Welch Labs' pictures of it): a deep ReLU network bends the
-    // plane layer by layer. Each layer stretches and rotates the plane (z ↦ Az + b), then folds it onto its
-    // positive quadrant (a ReLU pair per axis computes |h|), so after a few layers two tangled classes sit on
-    // either side of one straight line. The weights are trained (Adam on the logistic loss), so the folds fit
-    // whatever distribution is given: click the input for another dataset, or paint classes onto it with a drag,
-    // and the network retrains live from where it is. Click the right to play the layers; drag across it to scrub.
+    // Folding space (after Montúfar et al., and Welch Labs' pictures of it): a deep ReLU network bends the plane layer by
+    // layer. Each layer stretches and rotates the plane (z ↦ Az + b), then folds it onto its positive quadrant (a ReLU
+    // pair per axis computes |h|), so after enough layers two tangled classes sit on either side of one straight line. The
+    // weights are trained (Adam on the logistic loss), so the folds fit whatever distribution is given: click the input
+    // for another dataset (ring, xor, checkerboard, wave, two blobs, band, three rings, spiral), or paint classes onto it
+    // with a drag, and the network retrains live from where it is. The row under the input sets the depth (1–8 layers;
+    // trained layers are kept, new ones added, and it retrains): the input shows the network's linear regions (the zero
+    // line of every unit, before its fold, traced by marching squares) and counts them, the number Montúfar et al. show
+    // grows exponentially with depth. Click the right to play the layers; drag across it to scrub.
     F.fold = {
         bleed: true, L: 3, STEPS: 700, PER: 24, LR: 0.03, SIM: 0.05,
-        title: 'Folding space', note: 'A trained ReLU network folds, stretches and rotates the plane until two tangled classes sit on either side of a line; change the data and it refits.',
+        title: 'Folding space', note: 'A trained ReLU network folds, stretches and rotates the plane until two tangled classes sit on either side of a line; deeper networks cut the plane into many more linear regions.',
         DATA: [
             ['ring', (x, y) => Math.hypot(x, y) < 0.6],
             ['xor', (x, y) => x * y > 0],
@@ -1422,17 +1425,21 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             ['wave', (x, y) => y > 0.45 * Math.sin(3.2 * x)],
             ['two blobs', (x, y) => Math.hypot(x - 0.4, y - 0.3) < 0.35 || Math.hypot(x + 0.45, y + 0.35) < 0.35],
             ['band', (x, y) => Math.abs(x + y) < 0.5],
+            ['three rings', (x, y) => Math.floor(Math.hypot(x, y) / 0.33) % 2 === 0],
+            ['spiral', (x, y) => Math.sin(Math.atan2(y, x) - 8 * Math.hypot(x, y)) > 0],
         ],
+        LMIN: 1, LMAX: 8,
         init(R, rand) {
             const r = rand(37), fx = R.fx ?? R.x, vy0 = R.vy0 ?? R.y, vy1 = (R.vy1 ?? R.y + R.h) - 16, W = R.x + R.w - fx;
             // two square panels by the layout rule; the plane [−1, 1] inside a half-line margin, its lattice a half line apart
             const LN = K.LN, lay = K.panels(R, [1, 1]), side = lay.h, sc = (side - LN) / 2, cy = lay.rects[0].y + side / 2;
-            const st = { r, fx, vy0, vy1, W, sc, side, u: F.fold.L, ds: 0, ext: 1.4 };
+            const st = { r, fx, vy0, vy1, W, sc, side, L: F.fold.L, u: F.fold.L, ds: 0, ext: 1.4 };
             st.left = [lay.rects[0].x + side / 2, cy]; st.right = [lay.rects[1].x + side / 2, cy];
             const n = Math.round(sc / (LN / 2)); st.lat = []; for (let i = -n; i <= n; i++) for (let j = -n; j <= n; j++) st.lat.push([i / n, j / n]);   // the plane: a field, ℓ/2 apart
             st.pts = Array.from({ length: 900 }, () => [r() * 2 - 1, r() * 2 - 1]);
             st.grid = []; for (let i = 0; i <= 8; i++) { const a = -1 + i / 4; for (let k = 0; k <= 48; k++) { const b = -1 + k / 24; st.grid.push([a, b], [b, a]); } }
             st.axis = { x0: st.right[0] - side / 2, x1: st.right[0] + side / 2, y: cy + side / 2 + LN / 2 };
+            st.lrow = { x0: st.left[0] - side / 2, x1: st.left[0] + side / 2, y: cy + side / 2 + LN / 2 };   // the layers row, under the input
             F.fold.dataset(st, 0);
             for (let tries = 0; tries < 5; tries++) {                    // trained at rest; a start that stalls is drawn again
                 F.fold.reinit(st); for (let i = 0; i < F.fold.STEPS; i++) F.fold.step(st);
@@ -1446,15 +1453,15 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         // weights near a stretch-and-rotate per layer, then a random readout line
         reinit(st) {
             const r = st.r, P = [];
-            for (let k = 0; k < F.fold.L; k++) { const th = (r() - 0.5) * 1.2 + (r() < 0.5 ? 0.6 : -0.6), c = Math.cos(th), sn = Math.sin(th); P.push(1.4 * c, -1.4 * sn, 1.4 * sn, 1.4 * c, (r() - 0.5) * 0.6, (r() - 0.5) * 0.6); }
+            for (let k = 0; k < st.L; k++) { const th = (r() - 0.5) * 1.2 + (r() < 0.5 ? 0.6 : -0.6), c = Math.cos(th), sn = Math.sin(th); P.push(1.4 * c, -1.4 * sn, 1.4 * sn, 1.4 * c, (r() - 0.5) * 0.6, (r() - 0.5) * 0.6); }
             P.push(r() - 0.5, r() - 0.5, 0);
             st.P = P; st.m = new Float64Array(P.length); st.v = new Float64Array(P.length); st.it = 0;
         },
-        forward(st, p) { const P = st.P; let z = p; for (let k = 0; k < F.fold.L; k++) { const o = k * 6; z = [Math.abs(P[o] * z[0] + P[o + 1] * z[1] + P[o + 4]), Math.abs(P[o + 2] * z[0] + P[o + 3] * z[1] + P[o + 5])]; } const o = F.fold.L * 6; return P[o] * z[0] + P[o + 1] * z[1] + P[o + 2]; },
+        forward(st, p) { const P = st.P; let z = p; for (let k = 0; k < st.L; k++) { const o = k * 6; z = [Math.abs(P[o] * z[0] + P[o + 1] * z[1] + P[o + 4]), Math.abs(P[o + 2] * z[0] + P[o + 3] * z[1] + P[o + 5])]; } const o = st.L * 6; return P[o] * z[0] + P[o + 1] * z[1] + P[o + 2]; },
         accuracy(st) { let a = 0; st.pts.forEach((p, i) => { if ((F.fold.forward(st, p) > 0) === !!st.lab[i]) a++; }); return a / st.pts.length; },
         // one full-batch Adam step on the logistic loss, backpropagating through the folds
         step(st) {
-            const L = F.fold.L, P = st.P, n = P.length, g = new Float64Array(n), N = st.pts.length;
+            const L = st.L, P = st.P, n = P.length, g = new Float64Array(n), N = st.pts.length;
             st.pts.forEach((p, i) => {
                 const ins = [], sg = []; let z = p;
                 for (let k = 0; k < L; k++) { const o = k * 6, h0 = P[o] * z[0] + P[o + 1] * z[1] + P[o + 4], h1 = P[o + 2] * z[0] + P[o + 3] * z[1] + P[o + 5]; ins.push(z); sg.push([Math.sign(h0), Math.sign(h1)]); z = [Math.abs(h0), Math.abs(h1)]; }
@@ -1467,8 +1474,38 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             // a pull towards similarities (a = d, b = −c): each layer stays a stretch and a rotation, so the bent plane stays two-dimensional
             const ls = lr * F.fold.SIM * 20; for (let k = 0; k < L; k++) { const o = k * 6, e1 = P[o] - P[o + 3], e2 = P[o + 1] + P[o + 2]; P[o] -= ls * e1; P[o + 3] += ls * e1; P[o + 1] -= ls * e2; P[o + 2] -= ls * e2; }
         },
+        // a new depth: the trained layers kept, new ones drawn as for a fresh start (or the last ones dropped), the readout kept
+        depth(st, L2) {
+            if (L2 === st.L) return;
+            const r = st.r, P = st.P, out = P.slice(st.L * 6), lay = P.slice(0, Math.min(st.L, L2) * 6);
+            for (let k = st.L; k < L2; k++) { const th = (r() - 0.5) * 1.2 + (r() < 0.5 ? 0.6 : -0.6), c = Math.cos(th), sn = Math.sin(th); lay.push(1.2 * c, -1.2 * sn, 1.2 * sn, 1.2 * c, (r() - 0.5) * 0.4, (r() - 0.5) * 0.4); }
+            st.P = lay.concat(out); st.L = L2; st.m = new Float64Array(st.P.length); st.v = new Float64Array(st.P.length); st.it = 0; st.u = L2; st.regionsAt = null;
+            st.acc = F.fold.accuracy(st); F.fold.retrain(st);
+        },
+        // the linear regions. Their boundaries are where some unit's input crosses zero (before its fold): each unit's
+        // zero line traced over a grid by marching squares, so the lines are the network's own straight pieces. Their
+        // number: grid cells labelled by their activation pattern (the sign of every unit), counted as connected patches
+        // of one pattern, slivers under three cells left out
+        regions(st, G = 96) {
+            const L = st.L, P = st.P, m = st.side / 2 / st.sc, V = G + 1, at = (i) => -m + (2 * m * i) / G, H = [];
+            for (let k = 0; k < L; k++) H.push(new Float64Array(V * V), new Float64Array(V * V));
+            const pat = new Int32Array(G * G);
+            for (let j = 0; j < V; j++) for (let i = 0; i < V; i++) { let z0 = at(i), z1 = -at(j); for (let k = 0; k < L; k++) { const o = k * 6, h0 = P[o] * z0 + P[o + 1] * z1 + P[o + 4], h1 = P[o + 2] * z0 + P[o + 3] * z1 + P[o + 5]; H[2 * k][j * V + i] = h0; H[2 * k + 1][j * V + i] = h1; z0 = Math.abs(h0); z1 = Math.abs(h1); } }
+            for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { let z0 = at(i + 0.5), z1 = -at(j + 0.5), code = 0; for (let k = 0; k < L; k++) { const o = k * 6, h0 = P[o] * z0 + P[o + 1] * z1 + P[o + 4], h1 = P[o + 2] * z0 + P[o + 3] * z1 + P[o + 5]; code = code * 4 + (h0 > 0 ? 2 : 0) + (h1 > 0 ? 1 : 0); z0 = Math.abs(h0); z1 = Math.abs(h1); } pat[j * G + i] = code; }
+            const seen = new Uint8Array(G * G), stack = []; let n = 0;
+            for (let s0 = 0; s0 < G * G; s0++) { if (seen[s0]) continue; let size = 0; seen[s0] = 1; stack.push(s0);
+                while (stack.length) { const c = stack.pop(), i = c % G, j = (c - i) / G; size++; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a2 = i + di, b2 = j + dj; if (a2 < 0 || b2 < 0 || a2 >= G || b2 >= G) continue; const c2 = b2 * G + a2; if (!seen[c2] && pat[c2] === pat[c]) { seen[c2] = 1; stack.push(c2); } } }
+                if (size >= 3) n++; }
+            const segs = [];
+            H.forEach((h) => { for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
+                const c = [h[j * V + i], h[j * V + i + 1], h[(j + 1) * V + i + 1], h[(j + 1) * V + i]], xy = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], cut = [];
+                for (let e = 0; e < 4; e++) { const a2 = c[e], b2 = c[(e + 1) % 4]; if ((a2 > 0) !== (b2 > 0)) { const f = a2 / (a2 - b2), p0 = xy[e], p1 = xy[(e + 1) % 4]; cut.push([at(p0[0] + (p1[0] - p0[0]) * f), -at(p0[1] + (p1[1] - p0[1]) * f)]); } }
+                for (let e = 0; e + 1 < cut.length; e += 2) segs.push(cut[e], cut[e + 1]);
+            } });
+            return { n, segs };
+        },
         // retrain from the current weights (Adam moments reset); if it stalls, start over from fresh weights
-        retrain(st) { st.anim = null; st.m.fill(0); st.v.fill(0); st.it = 0; st.train = { left: F.fold.STEPS, tries: 0 }; st.u = F.fold.L; st.wake = 6; },
+        retrain(st) { st.anim = null; st.m.fill(0); st.v.fill(0); st.it = 0; st.train = { left: F.fold.STEPS, tries: 0 }; st.u = st.L; st.wake = 6; },
         // one layer at stage t ∈ [0, 2]: 0→1 stretches and rotates (z ↦ Az + b), 1→2 folds the negative half of each axis over like a page
         layer(st, k, x, y, t) {
             const P = st.P, o = k * 6, g = smooth(Math.min(1, t)), h0 = P[o] * x + P[o + 1] * y + P[o + 4], h1 = P[o + 2] * x + P[o + 3] * y + P[o + 5];
@@ -1477,10 +1514,13 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const c = Math.cos(Math.PI * smooth(t - 1));
             return [ax < 0 ? ax * c : ax, ay < 0 ? ay * c : ay];
         },
-        apply(st, p, u) { let [x, y] = p; for (let k = 0; k < F.fold.L; k++) { const t = Math.max(0, Math.min(2, (u - k) * 2)); if (t <= 0) break; [x, y] = F.fold.layer(st, k, x, y, t); } return [x, y]; },
+        apply(st, p, u) { let [x, y] = p; for (let k = 0; k < st.L; k++) { const t = Math.max(0, Math.min(2, (u - k) * 2)); if (t <= 0) break; [x, y] = F.fold.layer(st, k, x, y, t); } return [x, y]; },
         pointer(type, x, y, st) {
-            const A = st.axis, uAt = (px) => Math.max(0, Math.min(F.fold.L, ((px - A.x0) / (A.x1 - A.x0)) * F.fold.L));
+            const A = st.axis, uAt = (px) => Math.max(0, Math.min(st.L, ((px - A.x0) / (A.x1 - A.x0)) * st.L));
             const toIn = (px, py) => [(px - st.left[0]) / st.sc, -(py - st.left[1]) / st.sc], onIn = (q) => Math.abs(q[0]) <= 1.15 && Math.abs(q[1]) <= 1.15;
+            const LR = st.lrow, onRow = Math.abs(y - LR.y) < K.LN / 2 && x > LR.x0 - 10 && x < LR.x1 + 10, Lat = (px) => Math.round(F.fold.LMIN + Math.max(0, Math.min(1, (px - LR.x0) / (LR.x1 - LR.x0))) * (F.fold.LMAX - F.fold.LMIN));
+            if (type === 'down' && onRow) { st.rowDrag = true; st.Lpick = Lat(x); st.wake = 1; return; }
+            if (st.rowDrag) { if (type === 'move') { st.Lpick = Lat(x); st.wake = 1; } else if (type === 'up' || type === 'leave') { st.rowDrag = false; F.fold.depth(st, st.Lpick); } return; }
             if (type === 'down') {
                 const q = toIn(x, y); st.press = { x, y, moved: false, paint: onIn(q) ? null : false };
                 if (st.press.paint === null) { let bi = 0, bd = Infinity; st.pts.forEach((p, i) => { const d = Math.hypot(p[0] - q[0], p[1] - q[1]); if (d < bd) { bd = d; bi = i; } }); st.press.to = st.lab[bi] ? 0 : 1; }
@@ -1497,7 +1537,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             }
         },
         draw(ctx, R, t, C, st, still) {
-            const sc = st.sc, L = F.fold.L;
+            const sc = st.sc, L = st.L;
             const U = 1.2, TB = 0.12, side = st.side;                     // the mark unit and the beat (s)
             // the layer walk: each half layer (stretch, then fold) is one transition of 4τ, eased
             if (st.anim && !still) { if (st.anim.start == null) st.anim.start = t; const q = (t - st.anim.start) / (4 * TB), k = Math.floor(q); st.u = Math.min(L, (k + smooth(q - k)) / 2); if (k >= 2 * L) { st.u = L; st.anim = null; } }
@@ -1521,6 +1561,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             // input panel: the plane as a field, the points, and the learned boundary as a line in focus tone
             clipTo(st.left);
             st.lat.forEach((g) => { const [x, y] = P(st.left, g); pt(x, y, -1, 0.25); });
+            // the linear regions, recomputed when the weights change: their boundaries a line at u/2, context tone
+            const ver = st.it + ':' + st.L + ':' + st.ds; if (st.regionsAt !== ver) { st.reg = F.fold.regions(st); st.regionsAt = ver; }
+            { ctx.globalAlpha = 0.25; ctx.strokeStyle = C.ink; ctx.lineWidth = U / 2; ctx.beginPath(); const sg = st.reg.segs; for (let e = 0; e < sg.length; e += 2) { const [xa, ya] = P(st.left, sg[e]), [xb, yb] = P(st.left, sg[e + 1]); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); } ctx.stroke(); }
             st.pts.forEach((p, i) => { const [x, y] = P(st.left, p), [k, tone] = style(i); pt(x, y, k, tone); });
             {
                 const G = 40, m = side / 2 / sc, v = new Float64Array((G + 1) * (G + 1)), at = (i) => -m + (2 * m * i) / G;
@@ -1552,7 +1595,13 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             label(ctx, C, st, `input · ${F.fold.DATA[st.ds][0]}`, st.left[0], st.left[1] - side / 2 - 12, 'center');
             const kk = Math.min(L - 1, Math.floor(u)), stage = st.train ? `training · ${Math.round(st.acc * 100)}%` : u >= L ? `separable · ${Math.round(st.acc * 100)}%` : (u - kk) * 2 < 1 ? `layer ${kk + 1} · stretch` : `layer ${kk + 1} · fold`;
             label(ctx, C, st, stage, st.right[0], st.right[1] - side / 2 - 12, 'center', true);
-            label(ctx, C, st, 'depth', A.x0 - 6, A.y, 'right');
+            label(ctx, C, st, 'depth', A.x0, A.y + K.LN / 2, 'left');
+            // the layers row: a track at context tone, up to the value at data tone, the value a focus point, a tick a layer
+            { const LR = st.lrow, Lv = st.rowDrag ? st.Lpick : st.L, k = (Lv - F.fold.LMIN) / (F.fold.LMAX - F.fold.LMIN), xv = LR.x0 + k * (LR.x1 - LR.x0);
+              K.line(ctx, C, [[LR.x0, LR.y], [LR.x1, LR.y]], -1, 0.25); K.line(ctx, C, [[LR.x0, LR.y], [xv, LR.y]], 0, 0.5);
+              for (let q = F.fold.LMIN; q <= F.fold.LMAX; q++) pt(LR.x0 + ((q - F.fold.LMIN) / (F.fold.LMAX - F.fold.LMIN)) * (LR.x1 - LR.x0), LR.y, -1, 0.5);
+              pt(xv, LR.y, 1, 1);
+              label(ctx, C, st, `${Lv} layer${Lv > 1 ? 's' : ''} · ${st.reg ? st.reg.n : '–'} linear regions`, LR.x0, LR.y + K.LN / 2, 'left', true); }
             if (!still && (flipping || st.flipT == null && st.prevLab)) st.wake = Math.max(st.wake || 0, 0.3);
             if (!still && (st.train || st.anim || st.press || Math.abs(st.ext - ext) > 0.01)) st.wake = Math.max(st.wake || 0, 0.3);
         },
