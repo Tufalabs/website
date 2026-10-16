@@ -3662,9 +3662,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
     };
 
-    // Scaling laws, measured: the solvable model of Maloney, Roberts & Sully (2022), trained here. A task with M = 512 latent
-    // dimensions whose variances fall as a power law (λₖ ∝ k^−2), a hidden linear target and label noise; seven models
-    // of N = 2 … 128 weights on nested random features of the input, each trained by online SGD (learning rate η/N, one
+    // Scaling laws, measured: the solvable model of Maloney, Roberts & Sully (2022), trained here. A task with M = 1024
+    // latent dimensions whose variances fall as a power law (λₖ ∝ k^−2), a hidden linear target and label noise; eight
+    // models of N = 2 … 256 weights on nested random features of the input, each trained by online SGD (learning rate η/N, one
     // fresh sample per step) in a background worker. Each run's exact population loss (relative to predicting zero) is
     // plotted as it trains, as its excess over the irreducible loss E (the label noise's) against its training compute
     // C = 6ND on log–log axes, where a power law is a straight line; every run goes to the same budgets, so the plot
@@ -3674,11 +3674,11 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     // come from the runs, not put in. The rows
     // set the learning rate and the label noise; a change trains everything again.
     F.scaling2 = {
-        bleed: true, tall: true, M: 512, SIZES: [2, 4, 8, 16, 32, 64, 128], CMIN: 1.5e3, CMAX: 1.26e7, POINTS: 48,
+        bleed: true, tall: true, M: 1024, SIZES: [2, 4, 8, 16, 32, 64, 128, 256], CMIN: 1.5e3, CMAX: 5e7, POINTS: 64,
         ETA: [0.01, 0.3], NOISE: [0, 0.1],
         // the training loop compiled from tools/scaling.wat (SIMD; 1.4–3.3× the JavaScript loop below, which stays as the fallback)
         WASM: 'AGFzbQEAAAABGARgAXwBfGABfwBgAAF8YAd/f39/f3x/AAIJAQFtA2xvZwAAAwUEAQICAwUDAQAEBhcDfwFBAQt8AUQAAAAAAAAAAAt/AUEACwcWAwNtZW0CAARzZWVkAAEFdHJhaW4ABAqDBQQKACAAJABBACQCC0wBAX8jAEH1863pBmokACMAIQAgACAAQQ92cyAAQQFybCEAIAAgACAAIABBB3ZzIABBPXJsanMhACAAIABBDnZzuEQAAAAAAADwQaMLjwEBBHwjAgRAQQAkAiMBDwsDQBACRAAAAAAAAABAokQAAAAAAADwP6EhABACRAAAAAAAAABAokQAAAAAAADwP6EhASAAIACiIAEgAaKgIQIgAkQAAAAAAADwP2YgAkQAAAAAAAAAAGFyDQALRAAAAAAAAADAIAIQAKIgAqOfIQMgASADoiQBQQEkAiAAIAOiC5cDAwV/AXsCfCABQQFrIQsCQANAIAcgBk8NAUEAIQgCQANAIAggAU8NASAEIAhBA3RqEAM5AwAgCEEBaiEIDAALC0EAIQgCQANAIAggAU8NASAAIAggAWxBA3RqIQr9DAAAAAAAAAAAAAAAAAAAAAAhDEEAIQkCQANAIAlBAWogCEoNASAMIAogCUEDdGr9AAQAIAQgCUEDdGr9AAQA/fIB/fABIQwgCUECaiEJDAALCyAM/SEAIAz9IQGgIQ0gCSAITARAIA0gCiAJQQN0aisDACAEIAlBA3RqKwMAoqAhDQsgAyAIQQN0aiANOQMAIAhBAWohCAwACwtEAAAAAAAAAAAhDUEAIQgCQANAIAggC08NASANIAIgCEEDdGorAwAgAyAIQQN0aisDAKKgIQ0gCEEBaiEIDAALCyAFIAMgC0EDdGorAwAgDaGiIQ5BACEIAkADQCAIIAtPDQEgAiAIQQN0aiACIAhBA3RqKwMAIA4gAyAIQQN0aisDAKKgOQMAIAhBAWohCAwACwsgB0EBaiEHDAALCws=',
-        title: 'Scaling laws', note: 'Seven models train live on one task; the lower envelope of their loss against compute is the scaling law, fitted from the runs. Drag the rows to change the learning rate or the label noise.',
+        title: 'Scaling laws', note: 'Eight models train live on one task; the lower envelope of their loss against compute is the scaling law, fitted from the runs. Drag the rows to change the learning rate or the label noise.',
         // the experiment, run in a worker (posted one budget at a time); self-contained, so it can be its source
         experiment(cfg, post) {
             const { M, sizes, alpha, noise, Cmin, Cmax, points, eta, seed, wasm } = cfg;
@@ -3756,8 +3756,12 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
         draw(ctx, R, t, C, st, still) {
             // log–log axes of the excess loss L − E against compute: a power law is a straight line here
-            const S = F.scaling2, pl = st.plot, data = st.data, n = data.length, E = st.E;
-            const ex = (l) => Math.max(1e-6, l - E), gs = data.flatMap((d) => d.losses.map(ex));
+            const S = F.scaling2, pl = st.plot, n = st.data.length, E = st.E;
+            const ex = (l) => Math.max(1e-6, l - E);
+            // each run's curve smoothed as training curves are shown: an exponential moving average over its budgets, in
+            // log space (weight 0.6 on the past); the frontier and the law are read from the smoothed curves
+            const data = []; st.data.forEach((d, k) => data.push({ c: d.c, losses: d.losses.map((l, i) => (k ? 10 ** (0.6 * Math.log10(ex(data[k - 1].losses[i])) + 0.4 * Math.log10(ex(l))) : ex(l)) + E) }));
+            const gs = data.flatMap((d) => d.losses.map(ex));
             const lx0 = Math.log10(S.CMIN), lx1 = Math.log10(S.CMAX), ly1 = Math.log10(1.2 * Math.max(...gs, 1 - E)), ly0 = Math.min(ly1 - 1, Math.log10(0.6 * Math.min(...gs, 0.5)));
             const X = (c) => pl.x + ((Math.log10(c) - lx0) / (lx1 - lx0)) * pl.w, Y = (g) => pl.y + ((ly1 - Math.log10(g)) / (ly1 - ly0)) * pl.h;
             K.line(ctx, C, [[pl.x, pl.y], [pl.x, pl.y + pl.h], [pl.x + pl.w, pl.y + pl.h]], -1, 0.5);
@@ -3781,13 +3785,13 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 K.line(ctx, C, [[pn.x, y], [pn.x + pn.w, y]], -1, 0.25); K.line(ctx, C, [[pn.x, y], [xv, y]], 0, 0.5); K.pt(ctx, C, xv, y, 1, 1);
             });
             const ly = (i) => st.rows[i].y + st.rows[i].h / 2 - K.LN / 2, sci = (v) => { const e = Math.floor(Math.log10(v)); return `${(v / 10 ** e).toFixed(1)}e${e}`; };
-            label(ctx, C, st, `learning rate η ${st.eta} (per weight η/N)`, pn.x, ly(0), 'left', true);
-            label(ctx, C, st, `label noise σ² ${st.noise.toFixed(3)}`, pn.x, ly(1), 'left', true);
-            label(ctx, C, st, 'loss above irreducible (log)', pl.x + K.LN / 4, pl.y + K.LN / 4, 'left');
-            label(ctx, C, st, 'compute C = 6ND (log)', pl.x + pl.w, pl.y + pl.h - K.LN / 4, 'right');
-            if (n) S.SIZES.forEach((N, i) => label(ctx, C, st, `N ${N}`, X(data[n - 1].c) + K.LN / 4, Y(ex(data[n - 1].losses[i])), 'left'));
-            const head = !st.done ? `training · ${n ? sci(data[n - 1].c) : '0'} of ${sci(S.CMAX)} FLOPs` : law ? `scaling law: L − E ∝ C^${law.b.toFixed(2)}${best ? ` · best N ∝ C^${best.b.toFixed(2)}` : ''}` : 'frontier';
-            label(ctx, C, st, head, pl.x + pl.w, pl.y + K.LN / 4, 'right', true);
+            label(ctx, C, st, `learning rate ${st.eta}`, pn.x, ly(0), 'left', true);
+            label(ctx, C, st, `label noise ${st.noise.toFixed(3)}`, pn.x, ly(1), 'left', true);
+            label(ctx, C, st, 'loss − E', pl.x, pl.y - K.LN / 2, 'left');
+            label(ctx, C, st, 'compute', pl.x + pl.w, pl.y + pl.h + K.LN / 2, 'right');
+            if (n) S.SIZES.forEach((N, i) => label(ctx, C, st, `${N}`, X(data[n - 1].c) + K.LN / 4, Y(ex(data[n - 1].losses[i])), 'left'));
+            label(ctx, C, st, !st.done ? `training ${Math.round((100 * n) / S.POINTS)}%` : law ? `L − E ∝ C^${law.b.toFixed(2)}` : '', pl.x + pl.w, pl.y - K.LN / 2, 'right', true);
+            if (st.done && best && hand.length) label(ctx, C, st, `best size ∝ C^${best.b.toFixed(2)}`, X(hand[hand.length - 1].c) - K.LN / 4, Y(hand[hand.length - 1].g) + K.LN / 2, 'right');
         },
     };
 
