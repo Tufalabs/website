@@ -201,135 +201,153 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     });
     F.__scenes = { prepare: (s, R, spec) => scenes(spec).prepare(s, R) };
 
-    // Optimizers (Adam, Kingma & Ba): contour dots of a loss surface made of a few valleys, and six
-    // optimizers from one start: SGD, momentum, RMSprop, Adam, Muon and Gauss–Newton. The loss is a sum of squares
-    // (each valley contributes ½rᵢ² = aᵢ(1 − e^(−dᵢ²/sᵢ²)), plus a constant), so Gauss–Newton is exact: it
-    // steps by −(JᵀJ + λI)⁻¹Jᵀr with the residuals' Jacobian J. Muon (Jordan et al.) treats the point as a 1×2
-    // matrix: Nesterov momentum, orthogonalised by five Newton–Schulz steps (for one row, the unit direction),
-    // at a step length that decays over the run. Each optimizer has its own line style. The reader drags the start or a valley;
-    // contours and paths follow live, and on release the optimizers race down. Hovering a path names it.
+    // Optimizers on one loss surface, run as written in their papers. The parameters θ = (u, v) live in the panel's own
+    // units (its width is 1), and the loss is a sum of Gaussian valleys, f(θ) = −Σ aᵢ exp(−|θ − cᵢ|²/sᵢ²), with its
+    // exact gradient. Every optimizer starts at the same point, takes the same number of steps with its published
+    // defaults and one fixed learning rate (OPT), and nothing else touches its iterates but the panel's edges (a box
+    // projection). Gradient descent and heavy-ball momentum (Polyak 1964); RMSprop (Hinton 2012, ρ = 0.9); Adam
+    // (Kingma & Ba 2014, β = 0.9, 0.999, ε = 10⁻⁸, bias-corrected); Muon (Jordan et al. 2024: Nesterov momentum 0.95,
+    // then five quintic Newton–Schulz steps; for a 1×2 parameter the orthogonalised update is its unit direction, so
+    // here Muon is normalised Nesterov momentum); Gauss–Newton with Levenberg–Marquardt's adaptive damping, on the residuals
+    // rᵢ = √(2aᵢ(1 − Eᵢ)), Eᵢ = exp(−|θ − cᵢ|²/sᵢ²), since f = ½Σrᵢ² − Σaᵢ. The path is the iterates themselves; the strip
+    // under the surface plots each optimizer's loss above the surface's minimum per step (log scale). Drag the start or a
+    // valley: the runs follow live, and on release they race, one step per beat for all.
     F.descent = {
-        bleed: true,
-        // name, line width, alpha, and a style: fine dots, dashes, dash-dot, long dashes, sparse beads, solid
-        // six optimizers told apart by kind × size, the only distinctions the rules allow: line or dotted, at u/2, u, 2u.
-        // Adam (the cited paper) is the 2u line in focus tone; the rest at data tone
-        NAMES: [['sgd', 'SGD', 'dotted', -1], ['momentum', 'Momentum', 'line', -1], ['rmsprop', 'RMSprop', 'line', 0],
+        bleed: true, STEPS: 160,
+        // name, label, line kind, size step (u/2, u, 2u); Adam (the cited paper) is the 2u line in focus tone
+        NAMES: [['gd', 'Gradient descent', 'dotted', -1], ['momentum', 'Momentum', 'line', -1], ['rmsprop', 'RMSprop', 'line', 0],
             ['muon', 'Muon', 'dotted', 0], ['gn', 'Gauss–Newton', 'dotted', 1], ['adam', 'Adam', 'line', 1]],
-        title: 'Optimizers', note: 'Drag the start or a valley of the loss surface; SGD, momentum, RMSprop, Adam, Muon and Gauss–Newton descend from the start.',
+        // the one learning rate each (in panel widths), and its other settings, as printed on hover
+        OPT: { gd: { lr: 0.012 }, momentum: { lr: 0.006, mu: 0.9 }, rmsprop: { lr: 0.006, rho: 0.9, eps: 1e-8 },
+            adam: { lr: 0.006, b1: 0.9, b2: 0.999, eps: 1e-8 }, muon: { lr: 0.012, mu: 0.95 }, gn: { lambda: 1e-3 } },
+        title: 'Optimizers', note: 'Six optimizers from one start on one loss surface, each as published with one fixed learning rate; drag the start or a valley, and the strip compares their loss step by step.',
         init(R, rand) {
-            const r = rand(1), fx = R.fx ?? R.x, fw = R.x + R.w - fx, vy0 = R.vy0 ?? R.y, vh = (R.vy1 ?? R.y + R.h) - vy0;
-            // valleys sit well inside the visible part and apart from each other, so each is its own minimum
+            const r = rand(1), fx = R.fx ?? R.x, vy0 = R.vy0 ?? R.y, vy1 = R.vy1 ?? R.y + R.h, L = K.LN;
+            const S = { x: K.q(fx + L / 2), y: K.q(vy1 - 2.5 * L), w: K.q(R.x + R.w - fx - L), h: 2 * L };
+            const M = { x: fx, y: vy0, w: R.x + R.w - fx, h: S.y - L - vy0 }, H = M.h / M.w;
+            // valleys well inside the panel and apart from each other, so each is its own minimum
             const wells = [];
             for (let tries = 0; wells.length < 4 && tries < 400; tries++) {
-                const w = { x: fx + (0.15 + 0.7 * r()) * fw, y: vy0 + (0.2 + 0.6 * r()) * vh, a: 0.4 + r() * 0.8, s: (0.18 + r() * 0.25) * fw };
-                if (wells.every((o) => Math.hypot(o.x - w.x, o.y - w.y) > fw * 0.28)) wells.push(w);
+                const w = { x: 0.15 + 0.7 * r(), y: (0.2 + 0.6 * r()) * H, a: 0.4 + r() * 0.8, s: 0.12 + r() * 0.13 };
+                if (wells.every((o) => Math.hypot(o.x - w.x, o.y - w.y) > 0.28)) wells.push(w);
             }
-            const st = { wells, fx, fw, vy0, vh, runAt: -1 };
-            F.descent.surface(st, R);
-            // the start: the highest of a few random points in the visible part
+            const st = { wells, M, S, H, R, runAt: -1 };
+            F.descent.surface(st);
+            // the start: the highest of a few random points
             let best = -Infinity;
-            for (let c = 0; c < 16; c++) { const cx = fx + r() * fw, cy = vy0 + (0.1 + 0.8 * r()) * vh, v = st.f(cx, cy); if (v > best) { best = v; st.start = [cx, cy]; } }
-            F.descent.run(st, R);
+            for (let c = 0; c < 16; c++) { const u = r(), v = (0.1 + 0.8 * r()) * H, f = st.f(u, v); if (f > best) { best = f; st.start = [u, v]; } }
+            F.descent.run(st);
             return st;
         },
-        surface(st, R) {
-            const W = st.wells, f = (x, y) => W.reduce((acc, w) => acc - w.a * Math.exp(-((x - w.x) ** 2 + (y - w.y) ** 2) / (w.s * w.s)), 0);
-            let lo = Infinity, hi = -Infinity; const sm = [];
-            for (let y = R.y; y <= R.y + R.h; y += 3) for (let x = R.x; x <= R.x + R.w; x += 3) { const v = f(x, y); sm.push(x, y, v); lo = Math.min(lo, v); hi = Math.max(hi, v); }
+        P(st, u, v) { return [st.M.x + u * st.M.w, st.M.y + v * st.M.w]; },
+        // the loss, its gradient, its minimum (refined from the grid by gradient steps), and its contours as a field of points
+        surface(st) {
+            const W = st.wells, M = st.M, H = st.H;
+            st.f = (u, v) => W.reduce((acc, w) => acc - w.a * Math.exp(-((u - w.x) ** 2 + (v - w.y) ** 2) / (w.s * w.s)), 0);
+            st.g = (u, v) => W.reduce(([gu, gv], w) => { const du = u - w.x, dv = v - w.y, k = (2 * w.a * Math.exp(-(du * du + dv * dv) / (w.s * w.s))) / (w.s * w.s); return [gu + k * du, gv + k * dv]; }, [0, 0]);
+            let lo = Infinity, hi = -Infinity, at = [0, 0]; const sm = [], step = 3 / M.w, u0 = (st.R.x - M.x) / M.w;
+            for (let v = 0; v <= H; v += step) for (let u = u0; u <= 1; u += step) { const f = st.f(u, v); sm.push(u, v, f); if (u >= 0 && f < lo) { lo = f; at = [u, v]; } hi = Math.max(hi, f); }
+            for (let i = 0; i < 200; i++) { const [gu, gv] = st.g(...at); at = [at[0] - 0.002 * gu, at[1] - 0.002 * gv]; }
+            st.fmin = Math.min(lo, st.f(...at));
             const dots = [];
-            for (let i = 0; i < sm.length; i += 3) { const k = ((sm[i + 2] - lo) / (hi - lo)) * 9; if (k - Math.floor(k) < 0.09) dots.push(sm[i], sm[i + 1]); }
-            st.f = f; st.dots = dots;
+            // nine levels between the minimum and the plateau; the plateau itself (far from every valley) is not a contour
+            for (let i = 0; i < sm.length; i += 3) { const k = ((sm[i + 2] - lo) / (hi - lo)) * 9; if (k > 0.5 && k < 8.9 && k - Math.floor(k) < 0.09) dots.push(...F.descent.P(st, sm[i], sm[i + 1])); }
+            st.dots = dots;
         },
-        run(st, R) {
-            const f = st.f, fx = st.fx, vy0 = st.vy0, vh = st.vh;
-            const grad = (x, y) => { const e = 0.5; return [(f(x + e, y) - f(x - e, y)) / (2 * e), (f(x, y + e) - f(x, y - e)) / (2 * e)]; };
-            const clampX = (x) => Math.min(R.x + R.w, Math.max(fx, x)), clampY = (y) => Math.min(vy0 + vh, Math.max(vy0, y));
-            const cap = (dx, dy, c) => { const m = Math.hypot(dx, dy); return m > c ? [dx * c / m, dy * c / m] : [dx, dy]; };
-            const go = (stepFn, steps = 420) => {
-                let [x, y] = st.start; const s2 = {}, raw = [[x, y]];
-                for (let i = 1; i <= steps; i++) {
-                    const [dx, dy] = cap(...stepFn(x, y, s2, i), 3.2);
-                    x = clampX(x + dx); y = clampY(y + dy); raw.push([x, y]);
-                    if (i > 30 && Math.hypot(dx, dy) < 0.02) break;
-                }
-                let q = raw;
-                for (let k = 0; k < 3; k++) { const o = [q[0]]; for (let i = 0; i < q.length - 1; i++) { const [ax, ay] = q[i], [bx, by] = q[i + 1]; o.push([ax * 0.75 + bx * 0.25, ay * 0.75 + by * 0.25], [ax * 0.25 + bx * 0.75, ay * 0.25 + by * 0.75]); } o.push(q[q.length - 1]); q = o; }
-                return q;
-            };
-            st.paths = {
-                sgd: go((x, y) => { const [gx, gy] = grad(x, y); return [-gx * 380, -gy * 380]; }, 170),
-                momentum: go((x, y, s2) => { const [gx, gy] = grad(x, y); s2.vx = (s2.vx || 0) * 0.955 - gx * 150; s2.vy = (s2.vy || 0) * 0.955 - gy * 150; return [s2.vx, s2.vy]; }),
-                rmsprop: go((x, y, s2) => { const [gx, gy] = grad(x, y); s2.sx = 0.9 * (s2.sx || gx * gx) + 0.1 * gx * gx; s2.sy = 0.9 * (s2.sy || gy * gy) + 0.1 * gy * gy; const k = Math.min(1, 60 * Math.hypot(gx, gy) + 0.05); return [-1.1 * gx / (Math.sqrt(s2.sx) + 1e-6) * k, -1.1 * gy / (Math.sqrt(s2.sy) + 1e-6) * k]; }),
-                adam: go((x, y, s2, t2) => { const [gx, gy] = grad(x, y), b1 = 0.9, b2 = 0.999;
-                    s2.mx = b1 * (s2.mx || 0) + (1 - b1) * gx; s2.my = b1 * (s2.my || 0) + (1 - b1) * gy;
-                    s2.vx = b2 * (s2.vx || 0) + (1 - b2) * gx * gx; s2.vy = b2 * (s2.vy || 0) + (1 - b2) * gy * gy;
-                    const mhx = s2.mx / (1 - b1 ** t2), mhy = s2.my / (1 - b1 ** t2), vhx = s2.vx / (1 - b2 ** t2), vhy = s2.vy / (1 - b2 ** t2);
-                    const decay = Math.min(1, 50 * Math.hypot(gx, gy) + 0.04);
-                    return [-1.4 * mhx / (Math.sqrt(vhx) + 1e-8) * decay, -1.4 * mhy / (Math.sqrt(vhy) + 1e-8) * decay]; }),
-                // Gauss–Newton (Levenberg–Marquardt damped): one residual per valley, rᵢ = √(2aᵢ(1 − Eᵢ)), Eᵢ = e^(−dᵢ²/sᵢ²)
-                gn: go((x, y) => {
+        run(st) {
+            const { f, g, H, wells } = st, O = F.descent.OPT, N = F.descent.STEPS;
+            const box = ([u, v]) => [Math.min(1, Math.max(0, u)), Math.min(H, Math.max(0, v))];
+            const go = (update) => { let th = st.start.slice(); const s = {}, path = [th], loss = [f(...th)]; for (let t = 1; t <= N; t++) { const d = update(th, g(...th), s, t); th = box([th[0] + d[0], th[1] + d[1]]); path.push(th); loss.push(f(...th)); } return { path, loss }; };
+            st.runs = {
+                gd: go((th, [gu, gv]) => [-O.gd.lr * gu, -O.gd.lr * gv]),
+                momentum: go((th, [gu, gv], s) => { const { lr, mu } = O.momentum; s.u = mu * (s.u || 0) + gu; s.v = mu * (s.v || 0) + gv; return [-lr * s.u, -lr * s.v]; }),
+                rmsprop: go((th, [gu, gv], s) => { const { lr, rho, eps } = O.rmsprop; s.u = rho * (s.u || 0) + (1 - rho) * gu * gu; s.v = rho * (s.v || 0) + (1 - rho) * gv * gv; return [-lr * gu / (Math.sqrt(s.u) + eps), -lr * gv / (Math.sqrt(s.v) + eps)]; }),
+                adam: go((th, [gu, gv], s, t) => { const { lr, b1, b2, eps } = O.adam;
+                    s.mu = b1 * (s.mu || 0) + (1 - b1) * gu; s.mv = b1 * (s.mv || 0) + (1 - b1) * gv; s.vu = b2 * (s.vu || 0) + (1 - b2) * gu * gu; s.vv = b2 * (s.vv || 0) + (1 - b2) * gv * gv;
+                    const c1 = 1 - b1 ** t, c2 = 1 - b2 ** t; return [-lr * (s.mu / c1) / (Math.sqrt(s.vu / c2) + eps), -lr * (s.mv / c1) / (Math.sqrt(s.vv / c2) + eps)]; }),
+                // Muon: Nesterov momentum, then the quintic Newton–Schulz iteration X ← aX + b(XXᵀ)X + c(XXᵀ)²X from X/‖X‖
+                muon: go((th, [gu, gv], s) => { const { lr, mu } = O.muon; s.u = mu * (s.u || 0) + gu; s.v = mu * (s.v || 0) + gv;
+                    let x = gu + mu * s.u, y = gv + mu * s.v; const n = Math.hypot(x, y); if (!n) return [0, 0]; x /= n; y /= n;
+                    for (let k = 0; k < 5; k++) { const A = x * x + y * y, c = 3.4445 - 4.775 * A + 2.0315 * A * A; x *= c; y *= c; }
+                    return [-lr * x, -lr * y]; }),
+                // Gauss–Newton with Levenberg–Marquardt's adaptive damping: the step −(JᵀJ + λI)⁻¹Jᵀr, one residual per valley;
+                // a step that would raise the loss is refused and λ grows tenfold, an accepted one shrinks it tenfold
+                gn: go(([u, v], grad, s) => {
                     let a11 = 0, a12 = 0, a22 = 0, b1 = 0, b2 = 0;
-                    st.wells.forEach((w) => {
-                        const dx = x - w.x, dy = y - w.y, E = Math.exp(-(dx * dx + dy * dy) / (w.s * w.s)), ri = Math.sqrt(Math.max(1e-12, 2 * w.a * (1 - E)));
-                        const gx = (w.a * E * 2 * dx) / (w.s * w.s), gy = (w.a * E * 2 * dy) / (w.s * w.s), jx = gx / ri, jy = gy / ri;   // ∇rᵢ = ∇(½rᵢ²)/rᵢ
-                        a11 += jx * jx; a12 += jx * jy; a22 += jy * jy; b1 += ri * jx; b2 += ri * jy;
-                    });
-                    const lam = 0.02 * (a11 + a22) + 1e-9, m11 = a11 + lam, m22 = a22 + lam, det = m11 * m22 - a12 * a12;
-                    return [-(m22 * b1 - a12 * b2) / det, -(m11 * b2 - a12 * b1) / det];
-                }, 260),
-                // Muon: Nesterov momentum, then Newton–Schulz orthogonalisation (quintic, Jordan's coefficients) of the 1×2 update
-                muon: go((x, y, s2, i) => {
-                    const [gx, gy] = grad(x, y), mu = 0.95; s2.mx = mu * (s2.mx || 0) + gx; s2.my = mu * (s2.my || 0) + gy;
-                    let ux = gx + mu * s2.mx, uy = gy + mu * s2.my; const nrm = Math.hypot(ux, uy) + 1e-12; ux /= nrm; uy /= nrm;
-                    for (let k = 0; k < 5; k++) { const A = ux * ux + uy * uy, c = 3.4445 + -4.7750 * A + 2.0315 * A * A; ux *= c; uy *= c; }   // X ← aX + b(XXᵀ)X + c(XXᵀ)²X
-                    const lr = 2.4 * Math.max(0.03, 1 - i / 300);
-                    return [-lr * ux, -lr * uy];
-                }, 300),
+                    wells.forEach((w) => { const du = u - w.x, dv = v - w.y, E = Math.exp(-(du * du + dv * dv) / (w.s * w.s)), ri = Math.sqrt(Math.max(1e-12, 2 * w.a * (1 - E)));
+                        const k = (2 * w.a * E) / (w.s * w.s) / ri, ju = k * du, jv = k * dv;   // ∇rᵢ = ∇(½rᵢ²)/rᵢ
+                        a11 += ju * ju; a12 += ju * jv; a22 += jv * jv; b1 += ri * ju; b2 += ri * jv; });
+                    if (s.lam == null) s.lam = O.gn.lambda;
+                    const f0 = f(u, v);
+                    for (let tries = 0; tries < 12; tries++) {
+                        const m11 = a11 + s.lam, m22 = a22 + s.lam, det = m11 * m22 - a12 * a12, du = -(m22 * b1 - a12 * b2) / det, dv = -(m11 * b2 - a12 * b1) / det;
+                        const [nu, nv] = box([u + du, v + dv]);
+                        if (f(nu, nv) < f0) { s.lam = Math.max(1e-7, s.lam / 10); return [du, dv]; }
+                        s.lam *= 10;
+                    }
+                    return [0, 0]; }),
             };
+            const gaps = Object.values(st.runs).flatMap((r) => r.loss.map((l) => Math.log10(Math.max(1e-12, l - st.fmin)))), top = Math.max(...gaps);
+            st.span = [Math.max(top - 5, Math.min(...gaps)), top];
         },
         // grab the start (or, away from it, the nearest valley); a press elsewhere sets a new start
-        pointer(type, x, y, st, R) {
-            const dStart = Math.hypot(x - st.start[0], y - st.start[1]);
-            let well = null, bd = Infinity; st.wells.forEach((w) => { const d = Math.hypot(x - w.x, y - w.y); if (d < bd) { bd = d; well = w; } });
-            const grabWell = bd < 30 && dStart > 10;
-            if (type === 'down') {
-                st.drag = grabWell ? { well, dx: well.x - x, dy: well.y - y } : { start: true };
-                if (!grabWell) st.start = [x, y];
+        pointer(type, x, y, st) {
+            const M = st.M, u = (x - M.x) / M.w, v = (y - M.y) / M.w, inM = u >= 0 && u <= 1 && v >= 0 && v <= st.H;
+            const [sx, sy] = F.descent.P(st, ...st.start), dStart = Math.hypot(x - sx, y - sy);
+            let well = null, bd = Infinity; st.wells.forEach((w) => { const [wx, wy] = F.descent.P(st, w.x, w.y), d = Math.hypot(x - wx, y - wy); if (d < bd) { bd = d; well = w; } });
+            const grabWell = bd < 30 && dStart > 10, cl = (q, hi) => Math.min(hi, Math.max(0, q));
+            if (type === 'down' && inM) {
+                st.drag = grabWell ? { well, du: well.x - u, dv: well.y - v } : { start: true };
+                if (!grabWell) st.start = [cl(u, 1), cl(v, st.H)];
                 st.runAt = null; st.preview = true;
             } else if (type === 'move' && st.drag) {
-                if (st.drag.well) { st.drag.well.x = Math.max(st.fx + 8, Math.min(R.x + R.w - 8, x + st.drag.dx)); st.drag.well.y = Math.max(st.vy0, Math.min(st.vy0 + st.vh, y + st.drag.dy)); F.descent.surface(st, R); }
-                else st.start = [Math.max(st.fx, x), y];
+                if (st.drag.well) { st.drag.well.x = cl(u + st.drag.du, 1); st.drag.well.y = cl(v + st.drag.dv, st.H); F.descent.surface(st); }
+                else st.start = [cl(u, 1), cl(v, st.H)];
             } else if (type === 'up' && st.drag) { st.drag = null; st.preview = false; st.runAt = -2; }
             else if (type === 'leave') st.hoverWell = null;
             if (type !== 'up' && type !== 'leave') st.hoverWell = st.drag ? st.drag.well || null : grabWell ? well : null;
-            // the path under the pointer (within 7px), named while hovered
+            // the run under the pointer (within 7px of its path or its loss curve), named while hovered
             if (type === 'leave' || st.drag) st.hoverPath = null;
-            else if (type === 'move' && st.paths) { let best = null, bd2 = 49; for (const k in st.paths) { const q = st.paths[k]; for (let j = 0; j < q.length; j += 3) { const d2 = (q[j][0] - x) ** 2 + (q[j][1] - y) ** 2; if (d2 < bd2) { bd2 = d2; best = { k, x: q[j][0], y: q[j][1] }; } } } if ((best && best.k) !== (st.hoverPath && st.hoverPath.k)) st.wake = 0.3; st.hoverPath = best; }
-            if (st.drag) { F.descent.run(st, R); st.wake = 0.5; }
+            else if (type === 'move' && st.runs) {
+                let best = null, bd2 = 49;
+                for (const k in st.runs) { const { path, loss } = st.runs[k]; path.forEach((th, j) => { const [px, py] = F.descent.P(st, ...th), d2 = (px - x) ** 2 + (py - y) ** 2; if (d2 < bd2) { bd2 = d2; best = { k, x: px, y: py }; } }); loss.forEach((l, j) => { const [px, py] = F.descent.LP(st, j, l), d2 = (px - x) ** 2 + (py - y) ** 2; if (d2 < bd2) { bd2 = d2; best = { k, x: px, y: py }; } }); }
+                if ((best && best.k) !== (st.hoverPath && st.hoverPath.k)) st.wake = 0.3; st.hoverPath = best;
+            }
+            if (st.drag) { F.descent.run(st); st.wake = 0.5; }
         },
+        // the strip: loss above the surface's minimum (log₁₀, over the runs' own range) against the step
+        LP(st, j, l) { const S = st.S, [a, b] = st.span || [-4, 0], y = Math.log10(Math.max(1e-12, l - st.fmin)), k = Math.min(1, Math.max(0, (y - a) / (b - a))); return [S.x + (j / F.descent.STEPS) * S.w, S.y + S.h - k * S.h]; },
+        HELP: { gd: 'η 0.012', momentum: 'η 0.006 · μ 0.9', rmsprop: 'η 0.006 · ρ 0.9', adam: 'η 0.006 · β 0.9, 0.999', muon: 'η 0.012 · μ 0.95, Nesterov', gn: 'Levenberg–Marquardt, λ adaptive from 10⁻³' },
         draw(ctx, R, t, C, st, still) {
-            // the race: each path appears point by point behind its focus point (delay(appear) along the path), 24τ
-            const RACE = 24 * K.TB;
-            if (st.runAt === -2) { st.runAt = t; st.wake = RACE + 0.3; }
-            const running = st.runAt >= 0 && !still, u = running ? Math.min(1, (t - st.runAt) / RACE) : 1;
-            // the surface: its contours as a field of context points
+            // the race: every optimizer one step per beat (τ), together
+            const N = F.descent.STEPS, BEAT = K.TB / 4;
+            if (st.runAt === -2) { st.runAt = t; st.wake = N * BEAT + 0.3; }
+            const running = st.runAt >= 0 && !still, k = st.preview ? N : running ? Math.min(N, Math.floor((t - st.runAt) / BEAT)) : N;
+            const M = st.M, S = st.S;
+            // the surface: its contours as a field of context points, the panel a closed line
             for (let i = 0; i < st.dots.length; i += 2) K.pt(ctx, C, st.dots[i], st.dots[i + 1], -1, 0.25);
-            // valleys: a data point each (the handle; focus when held or hovered)
-            st.wells.forEach((w) => K.pt(ctx, C, w.x, w.y, w === st.hoverWell ? 1 : 0, w === st.hoverWell ? 1 : 0.5));
+            st.wells.forEach((w) => K.pt(ctx, C, ...F.descent.P(st, w.x, w.y), w === st.hoverWell ? 1 : 0, w === st.hoverWell ? 1 : 0.5));
+            // the strip: two axes, the curves at the same tones as the paths
+            K.line(ctx, C, [[S.x, S.y], [S.x, S.y + S.h], [S.x + S.w, S.y + S.h]], -1, 0.5);
             const hp = st.hoverPath && !st.preview ? st.hoverPath.k : null;
-            F.descent.NAMES.forEach(([key, , kind, k]) => {
-                const q = st.paths[key], n = q.length, upto = st.preview ? n : Math.max(2, Math.floor(K.ease(u) * n)), shown = q.slice(0, upto);
+            F.descent.NAMES.forEach(([key, , kind, size]) => {
+                const run = st.runs[key], path = run.path.slice(0, k + 1).map((th) => F.descent.P(st, ...th)), curve = run.loss.slice(0, k + 1).map((l, j) => F.descent.LP(st, j, l));
                 let tone = key === 'adam' ? 1 : 0.5; if (hp) tone = key === hp ? 1 : 0.25; if (st.preview) tone = 0.25;
-                const kk = st.preview ? -1 : k;
-                if (kind === 'line') K.line(ctx, C, shown, kk, tone); else K.dotted(ctx, C, shown, kk, tone);
-                if (!st.preview && u < 1) K.pt(ctx, C, ...shown[shown.length - 1], 1, 1);
+                const sz = st.preview ? -1 : size, draw = kind === 'line' ? K.line : K.dotted;
+                draw(ctx, C, path, sz, tone); draw(ctx, C, curve, sz, tone);
+                if (!st.preview && k < N) { K.pt(ctx, C, ...path[path.length - 1], 1, 1); K.pt(ctx, C, ...curve[curve.length - 1], 0, 1); }
             });
             // the start: a ring (two closed lines)
-            K.line(ctx, C, K.circle(st.start[0], st.start[1], 4 * K.U), 0, 1, true);
+            const [sx, sy] = F.descent.P(st, ...st.start);
+            K.line(ctx, C, K.circle(sx, sy, 4 * K.U), 0, 1, true);
             // labels, on hover only
-            if (hp) label(ctx, C, st, F.descent.NAMES.find((e) => e[0] === hp)[1], st.hoverPath.x + 12, st.hoverPath.y - 12, 'left', true);
-            label(ctx, C, st, 'start', st.start[0], st.start[1] - 12, 'center');
-            if (st.hover) { const w = st.wells.reduce((a, b) => (b.a > a.a ? b : a)); label(ctx, C, st, 'valley', w.x, w.y + 12, 'center'); label(ctx, C, st, 'loss surface', st.fx + 12, st.vy0 + 6); }
+            if (hp) { const run = st.runs[hp]; label(ctx, C, st, `${F.descent.NAMES.find((e) => e[0] === hp)[1]} · ${F.descent.HELP[hp]}`, st.hoverPath.x + 12, st.hoverPath.y - 12, 'left', true);
+                label(ctx, C, st, `loss − min ${(run.loss[Math.min(k, N)] - st.fmin).toExponential(1)}`, st.hoverPath.x + 12, st.hoverPath.y, 'left'); }
+            label(ctx, C, st, 'start', sx, sy - 12, 'center');
+            label(ctx, C, st, `step ${k}/${N}`, S.x + S.w, S.y - K.LN / 4, 'right', true);
+            label(ctx, C, st, 'loss above the minimum (log) per step', S.x, S.y - K.LN / 4, 'left');
+            if (st.hover) { const w = st.wells.reduce((a, b) => (b.a > a.a ? b : a)); label(ctx, C, st, 'valley', ...F.descent.P(st, w.x, w.y + 12 / M.w), 'center'); label(ctx, C, st, 'loss surface', M.x + 12, M.y + 6); }
+            if (running && k < N) st.wake = Math.max(st.wake || 0, 0.3);
         },
     };
 
