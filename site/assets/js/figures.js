@@ -1520,7 +1520,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const toIn = (px, py) => [(px - st.left[0]) / st.sc, -(py - st.left[1]) / st.sc], onIn = (q) => Math.abs(q[0]) <= 1.15 && Math.abs(q[1]) <= 1.15;
             const LR = st.lrow, onRow = Math.abs(y - LR.y) < K.LN / 2 && x > LR.x0 - 10 && x < LR.x1 + 10, Lat = (px) => Math.round(F.fold.LMIN + Math.max(0, Math.min(1, (px - LR.x0) / (LR.x1 - LR.x0))) * (F.fold.LMAX - F.fold.LMIN));
             if (type === 'down' && onRow) { st.rowDrag = true; st.Lpick = Lat(x); st.wake = 1; return; }
-            if (st.rowDrag) { if (type === 'move') { st.Lpick = Lat(x); st.wake = 1; } else if (type === 'up' || type === 'leave') { st.rowDrag = false; F.fold.depth(st, st.Lpick); } return; }
+            if (st.rowDrag) { if (type === 'move') { st.Lpick = Lat(x); st.wake = 1; } else if (type === 'up' || type === 'leave') { st.rowDrag = false; if (type === 'up') st.Lpick = Lat(x); F.fold.depth(st, st.Lpick); } return; }
             if (type === 'down') {
                 const q = toIn(x, y); st.press = { x, y, moved: false, paint: onIn(q) ? null : false };
                 if (st.press.paint === null) { let bi = 0, bd = Infinity; st.pts.forEach((p, i) => { const d = Math.hypot(p[0] - q[0], p[1] - q[1]); if (d < bd) { bd = d; bi = i; } }); st.press.to = st.lab[bi] ? 0 : 1; }
