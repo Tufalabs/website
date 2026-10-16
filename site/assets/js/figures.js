@@ -1451,16 +1451,21 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             st.axis = { x0: st.right[0] - side / 2, x1: st.right[0] + side / 2, y: cy + side / 2 + 0.75 * LN };   // the depth, under the output
             st.lrow = { x0: st.left[0] - side / 2, x1: st.left[0] + side / 2, y: cy + side / 2 + 0.75 * LN };   // the layers, under the input
             F.fold.dataset(st, F.fold.shape(r)); st.prevLab = null; st.train = null;
-            // trained before it is shown, in chunks of ~8 ms when the browser is idle (never holding up the page): the best
-            // of up to four starts, done at 90%; then it fades in
+            // trained before it is shown, off the page's way: started when the browser is first idle, then in ~6 ms chunks
+            // that yield to the page between them (waiting for idle time again for each chunk could take minutes on a busy
+            // page). The best of up to four starts is kept; the figure fades in at the first start reaching 80% (or after the
+            // fourth), and a later, better start takes its place
             F.fold.reinit(st); st.acc = F.fold.accuracy(st); st.hidden = true;
-            const pre = { tries: 0, steps: 0, best: null }, chunk = () => {
-                if (st.disposed) return;
-                const t0 = performance.now(); while (performance.now() - t0 < 8 && pre.steps < 4 * F.fold.STEPS) { F.fold.step(st); pre.steps++; }
-                if (pre.steps < 4 * F.fold.STEPS) { idle(chunk); return; }
-                const a = F.fold.accuracy(st); if (!pre.best || a > pre.best.a) pre.best = { a, P: st.P.slice() };
-                if (a >= 0.9 || ++pre.tries >= 4) { st.P = pre.best.P; st.acc = pre.best.a; st.m.fill(0); st.v.fill(0); st.it++; st.hidden = false; st.shownAt = performance.now(); st.request?.(); return; }
-                F.fold.reinit(st); pre.steps = 0; idle(chunk);
+            const pre = { tries: 0, steps: 0, best: null }, settle = () => { st.P = pre.best.P.slice(); st.acc = pre.best.a; st.m.fill(0); st.v.fill(0); st.it++; if (st.hidden) { st.hidden = false; st.shownAt = performance.now(); } st.request?.(); };
+            const chunk = () => {
+                if (st.disposed || st.train) return;   // the reader took over (a click or a paint retrains)
+                const t0 = performance.now(); while (performance.now() - t0 < 6 && pre.steps < 4 * F.fold.STEPS) { F.fold.step(st); pre.steps++; }
+                if (pre.steps < 4 * F.fold.STEPS) { setTimeout(chunk, 0); return; }
+                const a = F.fold.accuracy(st), better = !pre.best || a > pre.best.a; if (better) pre.best = { a, P: st.P.slice() };
+                pre.tries++;
+                if (pre.best.a >= 0.9 || pre.tries >= 4) { settle(); return; }
+                if (better && pre.best.a >= 0.8) settle();
+                F.fold.reinit(st); pre.steps = 0; setTimeout(chunk, 0);
             };
             idle(chunk);
             return st;
@@ -3567,7 +3572,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     // new arena at the level. Leaving the figure stops training. The rows set the learning rate, exploration, discount and
     // batch size (σ also while trying it).
     F.rlcont = {
-        bleed: true, tall: true, AGENTS: 24, SIGMA: 0.5, ALPHA: 0.003, SPREAD: 0.08, PRE: 0.8, PRE_ALPHA: 0.01, ITEMS: 5, ITEM: 0.3, ITEM_R: 0.02, GOAL_R: 0.045, RAYS: 8, RANGE: 0.2, GAMMA: 0.97, MAXT: 130, SPEED: 0.026, SHAPE: 2, TICK: 0.005, COLLIDE: 0.005, WALLGAP: 0.02, FX: 22, FY: 18, RBF: 0.036, GX: 60, GY: 51, HT: 1,
+        bleed: true, tall: true, AGENTS: 24, SIGMA: 0.7, ALPHA: 0.003, SPREAD: 0.08, PRE: 0.8, PRE_ALPHA: 0.01, ITEMS: 5, ITEM: 0.3, ITEM_R: 0.02, GOAL_R: 0.045, RAYS: 8, RANGE: 0.2, GAMMA: 0.97, MAXT: 130, SPEED: 0.026, SHAPE: 2, TICK: 0.005, COLLIDE: 0.005, WALLGAP: 0.02, FX: 22, FY: 18, RBF: 0.036, GX: 60, GY: 51, HT: 1,
         title: 'RL in continuous space', note: 'Agents that sense only in their own frame learn to reach a goal past walls and pits, by batched REINFORCE across random arenas of rising level; hover to train, pause to try the policy.',
         init(R, rand) {
             const fx = R.fx ?? R.x, vy0 = (R.vy0 ?? R.y) + 10, vy1 = (R.vy1 ?? R.y + R.h) - 22, W = R.x + R.w - fx, L = K.LN;
