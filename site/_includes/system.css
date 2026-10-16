@@ -422,6 +422,9 @@ a:hover { text-decoration-thickness: 2px; }
 .privacy-updated { grid-column: 4 / 10; margin: 0 0 var(--s1); font: 400 var(--t-1) / calc(var(--line) * .75) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); }
 .page-content > h3 { grid-column: 4 / 10; font: 600 var(--t0) / var(--line) var(--display); margin: var(--s1) 0 0; }
 privacybee-widget:empty, privacybee-widget.is-adopted { display: none; }
+/* while it renders (in stages, in its own styles) the widget is laid out at full width but unseen; adopted, it goes; never
+   adopted (its markup changed), it is shown as it is after a while (site.js) */
+privacybee-widget:not(.is-adopted):not(.is-raw) { visibility: hidden; height: 0; overflow: hidden; }
 .privacy-tag { font: 400 var(--t-1) / var(--line) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); margin-left: var(--s-1); }
 /* every head is exactly seventeen lines (its bottom padding takes up any slack from a long statement) */
 @media (min-width: 901px) { :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { height: calc(var(--line) * 17); box-sizing: border-box; } }

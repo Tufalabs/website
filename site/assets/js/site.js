@@ -306,7 +306,8 @@ window.tufaPage = (() => {
     // the widget renders in stages: adopt once it has been quiet for a moment
     let quiet = 0; const settle = () => { clearTimeout(quiet); quiet = setTimeout(() => { const wrap = w.querySelector('.prx_wrapper'); if (wrap && wrap.querySelector('h2')) { obs.disconnect(); adopt(wrap); } }, 300); };
     const obs = new MutationObserver(settle); obs.observe(w, { childList: true, subtree: true, characterData: true }); settle();
-    return () => { clearTimeout(quiet); obs.disconnect(); };
+    const raw = setTimeout(() => { if (!w.classList.contains('is-adopted')) w.classList.add('is-raw'); }, 6000);   // not adopted: the widget as it is
+    return () => { clearTimeout(quiet); clearTimeout(raw); obs.disconnect(); };
 });
 
 // The creature (the identity repo's js/creature.js): in the header, on the bar beside the logo, the same animal on every
