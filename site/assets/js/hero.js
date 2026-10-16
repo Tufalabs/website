@@ -123,6 +123,11 @@
         fig.pointer('key', d, 0, 0);
     };
     if (['arc3', 'heads', 'attn3b', 'lens', 'lens2'].includes(name)) addEventListener('keydown', onKey);
+    // the chip zooms with a pinch (a trackpad sends it as ctrl + wheel) or ctrl/⌘ + wheel; on it the page itself does not zoom
+    if (name === 'chip') {
+        hit.addEventListener('wheel', (e) => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); fig.touch(); live(); fig.pointer('wheel', ...local(e), e.deltaY * (e.deltaMode ? 16 : 1)); }, { passive: false });
+        ['gesturestart', 'gesturechange'].forEach((ev) => hit.addEventListener(ev, (e) => e.preventDefault()));   // Safari's own pinch
+    }
     hit.addEventListener('pointerup', (e) => { hit.releasePointerCapture?.(e.pointerId); if (fig.touched) fig.pointer('up', ...local(e), 0); });
     return () => { fig.destroy(); clearTimeout(hintTimer); removeEventListener('keydown', onKey); };   // the page is left
 });
