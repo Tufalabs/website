@@ -3662,18 +3662,21 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
     };
 
-    // Scaling laws, measured: the solvable model of Maloney, Roberts & Sully (2022), trained here. A task with M = 128 latent
-    // dimensions whose variances fall as a power law (λₖ ∝ k^−2), a hidden linear target and label noise; six models
-    // of N = 2 … 64 weights on nested random features of the input, each trained by online SGD (learning rate η/N, one
+    // Scaling laws, measured: the solvable model of Maloney, Roberts & Sully (2022), trained here. A task with M = 512 latent
+    // dimensions whose variances fall as a power law (λₖ ∝ k^−2), a hidden linear target and label noise; seven models
+    // of N = 2 … 128 weights on nested random features of the input, each trained by online SGD (learning rate η/N, one
     // fresh sample per step) in a background worker. Each run's exact population loss (relative to predicting zero) is
-    // plotted against its training compute C = 6ND as it trains, every run to the same budgets, so the plot fills from
-    // left to right. The lower envelope of all runs is the compute-optimal frontier; its exponent (L − E ∝ C^γ, E the
-    // label noise's irreducible loss) and which size wins at each budget are fitted from the runs, not put in. The rows
+    // plotted as it trains, as its excess over the irreducible loss E (the label noise's) against its training compute
+    // C = 6ND on log–log axes, where a power law is a straight line; every run goes to the same budgets, so the plot
+    // fills from left to right. The lower envelope of all runs is the compute-optimal frontier, with a focus point where
+    // a bigger model takes it over; the scaling law is the straight line fitted through it from the second hand-over on
+    // (L − E ∝ C^γ), drawn dotted across the whole range, and the winning size's growth (N ∝ C^κ) is fitted too: both
+    // come from the runs, not put in. The rows
     // set the learning rate and the label noise; a change trains everything again.
     F.scaling2 = {
-        bleed: true, tall: true, M: 128, SIZES: [2, 4, 8, 16, 32, 64], CMIN: 1.5e3, CMAX: 6.3e6, POINTS: 24,
+        bleed: true, tall: true, M: 512, SIZES: [2, 4, 8, 16, 32, 64, 128], CMIN: 1.5e3, CMAX: 1.26e7, POINTS: 48,
         ETA: [0.01, 0.3], NOISE: [0, 0.1],
-        title: 'Scaling laws', note: 'Six models train live on one task; the lower envelope of their loss against compute is the scaling law, fitted from the runs. Drag the rows to change the learning rate or the label noise.',
+        title: 'Scaling laws', note: 'Seven models train live on one task; the lower envelope of their loss against compute is the scaling law, fitted from the runs. Drag the rows to change the learning rate or the label noise.',
         // the experiment, run in a worker (posted one budget at a time); self-contained, so it can be its source
         experiment(cfg, post) {
             const { M, sizes, alpha, noise, Cmin, Cmax, points, eta, seed } = cfg;
@@ -3685,15 +3688,27 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             let L0 = noise; for (let k = 0; k < M; k++) L0 += lam[k] * wstar[k] ** 2;
             const runs = sizes.map((N) => ({ N, v: new Float64Array(N), lr: eta / N, d: 0 }));
             const loss = (run) => { const u = new Float64Array(M); for (let j = 0; j < run.N; j++) { const vj = run.v[j], row = j * M; for (let k = 0; k < M; k++) u[k] += P[row + k] * vj; } let l = noise; for (let k = 0; k < M; k++) l += lam[k] * (u[k] - wstar[k]) ** 2; return l / L0; };
-            const x = new Float64Array(M), z = new Float64Array(Nmax);
+            // a model sees only its features z = P_N x and the target y, jointly Gaussian with a known covariance, so a
+            // sample is drawn directly through that covariance's Cholesky factor: the same data, (N+1)²/2 operations a
+            // sample instead of N·M
+            runs.forEach((r) => {
+                const N = r.N, n = N + 1, A = new Float64Array(n * n), pl = new Float64Array(N * M);
+                for (let j = 0; j < N; j++) for (let k = 0; k < M; k++) pl[j * M + k] = P[j * M + k] * lam[k];
+                for (let a = 0; a < N; a++) { for (let b = 0; b <= a; b++) { let q = 0; for (let k = 0; k < M; k++) q += pl[a * M + k] * P[b * M + k]; A[a * n + b] = q; } let q = 0; for (let k = 0; k < M; k++) q += pl[a * M + k] * wstar[k]; A[N * n + a] = q; }
+                let yy = noise; for (let k = 0; k < M; k++) yy += lam[k] * wstar[k] ** 2; A[N * n + N] = yy;
+                for (let a = 0; a < n; a++) for (let b = 0; b <= a; b++) { let q = A[a * n + b]; for (let k = 0; k < b; k++) q -= A[a * n + k] * A[b * n + k]; A[a * n + b] = a === b ? Math.sqrt(Math.max(q, 1e-12)) : q / A[b * n + b]; }
+                r.chol = A;
+            });
+            const g = new Float64Array(Nmax + 1), z = new Float64Array(Nmax + 1);
             for (let i = 0; i < points; i++) {
                 const c = Cmin * (Cmax / Cmin) ** (i / (points - 1));
                 for (const r of runs) {
-                    const goal = Math.floor(c / (6 * r.N)), N = r.N, v = r.v, lr = r.lr;
+                    const goal = Math.floor(c / (6 * r.N)), N = r.N, n = N + 1, Lc = r.chol, v = r.v, lr = r.lr;
                     for (; r.d < goal; r.d++) {
-                        let y = 0; for (let k = 0; k < M; k++) { x[k] = sq[k] * randn(); y += wstar[k] * x[k]; } y += Math.sqrt(noise) * randn();
-                        let pr = 0; for (let j = 0; j < N; j++) { let a = 0; const row = j * M; for (let k = 0; k < M; k++) a += P[row + k] * x[k]; z[j] = a; pr += v[j] * a; }
-                        const e = (y - pr) * lr; for (let j = 0; j < N; j++) v[j] += e * z[j];
+                        for (let a = 0; a < n; a++) g[a] = randn();
+                        for (let a = 0; a < n; a++) { let q = 0; const row = a * n; for (let b = 0; b <= a; b++) q += Lc[row + b] * g[b]; z[a] = q; }
+                        let pr = 0; for (let j = 0; j < N; j++) pr += v[j] * z[j];
+                        const e = (z[N] - pr) * lr; for (let j = 0; j < N; j++) v[j] += e * z[j];
                     }
                 }
                 post({ c, E: noise / L0, losses: runs.map((r) => r.d ? loss(r) : 1) });
@@ -3725,21 +3740,25 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (type === 'up' || type === 'leave') { st.drag = null; S.train(st); st.wake = 4; }
         },
         draw(ctx, R, t, C, st, still) {
-            const S = F.scaling2, pl = st.plot, lx0 = Math.log10(S.CMIN), lx1 = Math.log10(S.CMAX), lmin = Math.min(...st.data.flatMap((d) => d.losses), st.E || 1, 0.5), ly0 = Math.log10(Math.max(1e-4, lmin * 0.6)), ly1 = Math.log10(1.15);
-            const X = (c) => pl.x + ((Math.log10(c) - lx0) / (lx1 - lx0)) * pl.w, Y = (l) => pl.y + ((ly1 - Math.log10(Math.max(l, 10 ** ly0))) / (ly1 - ly0)) * pl.h;
-            const data = st.data, n = data.length;
-            // two axes (u/2 lines); the irreducible loss a dotted line
+            // log–log axes of the excess loss L − E against compute: a power law is a straight line here
+            const S = F.scaling2, pl = st.plot, data = st.data, n = data.length, E = st.E;
+            const ex = (l) => Math.max(1e-6, l - E), gs = data.flatMap((d) => d.losses.map(ex));
+            const lx0 = Math.log10(S.CMIN), lx1 = Math.log10(S.CMAX), ly1 = Math.log10(1.2 * Math.max(...gs, 1 - E)), ly0 = Math.min(ly1 - 1, Math.log10(0.6 * Math.min(...gs, 0.5)));
+            const X = (c) => pl.x + ((Math.log10(c) - lx0) / (lx1 - lx0)) * pl.w, Y = (g) => pl.y + ((ly1 - Math.log10(g)) / (ly1 - ly0)) * pl.h;
             K.line(ctx, C, [[pl.x, pl.y], [pl.x, pl.y + pl.h], [pl.x + pl.w, pl.y + pl.h]], -1, 0.5);
-            if (st.E > 0) K.dotted(ctx, C, [[pl.x, Y(st.E)], [pl.x + pl.w, Y(st.E)]], -1, 0.5);
-            // runs at data tone, each ending in a point (the run still training a focus point)
-            S.SIZES.forEach((N, i) => { const pts = data.map((d) => [X(d.c), Y(d.losses[i])]); if (pts.length > 1) K.line(ctx, C, pts, -1, 0.5); if (pts.length) K.pt(ctx, C, ...pts[pts.length - 1], st.done ? -1 : 0, st.done ? 0.5 : 1); });
-            // the frontier: the lowest loss at each budget — the answer, a 2u line in focus tone
-            const front = data.map((d) => { let b = 0; d.losses.forEach((l, i) => { if (l < d.losses[b]) b = i; }); return { c: d.c, l: d.losses[b], N: S.SIZES[b] }; });
-            if (front.length > 1) K.line(ctx, C, front.map((f) => [X(f.c), Y(f.l)]), 1, 1);
-            // fits over the frontier's later half: L − E ∝ C^γ, and the winning size N ∝ C^κ
-            const fit = (pts) => { const mx = pts.reduce((a, p) => a + p[0], 0) / pts.length, my = pts.reduce((a, p) => a + p[1], 0) / pts.length, sxx = pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0); return sxx ? pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / sxx : null; };
-            const tail = front.slice(front.length >> 1).filter((f) => f.l > st.E * 1.05), gamma = tail.length > 3 ? fit(tail.map((f) => [Math.log10(f.c), Math.log10(f.l - st.E)])) : null;
-            const kappa = front.length > 6 ? fit(front.map((f) => [Math.log10(f.c), Math.log10(f.N)])) : null;
+            // runs at data tone, each ending in a point (a focus point while it trains)
+            S.SIZES.forEach((N, i) => { const pts = data.map((d) => [X(d.c), Y(ex(d.losses[i]))]); if (pts.length > 1) K.line(ctx, C, pts, -1, 0.5); if (pts.length) K.pt(ctx, C, ...pts[pts.length - 1], st.done ? -1 : 0, st.done ? 0.5 : 1); });
+            // the frontier: the lowest loss at each budget (a 2u line), and where a bigger model takes it over (focus points)
+            const front = data.map((d) => { let b = 0; d.losses.forEach((l, i) => { if (l < d.losses[b]) b = i; }); return { c: d.c, g: ex(d.losses[b]), N: S.SIZES[b] }; });
+            if (front.length > 1) K.line(ctx, C, front.map((f) => [X(f.c), Y(f.g)]), 1, 1);
+            const hand = front.filter((f, k) => k > 0 && f.N > front[k - 1].N);
+            hand.forEach((f) => K.pt(ctx, C, X(f.c), Y(f.g), 1, 1));
+            // the law: a least-squares line through the frontier from the second hand-over on (the first falls in the early
+            // transient, before the frontier settles), drawn across the whole range
+            const fit = (pts) => { const mx = pts.reduce((a, q) => a + q[0], 0) / pts.length, my = pts.reduce((a, q) => a + q[1], 0) / pts.length, sxx = pts.reduce((a, q) => a + (q[0] - mx) ** 2, 0); if (!sxx) return null; const b = pts.reduce((a, q) => a + (q[0] - mx) * (q[1] - my), 0) / sxx; return { b, a: my - b * mx }; };
+            const from = front.indexOf(hand[1] || hand[0]), law = hand.length && front.length - from > 3 ? fit(front.slice(from).map((f) => [Math.log10(f.c), Math.log10(f.g)])) : null;
+            const best = front.length > 6 ? fit(front.map((f) => [Math.log10(f.c), Math.log10(f.N)])) : null;
+            if (law && st.done) K.dotted(ctx, C, [[pl.x, Y(10 ** (law.a + law.b * lx0))], [pl.x + pl.w, Y(10 ** (law.a + law.b * lx1))]].map(([x, y]) => [x, Math.max(pl.y, Math.min(pl.y + pl.h, y))]), 0, 1);
             // the rows: track at context tone, up to the value at data tone, the value a focus point
             const pn = st.panel;
             [[Math.log(st.eta / S.ETA[0]) / Math.log(S.ETA[1] / S.ETA[0])], [(st.noise - S.NOISE[0]) / (S.NOISE[1] - S.NOISE[0])]].forEach(([k], i) => {
@@ -3749,11 +3768,10 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const ly = (i) => st.rows[i].y + st.rows[i].h / 2 - K.LN / 2, sci = (v) => { const e = Math.floor(Math.log10(v)); return `${(v / 10 ** e).toFixed(1)}e${e}`; };
             label(ctx, C, st, `learning rate η ${st.eta} (per weight η/N)`, pn.x, ly(0), 'left', true);
             label(ctx, C, st, `label noise σ² ${st.noise.toFixed(3)}`, pn.x, ly(1), 'left', true);
-            label(ctx, C, st, 'loss', pl.x + K.LN / 4, pl.y + K.LN / 4, 'left');
-            label(ctx, C, st, 'compute C = 6ND', pl.x + pl.w, pl.y + pl.h - K.LN / 4, 'right');
-            if (st.E > 0) label(ctx, C, st, 'irreducible', pl.x + K.LN / 4, Y(st.E) - K.LN / 4, 'left');
-            if (n) S.SIZES.forEach((N, i) => label(ctx, C, st, `N ${N}`, X(data[n - 1].c) + K.LN / 4, Y(data[n - 1].losses[i]), 'left'));
-            const head = !st.done ? `training · ${n ? sci(data[n - 1].c) : '0'} of ${sci(S.CMAX)} FLOPs` : gamma != null ? `frontier: L − E ∝ C^${gamma.toFixed(2)}${kappa != null ? ` · best N ∝ C^${kappa.toFixed(2)}` : ''}` : 'frontier';
+            label(ctx, C, st, 'loss above irreducible (log)', pl.x + K.LN / 4, pl.y + K.LN / 4, 'left');
+            label(ctx, C, st, 'compute C = 6ND (log)', pl.x + pl.w, pl.y + pl.h - K.LN / 4, 'right');
+            if (n) S.SIZES.forEach((N, i) => label(ctx, C, st, `N ${N}`, X(data[n - 1].c) + K.LN / 4, Y(ex(data[n - 1].losses[i])), 'left'));
+            const head = !st.done ? `training · ${n ? sci(data[n - 1].c) : '0'} of ${sci(S.CMAX)} FLOPs` : law ? `scaling law: L − E ∝ C^${law.b.toFixed(2)}${best ? ` · best N ∝ C^${best.b.toFixed(2)}` : ''}` : 'frontier';
             label(ctx, C, st, head, pl.x + pl.w, pl.y + K.LN / 4, 'right', true);
         },
     };
