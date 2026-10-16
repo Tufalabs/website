@@ -2937,16 +2937,18 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
     };
 
-    // The Blackwell Ultra GPU, after NVIDIA's floorplan: two dies joined by NV-HBI (10 TB/s die to die), each
-    // with four graphics processing clusters (GPCs) in two rows around an L2 cache, HBM controllers along top
-    // and bottom, the GigaThread engine across the middle; NVLink and PCIe Gen 6 on the left edge, NVLink-C2C
-    // on the right. Hover a block to see its wiring (dotted traces with pulses). Drag up to zoom through the
-    // z axis, towards where you pressed: the chip, a GPC (10 TPCs of 2 SMs), an SM (four quadrants: warp
-    // scheduler, register file, cores, tensor core; L1 and shared memory), a tensor core's grid of
-    // multiply-accumulate units. Drag down to zoom out; a click flies back to the whole chip.
+    // The Blackwell Ultra GPU, after NVIDIA's floorplan: two dies joined by NV-HBI (10 TB/s die to die), each with four
+    // graphics processing clusters (GPCs) in two rows around an L2 cache, HBM controllers along top and bottom, the
+    // GigaThread engine across the middle; NVLink and PCIe Gen 6 on the left edge, NVLink-C2C on the right. Every
+    // component opens up as you zoom, one level at a time: a click frames it, another goes a level deeper (HBM: the die
+    // stack, a die's bank groups, a bank's cell array; L2: slices, SRAM cells; the GigaThread engine's queue; the links'
+    // lanes; NVDEC's stages; a GPC: TPCs, an SM's quadrants, a tensor core's multiply-accumulate grid, then logic cells,
+    // FinFETs from above, the silicon crystal, an atom as a quantum electron density, one bond orbital's wavefunction, its
+    // nucleus as a density). Hover a block for its wiring. Drag up to zoom towards where you pressed, down to zoom out; a
+    // double click flies back to the whole chip.
     F.chip = {
-        bleed: true, ZMAX: 1e11,
-        title: 'GPU floorplan', note: 'Blackwell Ultra after NVIDIA’s floorplan: hover for wiring, drag to zoom from the chip down to a tensor core. Memory is a field of points, compute a grid of cells, control a line.',
+        bleed: true, ZMAX: 3e9,
+        title: 'GPU floorplan', note: 'Blackwell Ultra after NVIDIA’s floorplan; every component opens up as you zoom, down to the quantum electron density of a silicon atom.',
         // chip units: 100 × 64. Blocks: [kind, x, y, w, h, die]
         layout() {
             const B = [];
@@ -2971,6 +2973,17 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             c2c: 'NVLink-C2C: 900 GB/s coherent link to the Grace CPU',
             pcie: 'PCIe Gen 6 ×16: 256 GB/s host interface',
         },
+        // each component's levels (shown as its frame grows on screen: a level per threshold in screen pixels)
+        DEPTH: {
+            hbm: [[140, 'HBM3E stack, from the side: 12 DRAM dies over a base logic die, joined by through-silicon vias'], [1400, 'a DRAM die: bank groups of banks, row decoders between them'], [7000, 'a bank: word lines across, bit lines down, a cell (a transistor and a capacitor) at each crossing, sense amplifiers below']],
+            l2: [[60, 'L2 cache: slices, each an SRAM array under its tags'], [400, 'SRAM: bit-line pairs down, word lines across, a six-transistor cell at each crossing']],
+            giga: [[100, 'GigaThread Engine: thread blocks queued, handed to the GPCs as SMs free up']],
+            hbi: [[40, 'NV-HBI: thousands of short wires across the die edge, the two dies one GPU']],
+            nvlink: [[40, 'NVLink 5: 18 links, each lanes of differential pairs to the NVLink Switch']],
+            pcie: [[40, 'PCIe Gen 6 ×16: sixteen lanes to the host']],
+            c2c: [[40, 'NVLink-C2C: lanes to the Grace CPU, memory-coherent']],
+            nvdec: [[40, 'NVDEC: entropy decode, inverse transform, motion compensation, deblocking']],
+        },
         init(R) {
             // at rest the whole chip fits the visible columns; zoomed in, it spills left into the fade column and up
             // and down, where the page's masks dissolve it instead of a hard frame cutting it off
@@ -2978,28 +2991,21 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const view = { x: fx + 4, y: vy0, w: W, h: vy1 - vy0 }, s0 = Math.min(view.w / 100, view.h / 64);
             return { fx, vy0, vy1, W, view, s0, z: 1, cx: 50, cy: 32, blocks: F.chip.layout(), hb: -1, fly: null };
         },
+        // how far a component other than a GPC lets you zoom: until its last level is well in view
+        zmax(st, b) { const L = F.chip.DEPTH[b.kind]; return L ? Math.max(2, (L[L.length - 1][0] * 4) / (Math.min(b.w, b.h * 4) * st.s0)) : F.chip.ZMAX; },
         // chip coordinates ↔ screen: the view centre shows (cx, cy) at scale s0·z
         toS(st, x, y) { const v = st.view, s2 = st.s0 * st.z; return [v.x + v.w / 2 + (x - st.cx) * s2, v.y + v.h / 2 + (y - st.cy) * s2]; },
         toC(st, X, Y) { const v = st.view, s2 = st.s0 * st.z; return [st.cx + (X - v.x - v.w / 2) / s2, st.cy + (Y - v.y - v.h / 2) / s2]; },
         at(st, x, y) { return st.blocks.findIndex((b) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h); },
         // below the crystal: positions in chip units, relative to the chosen atom. The lattice: atoms a2 apart in rows
-        // b2 apart, odd rows shifted half a spacing; the nucleus: 28 nucleons in a ball (a proton at its centre); a
-        // nucleon: three quarks (proton uud, neutron udd)
+        // b2 apart, odd rows shifted half a spacing
         deep(st) { const mac = st.mac || 0.035, a2 = mac / 2500, R0 = 12 / (5e7 * st.s0); return { a2, b2: a2 * 1.41, R0, rn: R0 * 0.2 }; },
         atomNear(st, x, y) { const { a2, b2 } = F.chip.deep(st), [tx, ty] = st.tgt; let best = null, bd = Infinity; const j0 = Math.round((y - ty) / b2); for (let j = j0 - 1; j <= j0 + 1; j++) { const off = (j % 2) * a2 * 0.5, i2 = Math.round((x - tx - off) / a2); for (let i = i2 - 1; i <= i2 + 1; i++) { const ax = tx + i * a2 + off, ay = ty + j * b2, d = Math.hypot(ax - x, ay - y); if (d < bd) { bd = d; best = [ax, ay]; } } } return best; },
-        nucleons(st) { const { R0 } = F.chip.deep(st), out = [[0, 0, 1]]; for (let q = 1; q < 28; q++) { const rr = R0 * Math.sqrt(q / 27) * 0.92, an = q * 2.39996; out.push([rr * Math.cos(an), rr * Math.sin(an), q % 2 === 0 ? 1 : 0]); } return out; },
-        quarks(st, proton) { const { rn } = F.chip.deep(st), names = proton ? ['u', 'u', 'd'] : ['u', 'd', 'd']; return names.map((nm, k) => { const an = (k / 3) * TAU - Math.PI / 2; return [rn * 0.45 * Math.cos(an), rn * 0.45 * Math.sin(an), nm]; }); },
-        // the deep object the view settles on at this zoom: the chosen atom, then its chosen nucleon, then its chosen quark
-        focus(st, z = st.z) {
-            if (z < 1.2e6 || !st.anc) return null; let [x, y] = st.anc; if (z < 6e8) return [x, y];
-            const nu = F.chip.nucleons(st)[st.sel || 0]; x += nu[0]; y += nu[1]; if (z < 8e9) return [x, y];
-            const qk = F.chip.quarks(st, nu[2])[st.qk || 0]; return [x + qk[0], y + qk[1]];
-        },
+        // the deep object the view settles on at this zoom: the chosen atom
+        focus(st, z = st.z) { return z < 1.2e6 || !st.anc ? null : st.anc; },
         // pick what a point is nearest to, at the depth the zoom is heading for
         pick(st, x, y, z) {
-            if (z >= 1.2e6 && (!st.anc || st.z < 5e6)) {   /* while the crystal shows, a click picks another atom */ st.anc = F.chip.atomNear(st, x, y); st.sel = 0; st.qk = 0; return; }
-            if (z >= 6e8 && st.anc && st.z >= 4e7 && st.z < 8e9) { const nu = F.chip.nucleons(st); let b = 0, bd = Infinity; nu.forEach(([dx, dy], k) => { const d = Math.hypot(st.anc[0] + dx - x, st.anc[1] + dy - y); if (d < bd) { bd = d; b = k; } }); st.sel = b; st.qk = 0; return; }
-            if (z >= 8e9 && st.anc && st.z >= 6e8) { const nu = F.chip.nucleons(st)[st.sel || 0], qs = F.chip.quarks(st, nu[2]); let b = 0, bd = Infinity; qs.forEach(([dx, dy], k) => { const d = Math.hypot(st.anc[0] + nu[0] + dx - x, st.anc[1] + nu[1] + dy - y); if (d < bd) { bd = d; b = k; } }); st.qk = b; }
+            if (z >= 1.2e6 && (!st.anc || st.z < 5e6)) { st.anc = F.chip.atomNear(st, x, y); return; }   // while the crystal shows, a click picks another atom
         },
         // where a zoom should land: the tensor core of an SM in the GPC nearest the press (same geometry as draw)
         target(st, px, py) {
@@ -3015,12 +3021,14 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (type === 'enter') return;
             if (type === 'leave') { st.hoverAt = null; st.hb = -1; return; }
             const [px, py] = F.chip.toC(st, x, y);
-            if (type === 'down') { const tg = st.z > 300 && st.tgt ? st.tgt : F.chip.target(st, px, py);   /* the tensor core nearest the press */ st.press = { x, y, z: st.z, fx: px, fy: py, moved: false, tgt: tg, t: performance.now(), free: st.z > 300 }; st.tgt = tg; st.fly = null; return; }
+            const own = st.blocks[F.chip.at(st, px, py)], other = own && own.kind !== 'gpc' && st.z < 300 ? own : null;
+            if (type === 'down') { const tg = other ? [px, py] : st.z > 300 && st.tgt ? st.tgt : F.chip.target(st, px, py);   /* the tensor core nearest the press */ st.press = { x, y, z: st.z, fx: px, fy: py, moved: false, tgt: tg, t: performance.now(), free: st.z > 300 }; st.tgt = tg; st.fly = null; return; }
             if (type === 'move' && st.press) {
                 if (Math.hypot(x - st.press.x, y - st.press.y) > 4) st.press.moved = true; st.press.lx = x; st.press.ly = y;
                 if (st.press.moved) {
                     // drag up: zoom in, keeping the pressed point under the pointer's start
-                    const z = Math.max(1, Math.min(F.chip.ZMAX, st.press.z * Math.exp(-(y - st.press.y) * 0.042)));
+                    const pressed = st.blocks[F.chip.at(st, st.press.fx, st.press.fy)], cap = pressed && pressed.kind !== 'gpc' ? F.chip.zmax(st, pressed) : F.chip.ZMAX;
+                    const z = Math.max(1, Math.min(cap, st.press.z * Math.exp(-(y - st.press.y) * 0.042)));
                     st.z = z; const v = st.view, s2 = st.s0 * z;
                     const ax = st.press.fx - (st.press.x - v.x - v.w / 2) / s2, ay = st.press.fy - (st.press.y - v.y - v.h / 2) / s2;
                     // steer: from keeping the pressed point put, towards centring the target tensor core, as the zoom deepens
@@ -3039,8 +3047,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const flyTo = (z1, cx1, cy1) => { st.fly = { start: null, z0: st.z, cx0: st.cx, cy0: st.cy, z1, cx1, cy1 }; st.wake = 1.4; };
                 if (dbl) { st.anc = null; flyTo(1, 50, 32); return; }                                                // double click: home
                 // a component whose framing would bring us closer: frame it; otherwise go six times deeper
-                const b = st.blocks[F.chip.at(st, pr.fx, pr.fy)], zb = b ? Math.max(1.2, Math.min(st.view.w / (b.w * st.s0), st.view.h / (b.h * st.s0)) * 0.9) : 0;
-                if (b && zb > st.z * 1.3) { const z1 = zb; st.tgt = F.chip.target(st, b.x + b.w / 2, b.y + b.h / 2); flyTo(z1, b.x + b.w / 2, b.y + b.h / 2); }   // a component: frame it
+                const b = st.blocks[F.chip.at(st, pr.fx, pr.fy)], thin = b && b.h > 4 * b.w, zb = b ? Math.max(1.2, thin ? (st.view.w * 0.25) / (b.w * st.s0) : Math.min(st.view.w / (b.w * st.s0), st.view.h / (b.h * st.s0)) * 0.9) : 0;
+                if (b && zb > st.z * 1.3) { const z1 = zb, fy1 = thin ? Math.max(b.y, Math.min(b.y + b.h, pr.fy)) : b.y + b.h / 2; st.tgt = F.chip.target(st, b.x + b.w / 2, fy1); flyTo(z1, b.x + b.w / 2, fy1); }   // a component: frame it (a thin one around the click)
+                else if (b && b.kind !== 'gpc' && st.z < 300) { const z1 = Math.min(F.chip.zmax(st, b), st.z * 6); if (z1 > st.z * 1.05) flyTo(z1, pr.fx, pr.fy); }   // inside it: a level deeper, where it was clicked
                 else { st.tgt = st.tgt || F.chip.target(st, pr.fx, pr.fy); const z1 = Math.min(F.chip.ZMAX, st.z * 6); if (st.z > 300) { F.chip.pick(st, pr.fx, pr.fy, z1); const f = F.chip.focus(st, z1); flyTo(z1, f ? f[0] : pr.fx, f ? f[1] : pr.fy); } else if (z1 > 30) { st.tgt = F.chip.target(st, pr.fx, pr.fy); flyTo(z1, st.tgt[0], st.tgt[1]); } else flyTo(z1, pr.fx, pr.fy); }   /* from the SM down, onto the tensor core nearest the click (gaps hold nothing) */   /* below the cells: to the atom, nucleon or quark nearest the click */      // deeper: six times closer, towards the click
                 return;
             }
@@ -3065,9 +3074,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (st.fly && !still) { if (st.fly.start == null) st.fly.start = t; const e = smooth(Math.min(1, (t - st.fly.start) / 1.1)), f = st.fly; st.z = Math.exp(Math.log(f.z0) * (1 - e) + Math.log(f.z1) * e); st.cx = f.cx0 + (f.cx1 - f.cx0) * e; st.cy = f.cy0 + (f.cy1 - f.cy0) * e; if (e >= 1) st.fly = null; }
             if (!still && !st.fly) { if (st.z >= 1.2e6 && !st.anc) F.chip.pick(st, st.cx, st.cy, st.z); const f = F.chip.focus(st); if (f) { const k = st.press ? 0.12 : 0.2; st.cx += (f[0] - st.cx) * k; st.cy += (f[1] - st.cy) * k; if (Math.hypot(f[0] - st.cx, f[1] - st.cy) * st.s0 * st.z > 0.3) st.wake = Math.max(st.wake || 0, 0.3); if (st.press && st.press.free && st.press.ly != null) { st.press.x = st.press.lx; st.press.y = st.press.ly; [st.press.fx, st.press.fy] = F.chip.toC(st, st.press.x, st.press.y); st.press.z = st.z; }   /* re-anchor the drag where the pointer is now */ } }
             const v = st.view, z = st.z, S = (x, y) => F.chip.toS(st, x, y), s2 = st.s0 * z;
-            ctx.save(); ctx.beginPath(); ctx.rect(R.x, R.y, R.w, R.h); ctx.clip();
+            ctx.save(); ctx.beginPath(); ctx.rect(R.x, R.y, R.w, v.y + v.h + 2 - R.y); ctx.clip();   // the chip stops above the sliders
             const vis = (x, y, w, h) => { const [a, b] = S(x, y), [c, d] = S(x + w, y + h); return c > R.x - 10 && a < R.x + R.w + 10 && d > R.y - 10 && b < R.y + R.h + 10; };
-            const VX0 = R.x - 4, VX1 = R.x + R.w + 4, VY0 = R.y - 4, VY1 = R.y + R.h + 4;
+            const VX0 = R.x - 4, VX1 = R.x + R.w + 4, VY0 = R.y - 4, VY1 = v.y + v.h + 4;
             const edge = (x0, y0, x1, y1, step, size, a, col) => {                               // one edge, trimmed to the visible area
                 if (y0 === y1) { if (y0 < VY0 || y0 > VY1) return; const a0 = Math.max(Math.min(x0, x1), VX0), a1 = Math.min(Math.max(x0, x1), VX1); for (let x = a0 - ((a0 - Math.min(x0, x1)) % step); x <= a1; x += step) dot(x, y0, size, a, col); }
                 else { if (x0 < VX0 || x0 > VX1) return; const a0 = Math.max(Math.min(y0, y1), VY0), a1 = Math.min(Math.max(y0, y1), VY1); for (let y = a0 - ((a0 - Math.min(y0, y1)) % step); y <= a1; y += step) dot(x0, y, size, a, col); }
@@ -3078,6 +3087,58 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const cells = (x, y, w, h, nx, ny, a) => { const [X, Y] = S(x, y), cw = (w * s2) / nx, ch = (h * s2) / ny; if (X > VX1 || Y > VY1 || X + w * s2 < VX0 || Y + h * s2 < VY0 || cw < 3 || ch < 3) return; ctx.globalAlpha = a; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U / 2; ctx.setLineDash([]); const g = Math.min(cw, ch) * 0.18; for (let q = 0; q < ny; q++) for (let p2 = 0; p2 < nx; p2++) { const cx = X + p2 * cw, cy = Y + q * ch; if (cx > VX1 || cy > VY1 || cx + cw < VX0 || cy + ch < VY0) continue; ctx.strokeRect(cx + g / 2, cy + g / 2, cw - g, ch - g); } };
             const ctrl = (x, y, w, a) => { const [X, Y] = S(x, y); ctx.globalAlpha = a; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(Math.max(VX0, X), Y); ctx.lineTo(Math.min(VX1, X + w * s2), Y); ctx.stroke(); };
             const fadeIn = (lo, hi) => Math.max(0, Math.min(1, (Math.log(z) - Math.log(lo)) / (Math.log(hi) - Math.log(lo))));
+            const prog = 1, gpcs = st.blocks.filter((q) => q.kind === 'gpc'), smOn = () => true;   // every SM at work (its tensor core's array runs)
+            const mid = (q) => [q.x + q.w / 2, q.y + q.h / 2], lerpPath = (path, f) => { const L = path.slice(1).map((q, k) => Math.hypot(q[0] - path[k][0], q[1] - path[k][1])), tot = L.reduce((x2, y2) => x2 + y2, 0); let d = f * tot; for (let k = 0; k < L.length; k++) { if (d <= L[k]) { const g = d / (L[k] || 1); return [path[k][0] + (path[k + 1][0] - path[k][0]) * g, path[k][1] + (path[k + 1][1] - path[k][1]) * g]; } d -= L[k]; } return path[path.length - 1]; };
+            // an array at a fixed pitch on screen within a rectangle, only its visible part: lines across and down, a point at
+            // each crossing (memory); a deep level keeps a full array in view however far in
+            const array = (x, y, w, h, pitch, a, pulse) => {
+                const pc = pitch / s2, [X0, Y0] = S(x, y), [X1, Y1] = S(x + w, y + h), xa = Math.max(X0, VX0), xb = Math.min(X1, VX1), ya = Math.max(Y0, VY0), yb = Math.min(Y1, VY1);
+                if (xb <= xa || yb <= ya) return; const i0 = Math.ceil((xa - X0) / pitch), i1 = Math.floor((xb - X0) / pitch), j0 = Math.ceil((ya - Y0) / pitch), j1 = Math.floor((yb - Y0) / pitch);
+                ctx.globalAlpha = 0.25 * a; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U / 2; ctx.beginPath();
+                for (let i = i0; i <= i1; i++) { const X = X0 + i * pitch; ctx.moveTo(X, ya); ctx.lineTo(X, yb); }
+                for (let j = j0; j <= j1; j++) { const Y = Y0 + j * pitch; ctx.moveTo(xa, Y); ctx.lineTo(xb, Y); } ctx.stroke();
+                for (let i = i0; i < i1; i++) for (let j = j0; j < j1; j++) { if (j % 17 === 16 || i % 33 === 32) continue; dot(X0 + (i + 0.5) * pitch, Y0 + (j + 0.5) * pitch, 1.2, (pulse && (i * 7 + j * 3 + Math.floor(t * 6)) % 23 === 0 ? 1 : 0.5) * a, C.ink); }
+                ctx.globalAlpha = 0.5 * a; ctx.lineWidth = K.U / 2;                                                    // its repeating units: sense amplifiers (cells) every 16 rows, a decoder (a line) every 32 columns
+                for (let j = j0; j < j1; j++) if (j % 17 === 16) { const Y = Y0 + j * pitch; for (let X = xa - ((xa - X0) % (pitch * 2)); X < xb; X += pitch * 2) ctx.strokeRect(X + 1, Y + 2, pitch * 2 - 2, pitch - 4); }
+                ctx.lineWidth = K.U; ctx.beginPath(); for (let i = i0; i < i1; i++) if (i % 33 === 32) { const X = X0 + (i + 0.5) * pitch; ctx.moveTo(X, ya); ctx.lineTo(X, yb); } ctx.stroke();
+                void pc;
+            };
+            // a component's levels: each drawn inside its frame once the frame is large enough on screen, the one before fading
+            const lvl0 = (b2, k) => { const th = (F.chip.DEPTH[b2.kind] || [])[k]; if (!th) return 0; const px = Math.min(b2.w, b2.h * 4) * s2; return Math.max(0, Math.min(1, (px - th[0]) / th[0])); };
+            const lvl = (b2, k) => { const L = F.chip.DEPTH[b2.kind] || []; let cur = -1; L.forEach((_, q) => { if (lvl0(b2, q) > 0) cur = q; }); return k === cur ? Math.min(1, lvl0(b2, k) * 2) : 0; };   // only the deepest level shown
+            const interior = (b2) => {
+                const { x, y, w, h } = b2, l0 = lvl(b2, 0), l1 = lvl(b2, 1), l2 = lvl(b2, 2), on = true, open = l0 + l1 + l2;   // a gentle traffic everywhere
+                if (b2.kind === 'hbm') {
+                    const a0 = l0, a1 = l1;
+                    if (a0 > 0) { const n = 12, bh = h * 0.18, sh = (h - bh - h * 0.1) / n;                     // the stack from the side
+                        for (let q = 0; q < n; q++) { rectD(x + w * 0.04, y + h * 0.05 + q * sh, w * 0.92, sh * 0.8, 0.5 * a0, C.ink2); stipple(x + w * 0.05, y + h * 0.05 + q * sh + sh * 0.15, w * 0.9, sh * 0.5, 2, 0.25 * a0, C.ink3); }
+                        cells(x + w * 0.04, y + h - bh - h * 0.04, w * 0.92, bh, 24, 1, 0.5 * a0);                    // the base logic die
+                        for (let q = 1; q < 8; q++) { const xx = x + w * (0.04 + 0.92 * q / 8), [X, Y0] = S(xx, y + h * 0.05), [, Y1] = S(xx, y + h - h * 0.04); for (let yy = Y0; yy < Y1; yy += 2 * K.U) dot(X, yy, 0.6, a0, C.ink); if (on) { const u = (t * 0.8 + q * 0.13) % 1; dot(X, Y1 - u * (Y1 - Y0), 1.2, a0, C.ink); } } }
+                    if (a1 > 0) { const gx = 4, gy = 4, cw2 = w / gx, ch2 = h / gy;                                // a die: bank groups
+                        for (let i = 0; i < gx; i++) for (let j = 0; j < gy; j++) { const bx = x + i * cw2, by = y + j * ch2; rectD(bx + cw2 * 0.06, by + ch2 * 0.08, cw2 * 0.88, ch2 * 0.84, 0.5 * a1, C.ink2); stipple(bx + cw2 * 0.1, by + ch2 * 0.14, cw2 * 0.8, ch2 * 0.58, 2, 0.25 * a1, C.ink3); ctrl(bx + cw2 * 0.1, by + ch2 * 0.8, cw2 * 0.8, 0.5 * a1); } }
+                    if (l2 > 0) { array(x, y, w, h * 0.86, 12, l2, on); const [, SY] = S(x, y + h * 0.86); if (SY < VY1) cells(x, y + h * 0.86, w, h * 0.12, Math.max(4, Math.round((w * s2) / 24)), 1, 0.5 * l2); }   // a bank: the cell array, sense amplifiers below
+                    return 1 - open;
+                }
+                if (b2.kind === 'l2') {
+                    const a0 = l0;
+                    if (a0 > 0) for (let i = 0; i < 2; i++) for (let j = 0; j < 8; j++) { const sx = x + w * (0.06 + i * 0.46), sy = y + h * (0.02 + j * 0.12), sw2 = w * 0.42, sh2 = h * 0.11; rectD(sx, sy, sw2, sh2, 0.5 * a0, C.ink2); ctrl(sx + sw2 * 0.08, sy + sh2 * 0.15, sw2 * 0.84, 0.5 * a0); stipple(sx + sw2 * 0.08, sy + sh2 * 0.3, sw2 * 0.84, sh2 * 0.6, 2, (on && (i + j + Math.floor(t * 4)) % 5 === 0 ? 0.5 : 0.25) * a0, C.ink3); }
+                    if (l1 > 0) array(x, y, w, h, 12, l1, on);                                                      // SRAM: bit cells at the crossings
+                    return 1 - open;
+                }
+                if (b2.kind === 'giga' && l0 > 0) {                                                                     // the queue, and blocks handed out
+                    const nq = 18, qw = (w * 0.5) / nq; for (let q = 0; q < nq; q++) { const filled = on ? q < nq * (1 - prog) : q < 4; rectD(x + w * 0.02 + q * qw, y + h * 0.3, qw * 0.8, h * 0.4, (filled ? 1 : 0.25) * l0, C.ink); }
+                    gpcs.filter((g) => g.d === b2.d).forEach((g, gi) => { const gx2 = g.x + g.w / 2; ctrl(Math.min(x + w * 0.55, gx2), y + h / 2, Math.abs(gx2 - (x + w * 0.55)), 0.25 * l0); if (on) { const u = (t * 1.5 + gi * 0.25) % 1, [X, Y] = S(x + w * 0.55 + (gx2 - x - w * 0.55) * u, y + h / 2); dot(X, Y, 2.4, l0, C.ink); } });
+                    return 1 - l0;
+                }
+                if ((b2.kind === 'hbi' || b2.kind === 'nvlink' || b2.kind === 'pcie' || b2.kind === 'c2c') && l0 > 0) {   // lanes: lines with bits riding them
+                    const n = b2.kind === 'hbi' ? 60 : b2.kind === 'nvlink' ? 36 : b2.kind === 'pcie' ? 16 : 28, gap = h / n, speed = b2.kind === 'hbi' ? 2 : 0.8;
+                    for (let q = 0; q < n; q++) { const yy = y + (q + 0.5) * gap; if (b2.kind === 'nvlink' && q % 2 === 0) rectD(x + w * 0.04, yy - gap * 0.45, w * 0.92, gap * 1.9, 0.25 * l0, C.ink3); ctrl(x + w * 0.08, yy, w * 0.84, 0.5 * l0);
+                        if (on || b2.kind !== 'hbi') { const dir = q % 2 ? 1 : -1, u = ((t * speed * (on ? 1.6 : 0.4) + q * 0.37) % 1 + 1) % 1, [X, Y] = S(x + w * 0.08 + w * 0.84 * (dir > 0 ? u : 1 - u), yy); dot(X, Y, 1.2, l0, C.ink); } }
+                    return 1 - l0;
+                }
+                if (b2.kind === 'nvdec' && l0 > 0) { for (let q = 0; q < 4; q++) cells(x + w * 0.1, y + h * (0.06 + q * 0.23), w * 0.8, h * 0.2, 3, 1, 0.5 * l0); return 1 - l0; }
+                return 1;
+            };
             // level 0: the floorplan
             rectD(0, 0, 100, 64, 0.5, C.ink2, 3, 0.6);
             st.blocks.forEach((b, k) => {
@@ -3085,10 +3146,10 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const hov = k === st.hb && z < 2.5, col = hov ? C.ink : C.ink2;
                 rectD(b.x, b.y, b.w, b.h, hov ? 1 : 0.5, col, 2.6, hov ? 1 : 0.6);
                 const tex = { gpc: [5, 0.12], l2: [3.2, 0.22], hbm: [3, 0.26], giga: [3.2, 0.2], nvdec: [3, 0.24], hbi: [2.6, 0.32], nvlink: [2.8, 0.28], c2c: [2.8, 0.28], pcie: [2.8, 0.28] }[b.kind];
-                if (b.kind === 'gpc') { if (z < 1.6) cells(b.x + 0.6, b.y + 0.6, b.w - 1.2, b.h - 1.2, 2, 5, hov ? 0.5 : 0.25); }
-                else if (b.kind === 'giga') { if (z < 400) ctrl(b.x + 1, b.y + b.h / 2, b.w - 2, hov ? 1 : 0.5); }
-                else if (b.kind === 'nvdec') { if (z < 400) cells(b.x + 0.3, b.y + 0.4, b.w - 0.6, b.h - 0.8, 1, 2, hov ? 0.5 : 0.25); }
-                else if (z < 400) stipple(b.x, b.y, b.w, b.h, tex[0], hov ? 0.5 : 0.25, C.ink3);
+                if (b.kind === 'gpc') { if (z < 1.6) { cells(b.x + 0.6, b.y + 0.6, b.w - 1.2, b.h - 1.2, 2, 5, hov ? 0.5 : 0.25);
+                } }
+                else { const keep = interior(b);   // the component's own levels; its base texture fades as they take over
+                    if (keep > 0.02) { if (b.kind === 'giga') ctrl(b.x + 1, b.y + b.h / 2, b.w - 2, (hov ? 1 : 0.5) * keep); else if (b.kind === 'nvdec') cells(b.x + 0.3, b.y + 0.4, b.w - 0.6, b.h - 0.8, 1, 2, (hov ? 0.5 : 0.25) * keep); else stipple(b.x, b.y, b.w, b.h, tex[0], (hov ? 0.5 : 0.25) * keep, C.ink3); } }
                 // level 1: a GPC's 10 TPCs (2 SMs each), fading in as you zoom
                 const f1 = b.kind === 'gpc' ? fadeIn(1.6, 3.2) : 0;
                 if (f1 > 0) for (let tq = 0; tq < 10; tq++) {
@@ -3098,6 +3159,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                     for (let sm = 0; sm < 2; sm++) {
                         const sx = tx + 0.4 + sm * ((tw - 0.8) / 2), sy = ty + 0.4, sw = (tw - 0.8) / 2 - 0.2, sh = th - 0.8;
                         if (!vis(sx, sy, sw, sh)) continue;
+                        const smBusy = smOn();
                         rectD(sx, sy, sw, sh, 0.5 * f1, C.ink2, 2.4, 0.55);
                         const f2 = fadeIn(9, 16);
                         if (f2 <= 0 || sw * s2 < 20) { cells(sx, sy, sw, sh * 0.84, 2, 2, 0.25 * f1); stipple(sx, sy + sh * 0.84, sw, sh * 0.16, 2, 0.25 * f1, C.ink3); continue; }
@@ -3120,9 +3182,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                                 const n = 16, m = 12, mw = tcw / n, mh = tch / m;
                                 cells(tcx, tcy, tcw, tch, n, m, 0.5 * f3);
                                 if (mw * s2 > 36) for (let a = 0; a < n; a++) for (let c2 = 0; c2 < m; c2++) { const x0 = tcx + a * mw, y0 = tcy + c2 * mh; if (!vis(x0, y0, mw, mh)) continue; cells(x0 + mw * 0.2, y0 + mh * 0.2, mw * 0.6, mh * 0.6, 2, 2, 0.25 * f3); }   // multiplier · adder · accumulator · operand latch
-                                for (let a = 0; a < n; a++) { const u = (t * 1.2 + a * 0.07) % 1, [X, Y] = S(tcx + (a + 0.5) * mw, tcy + u * tch); dot(X, Y, 2, 0.5 * f3, C.ink); }      // B operands down the columns
-                                for (let c2 = 0; c2 < m; c2++) { const u = (t * 1.2 + c2 * 0.09) % 1, [X, Y] = S(tcx + u * tcw, tcy + (c2 + 0.5) * mh); dot(X, Y, 2, 0.5 * f3, C.ink); }     // A operands along the rows
-                                for (let a = 0; a < n; a++) for (let c2 = 0; c2 < m; c2++) { const ph = (t * 1.6 - (a + c2) * 0.08) % 1; if (ph < 0.2) { const [X, Y] = S(tcx + (a + 0.5) * mw, tcy + (c2 + 0.5) * mh); dot(X, Y, 1.2, f3, C.ink); } }   // products accumulating, a wave across the array
+                                if (smBusy) for (let a = 0; a < n; a++) { const u = (t * 1.2 + a * 0.07) % 1, [X, Y] = S(tcx + (a + 0.5) * mw, tcy + u * tch); dot(X, Y, 2, 0.5 * f3, C.ink); }      // B operands down the columns (while its SM works)
+                                if (smBusy) for (let c2 = 0; c2 < m; c2++) { const u = (t * 1.2 + c2 * 0.09) % 1, [X, Y] = S(tcx + u * tcw, tcy + (c2 + 0.5) * mh); dot(X, Y, 2, 0.5 * f3, C.ink); }     // A operands along the rows
+                                if (smBusy) for (let a = 0; a < n; a++) for (let c2 = 0; c2 < m; c2++) { const ph = (t * 1.6 - (a + c2) * 0.08) % 1; if (ph < 0.2) { const [X, Y] = S(tcx + (a + 0.5) * mw, tcy + (c2 + 0.5) * mh); dot(X, Y, 1.2, f3, C.ink); } }   // products accumulating, a wave across the array
                                 st.deep = true;
                             }
                         }
@@ -3146,40 +3208,58 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                         if (i % 2 === 0) { ctx.globalAlpha = 0.5 * f4; ctx.lineWidth = K.U; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 2 * cw, y); ctx.stroke(); }
                         if (hash(i + 7, j) > 0.7) dot(x + w2 * 0.5, y + rh * (0.3 + 0.4 * hash(i, j + 3)), 1.2, 0.5 * f4, C.ink); });
                 }
-                // FinFET transistors: gate lines crossing fins, contacts between gates
+                // FinFET transistors seen from above: silicon fins in pairs across (thin lines), gates down across them (lines at
+                // data tone, a pitch apart), and a contact (a point) on each fin between two gates: source and drain
                 const f5 = band(4000, 9000, 50000, 110000);
-                if (f5 > 0) { const gp = (mac / 200) * s2, fp = (mac / 150) * s2;
-                    grid(gp, fp, (x, y, i, j) => { lineDots(x, y, x, y + fp, 2, 0.9, 1 * f5, C.ink); if (j % 4 !== 3) lineDots(x, y + fp * 0.5, x + gp, y + fp * 0.5, 2.6, 0.55, 0.5 * f5, C.ink2); if (j % 4 !== 3 && hash(i, j) > 0.5) dotRect(ctx, x + gp * 0.35, y + fp * 0.3, gp * 0.3, fp * 0.4, 1.8, 0.5, C.ink2, 1 * f5); });
+                if (f5 > 0) { const gp = (mac / 120) * s2, fp = (mac / 60) * s2;
+                    grid(gp, fp, (x, y, i, j) => {
+                        ctx.globalAlpha = 0.25 * f5; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U / 2; ctx.beginPath(); [0.35, 0.6].forEach((q) => { ctx.moveTo(x, y + fp * q); ctx.lineTo(x + gp, y + fp * q); }); ctx.stroke();   // two fins
+                        ctx.globalAlpha = 0.5 * f5; ctx.lineWidth = K.U; ctx.beginPath(); ctx.moveTo(x, y + fp * 0.18); ctx.lineTo(x, y + fp * 0.78); ctx.stroke();                                                  // the gate across them
+                        if (hash(i, j) > 0.25) { dot(x + gp * 0.5, y + fp * 0.35, 1.2, 0.5 * f5, C.ink); dot(x + gp * 0.5, y + fp * 0.6, 1.2, 0.5 * f5, C.ink); } });   // contacts
                 }
                 // the silicon lattice: atoms in pairs (the diamond structure seen along [110]) and their bonds
                 const f6 = band(60000, 140000, 2e6, 5e6);
                 // below the crystal everything is drawn about the view centre (the target), at a scale that keeps
-                // growing with the zoom: an atom, its nucleus, a proton, its quarks (sizes compressed, the order true)
+                // growing with the zoom: an atom, its wavefunction, its nucleus (sizes compressed, the order true)
                 const A = st.anc || F.chip.atomNear(st, st.cx, st.cy) || st.tgt, [CX, CY] = S(A[0], A[1]), ring = (r, a, n2, X0 = CX, Y0 = CY) => { const n = n2 || Math.max(24, Math.min(240, Math.round((TAU * r) / 4))); for (let q = 0; q < n; q++) dot(X0 + r * Math.cos((q / n) * TAU), Y0 + r * Math.sin((q / n) * TAU), 0.6, a, C.ink); };
                 const zA = Math.max(1, z / 2e6), a0 = (mac / 2500) * st.s0 * 2e6, rOut = 0.5 * a0 * zA ** 0.69, r0 = rOut / 3.8;   // the outer shell, half a lattice spacing at the handover
                 const hsh = (q, k) => { const h = Math.sin(q * 12.9898 + k * 78.233) * 43758.5453; return h - Math.floor(h); };
-                const f7 = band(2e6, 5e6, 5e7, 1.4e8);
-                if (f7 > 0) {
-                    for (let q = 0; q < 700; q++) { const sh = q % 3, k = [1, 2.4, 3.8][sh], rr = r0 * k * (1 + 0.28 * (hsh(q, 1) + hsh(q, 2) - 1)), an = hsh(q, 3) * TAU + t * 0.05 * (sh + 1); dot(CX + rr * Math.cos(an), CY + rr * Math.sin(an), 0.6, 0.25 * f7, C.ink); }   // the cloud: where each shell's electrons are likely to be
-                    [[1, 2], [2.4, 8], [3.8, 4]].forEach(([k, ne], sh) => { const r = r0 * k; if (r > v.w * 2) return; ring(r, 0.5 * f7); for (let e = 0; e < ne; e++) { const an = (e / ne) * TAU + t * (0.6 / (sh + 1)) + sh; dot(CX + r * Math.cos(an), CY + r * Math.sin(an), 2.4, 1 * f7, C.ink); } });
+                // the atom, quantum mechanically: no orbits, an electron density. Its samples (where an electron would be found)
+                // are drawn once and a few renewed each frame, so the cloud shimmers rather than jumps: a dense core (1s, then
+                // n = 2) and the four valence sp³ hybrids, each ψ ∝ e^(−r/a)(1 + 2.2 (r/a) cos(φ − θ)), pointing along the bonds to
+                // its four neighbours (the tetrahedron seen along [110]), the bonds dotted out to them. Deeper, one hybrid as a
+                // textbook draws it: contour lines of ψ, positive solid, negative dotted, the node (ψ = 0) a line at context tone.
+                // At the end, the nucleus: not marbles but its measured density, flat inside with a soft edge (Woods–Saxon,
+                // radius 3.4 fm, skin 0.55 fm), sampled as points
+                const f7 = band(2e6, 5e6, 5e7, 1.2e8), f8 = band(5e7, 1.2e8, 6e8, 1.2e9), f9 = fadeIn(6e8, 1.2e9);
+                const TH = [54.7, 125.3, 234.7, 305.3].map((d) => (d * Math.PI) / 180), aV = Math.min(r0 * 1.1, Math.min(v.w, v.h) * 0.11);
+                if (f7 > 0 && aV < v.w * 4) {
+                    if (!st.cloud) { const P2 = [], gam = (k) => { let x = 0; for (let q = 0; q < k; q++) x -= Math.log(1 - Math.random()); return x; };
+                        const draw1 = (kind) => { if (kind < 0.12) { const r = gam(3) * 0.05, an = Math.random() * TAU; return [r, an, 1]; } if (kind < 0.32) { const r = gam(5) * 0.16, an = Math.random() * TAU; return [r, an, 2]; }
+                            const th = TH[Math.floor(Math.random() * 4)]; for (;;) { const r = gam(3) * 0.5, an = th + (Math.random() - 0.5) * 1.4, ps = Math.exp(-r) * (1 + 2.2 * r * Math.cos(an - th)); if (ps > 0 && Math.random() < Math.min(1, (ps * ps * r) / 0.55)) return [r, an, 3]; } };
+                        for (let q = 0; q < 1400; q++) P2.push(draw1(Math.random())); st.cloud = { P: P2, draw1 }; }
+                    const cl = st.cloud; if (!still) for (let q = 0; q < 30; q++) { const k = Math.floor(Math.random() * cl.P.length); cl.P[k] = cl.draw1(Math.random()); }   // a few renewed: the shimmer
+                    TH.forEach((th) => { for (let q = 8; q <= 30; q++) { const rr = aV * 4.2 * (q / 30); dot(CX + rr * Math.cos(th), CY + rr * Math.sin(th), 0.6, 0.25 * f7, C.ink); } dot(CX + aV * 4.2 * Math.cos(th), CY + aV * 4.2 * Math.sin(th), 2.4, 0.5 * f7, C.ink); });   // bonds to the neighbours
+                    cl.P.forEach(([r, an, kind]) => dot(CX + r * aV * Math.cos(an), CY + r * aV * Math.sin(an), kind === 3 ? 1.2 : 0.6, (kind === 3 ? 0.5 : 1) * f7, C.ink));
+                    dot(CX, CY, 2.4, f7, C.ink);
                 }
-                // the nucleus: 28 nucleons in a ball, a proton at its centre (filled: protons; rings: neutrons)
-                const R0 = 12 * (z / 5e7), rn = R0 * 0.2;
-                const f8 = band(4e7, 9e7, 8e8, 1.6e9);
-                if (f8 > 0 && rn > 0.4) {
-                    const pts = F.chip.nucleons(st).map(([dx, dy, p2]) => [CX + dx * s2, CY + dy * s2, p2]);
-                    pts.slice().reverse().forEach(([x, y, p2], q) => { const jx = 0 * q + Math.sin(t * 3 + q) * rn * 0.06, jy = 0 * q + Math.cos(t * 2.6 + q * 1.7) * rn * 0.06; ctx.globalAlpha = f8; ctx.beginPath(); ctx.arc(x + jx, y + jy, Math.max(0.6, rn), 0, TAU); if (p2) { ctx.fillStyle = C.ink; ctx.fill(); } else { ctx.fillStyle = C.bg; ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.stroke(); } });
+                if (f8 > 0) {                                                                                          // one hybrid's ψ as contour lines
+                    const RR = Math.min(v.w, v.h) * 0.42 * (1 + 0.25 * Math.log10(Math.max(1, z / 1.2e8))), th = TH[0], a3 = RR / 4.5, G = 72, X0 = CX - RR, Y0 = CY - RR, cs = (2 * RR) / G;
+                    const psi = (x, y) => { const dx = x - CX, dy = y - CY, r = Math.hypot(dx, dy) / a3, c = r ? (dx * Math.cos(th) + dy * Math.sin(th)) / (r * a3) : 0; return Math.exp(-r) * (1 + 2.2 * r * c); };
+                    const V = new Float64Array((G + 1) * (G + 1)); let mx = 0; for (let j = 0; j <= G; j++) for (let i = 0; i <= G; i++) { const val = psi(X0 + i * cs, Y0 + j * cs); V[j * (G + 1) + i] = val; mx = Math.max(mx, Math.abs(val)); }
+                    const iso = (lv, solid, tone) => { ctx.globalAlpha = tone * f8; ctx.strokeStyle = C.ink; ctx.lineWidth = solid ? K.U : K.U / 2; ctx.setLineDash(solid ? [] : [K.U, 2 * K.U]); ctx.beginPath();
+                        for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const c4 = [V[j * (G + 1) + i] - lv, V[j * (G + 1) + i + 1] - lv, V[(j + 1) * (G + 1) + i + 1] - lv, V[(j + 1) * (G + 1) + i] - lv], xy = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], cut = [];
+                            for (let e = 0; e < 4; e++) { const p0 = c4[e], p1 = c4[(e + 1) % 4]; if ((p0 > 0) !== (p1 > 0)) { const f = p0 / (p0 - p1), A0 = xy[e], A1 = xy[(e + 1) % 4]; cut.push([X0 + (A0[0] + (A1[0] - A0[0]) * f) * cs, Y0 + (A0[1] + (A1[1] - A0[1]) * f) * cs]); } }
+                            for (let e = 0; e + 1 < cut.length; e += 2) { ctx.moveTo(cut[e][0], cut[e][1]); ctx.lineTo(cut[e + 1][0], cut[e + 1][1]); } }
+                        ctx.stroke(); ctx.setLineDash([]); };
+                    [0.08, 0.25, 0.5, 0.8].forEach((q) => iso(q * mx, true, 1)); [0.04, 0.1].forEach((q) => iso(-q * mx, false, 0.5)); iso(0, false, 0.25);
+                    dot(CX, CY, 2.4, f8, C.ink);
                 }
-                // the chosen nucleon: its edge a dotted ring; inside, its three quarks joined by gluons, in a field of sea
-                // quarks; quarks stay points however far you zoom
-                const f9 = fadeIn(8e8, 1.6e9);
-                if (f9 > 0) { const Rp = rn, nu = F.chip.nucleons(st)[st.sel || 0], PX = CX + nu[0] * s2, PY = CY + nu[1] * s2;
-                    if (Rp < v.w * 3) ring(Rp, 0.5 * f9, 0, PX, PY);
-                    const qs = F.chip.quarks(st, nu[2]).map(([dx, dy, nm], k) => [PX + dx * s2 + Math.sin(t * 2 + k) * Math.min(3, Rp * 0.03), PY + dy * s2 + Math.cos(t * 1.7 + k) * Math.min(3, Rp * 0.03), nm]);
-                    const span = Math.min(Rp, v.w * 1.5), fq = qs[st.qk || 0];
-                    for (let q = 0; q < 520; q++) { const rr = span * (Rp < v.w ? Math.sqrt(hsh(q, 5)) : hsh(q, 5) ** 1.6), an = hsh(q, 6) * TAU + t * 0.3 * ((q % 3) - 1), life = 0.5 + 0.5 * Math.sin(t * 2.4 + q * 1.3), ox = Rp < v.w ? PX : fq[0], oy = Rp < v.w ? PY : fq[1]; dot(ox + rr * Math.cos(an) * 1.2, oy + rr * Math.sin(an) * 1.2, life > 0.8 ? 1.2 : 0.6, 0.25 * f9 * life, C.ink); }   // sea quarks and gluons, appearing and vanishing
-                    qs.forEach(([x, y], k) => { const [x2, y2] = qs[(k + 1) % 3]; const L = Math.hypot(x2 - x, y2 - y), n = Math.max(8, Math.min(400, Math.round(L / 4))); for (let q = 1; q < n; q++) { const u = q / n, w = Math.sin(u * Math.PI * Math.max(6, L / 30) + t * 6) * 3; const nx2 = -(y2 - y) / (L || 1), ny2 = (x2 - x) / (L || 1); const gx = x + (x2 - x) * u + nx2 * w, gy = y + (y2 - y) * u + ny2 * w; if (gx > VX0 && gx < VX1 && gy > VY0 && gy < VY1) dot(gx, gy, 0.6, 0.5 * f9, C.ink); } });   // gluons: wavy point lines
-                    qs.forEach(([x, y, nm]) => { dot(x, y, 2.4, 1 * f9, C.ink); if (x > v.x && x < v.x + v.w && y > v.y && y < v.y + v.h) label(ctx, C, st, nm, x + K.LN / 4, y - K.LN, 'left'); }); }
+                if (f9 > 0) {                                                                                           // the nucleus: its density, sampled
+                    if (!st.nuc) { const P3 = []; for (let q = 0; q < 1600; q++) { let r; for (;;) { r = Math.random() * 1.6; if (Math.random() < (r * r * 2.6) / (1 + Math.exp((r - 1) / 0.16)) / 1.1) break; } const c = 2 * Math.random() - 1, an = Math.random() * TAU; P3.push([r * Math.sqrt(1 - c * c), an]); } st.nuc = P3; }
+                    const RN = Math.min(v.w, v.h) * 0.3; st.nuc.forEach(([r, an]) => dot(CX + r * RN * Math.cos(an), CY + r * RN * Math.sin(an), 0.6, 0.5 * f9, C.ink));
+                    ring(RN, 0.5 * f9);                                                                                   // the radius, 3.4 fm
+                }
                 if (f6 > 0) { const a2 = (mac / 2500) * s2, b2 = a2 * 1.41;
                     grid(a2, b2, (x, y, i, j) => { const off = (j % 2) * a2 * 0.5, ax = x + off, ay = y, bx = ax + a2 * 0.25, by = ay + b2 * 0.25; dot(ax, ay, Math.min(4, a2 * 0.12), 1 * f6, C.ink); dot(bx, by, Math.min(4, a2 * 0.12), 1 * f6, C.ink); lineDots(ax, ay, bx, by, 2.5, 0.5, 0.5 * f6, C.ink2); lineDots(bx, by, bx + a2 * 0.25, by - b2 * 0.25 + b2 * 0.5 * 0, 2.5, 0.45, 0.25 * f6, C.ink3); });
                 }
@@ -3196,8 +3276,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             }
             ctx.restore();
             // labels
-            const level = z < 2.5 ? 'chip' : z < 12 ? 'GPC: 10 TPCs × 2 SMs' : z < 55 ? 'SM: 4 quadrants (scheduler · register file · 32 lanes · tensor core), L1 / shared memory below' : z < 700 ? 'tensor core: a grid of multiply-accumulate units' : z < 7000 ? 'a multiply-accumulate unit: rows of logic cells, metal tracks, vias' : z < 90000 ? 'FinFET transistors: gates across silicon fins (a 4 nm-class process)' : z < 3e6 ? 'the silicon crystal: atoms 0.54 nm apart · click an atom' : z < 7e7 ? 'a silicon atom: 14 electrons in three shells around a nucleus 10⁵ times smaller' : z < 1.2e9 ? 'the nucleus: 14 protons, 14 neutrons, about 6 fm across · click a nucleon' : z < 2e10 ? (F.chip.nucleons(st)[st.sel || 0][2] ? 'a proton: two up quarks and a down quark, held by gluons · click a quark' : 'a neutron: an up quark and two down quarks, held by gluons · click a quark') : `${F.chip.quarks(st, F.chip.nucleons(st)[st.sel || 0][2])[st.qk || 0][2] === 'u' ? 'an up' : 'a down'} quark: no measured size, below 10⁻¹⁹ m`;
-            label(ctx, C, st, hb && z < 2.5 ? F.chip.NAMES[hb.kind] : `${level} · ${z < 10 ? z.toFixed(1) : z < 10000 ? Math.round(z) : z < 1e6 ? Math.round(z / 1000) + 'k' : '10' + String(Math.floor(Math.log10(z))).split('').map((d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]).join('')}×`, st.fx + K.LN / 4, st.vy0 + K.LN / 4, 'left', true);
+            const level = z < 2.5 ? 'chip' : z < 12 ? 'GPC: 10 TPCs × 2 SMs' : z < 55 ? 'SM: 4 quadrants (scheduler · register file · 32 lanes · tensor core), L1 / shared memory below' : z < 700 ? 'tensor core: a grid of multiply-accumulate units' : z < 7000 ? 'a multiply-accumulate unit: rows of logic cells, metal tracks, vias' : z < 90000 ? 'FinFET transistors: gates across silicon fins (a 4 nm-class process)' : z < 3e6 ? 'the silicon crystal: atoms 0.54 nm apart · click an atom' : z < 8e7 ? 'a silicon atom, quantum mechanically: no orbits but an electron density, a dense core and four sp³ lobes along its bonds (dotted) to its neighbours' : z < 8e8 ? 'one bond orbital ψ: contour lines, positive solid, negative dotted; the node, ψ = 0, between' : 'the nucleus: 14 protons and 14 neutrons as one density, flat inside, a soft edge; radius 3.4 fm (ring), 10⁵ times smaller than the atom';
+            const cb = st.blocks[F.chip.at(st, st.cx, st.cy)], deepIn = cb && cb.kind !== 'gpc' && z >= 2.5 ? (F.chip.DEPTH[cb.kind] || []).filter((d, k) => lvl(cb, k) > 0.5).pop() : null;
+            label(ctx, C, st, hb && z < 2.5 ? F.chip.NAMES[hb.kind] : deepIn ? deepIn[1] : `${level} · ${z < 10 ? z.toFixed(1) : z < 10000 ? Math.round(z) : z < 1e6 ? Math.round(z / 1000) + 'k' : '10' + String(Math.floor(Math.log10(z))).split('').map((d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]).join('')}×`, st.fx + K.LN / 4, st.vy0 + K.LN / 4, 'left', true);
             if (!still && (st.fly || st.press || (hb && z < 2.5) || z > 40)) st.wake = Math.max(st.wake || 0, 0.3);
         },
     };
