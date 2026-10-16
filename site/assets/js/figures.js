@@ -3504,7 +3504,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     // new arena at the level. Leaving the figure stops training. The rows set the learning rate, exploration, discount and
     // batch size (σ also while trying it).
     F.rlcont = {
-        bleed: true, tall: true, AGENTS: 24, SIGMA: 0.5, ALPHA: 0.003, SPREAD: 0.08, ITEMS: 5, ITEM: 0.3, ITEM_R: 0.04, RAYS: 8, RANGE: 0.2, GAMMA: 0.97, MAXT: 130, SPEED: 0.026, SHAPE: 2, TICK: 0.005, COLLIDE: 0.02, WALLGAP: 0.03, FX: 22, FY: 18, RBF: 0.036, GX: 60, GY: 51, HT: 1,
+        bleed: true, tall: true, AGENTS: 24, SIGMA: 0.5, ALPHA: 0.003, SPREAD: 0.08, ITEMS: 5, ITEM: 0.3, ITEM_R: 0.02, GOAL_R: 0.045, RAYS: 8, RANGE: 0.2, GAMMA: 0.97, MAXT: 130, SPEED: 0.026, SHAPE: 2, TICK: 0.005, COLLIDE: 0.02, WALLGAP: 0.03, FX: 22, FY: 18, RBF: 0.036, GX: 60, GY: 51, HT: 1,
         title: 'RL in continuous space', note: '24 agents with ray-cast vision share one Gaussian policy over velocities, trained by batched REINFORCE with a time-dependent baseline and potential-based shaping.',
         init(R, rand) {
             const fx = R.fx ?? R.x, vy0 = (R.vy0 ?? R.y) + 10, vy1 = (R.vy1 ?? R.y + R.h) - 22, W = R.x + R.w - fx, L = K.LN;
@@ -3575,7 +3575,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                     for (let k = 0; k < nw; k++) { const vert = r() < 0.5, x = 0.05 + r() * 0.9, y = r() * HT, L2 = 0.14 + r() * 0.18, t2 = 0.035; st.walls.push(vert ? [x - t2 / 2, Math.max(0, y - L2 / 2), x + t2 / 2, Math.min(HT, y + L2 / 2)] : [Math.max(0, x - L2 / 2), y - t2 / 2, Math.min(1, x + L2 / 2), y + t2 / 2]); }
                     for (let k = 0; k < L.pits; k++) st.pits.push([0.08 + r() * 0.84, 0.08 + r() * (HT - 0.16)]);
                     const nearWall = (x, y, m) => st.walls.some(([x0, y0, x1, y1]) => x > x0 - m && x < x1 + m && y > y0 - m && y < y1 + m);
-                    if (F.rlcont.blocked(st, ...st.goal) || nearWall(...st.start, F.rlcont.SPREAD + 0.02) || st.pits.some(([px, py]) => Math.hypot(px - st.goal[0], py - st.goal[1]) < 0.14 || Math.hypot(px - st.start[0], py - st.start[1]) < 0.16)) continue;
+                    if (F.rlcont.blocked(st, ...st.goal) || nearWall(...st.start, F.rlcont.SPREAD + 0.02) || st.pits.some(([px, py]) => nearWall(px, py, 0.06)) || st.pits.some(([px, py]) => Math.hypot(px - st.goal[0], py - st.goal[1]) < 0.14 || Math.hypot(px - st.start[0], py - st.start[1]) < 0.16)) continue;
                     const d = F.rlcont.bfs(st, 0.1), at = (x, y) => d[Math.floor((y / HT) * F.rlcont.GY) * GX + Math.floor(x * GX)];
                     const straight = Math.hypot(st.goal[0] - st.start[0], st.goal[1] - st.start[1]), safe = at(st.start[0], st.start[1]);
                     if (!isFinite(safe) || safe < straight * L.detour[0] || safe > straight * L.detour[1]) continue;              // a real detour, not a maze
@@ -3674,8 +3674,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 // potential-based shaping (Ng et al.): γΦ(s′) − Φ(s) with Φ = −distance to the goal; it leaves the optimal policy unchanged
                 const Phi = (x, y) => -F.rlcont.geo(st, x, y) * F.rlcont.SHAPE;                   // distance around the obstacles
                 let r = -0.01 - (hit ? F.rlcont.COLLIDE : 0) + GAMMA * Phi(ag.x, ag.y) - Phi(ag.px, ag.py), end = false;
-                (st.items || []).forEach(([qx, qy], i) => { if (!(ag.got & (1 << i)) && Math.hypot(ag.x - qx, ag.y - qy) < F.rlcont.ITEM_R + 0.01) { ag.got |= 1 << i; r += F.rlcont.ITEM; } });   // a reward item, once each an episode
-                if (Math.hypot(ag.x - st.goal[0], ag.y - st.goal[1]) < 0.06) { r = 1; end = true; }
+                (st.items || []).forEach(([qx, qy], i) => { if (!(ag.got & (1 << i)) && Math.hypot(ag.x - qx, ag.y - qy) < F.rlcont.ITEM_R) { ag.got |= 1 << i; r += F.rlcont.ITEM; } });   // a reward item, once each an episode
+                if (Math.hypot(ag.x - st.goal[0], ag.y - st.goal[1]) < F.rlcont.GOAL_R) { r = 1; end = true; }
                 else if (st.pits.some(([px, py]) => Math.hypot(ag.x - px, ag.y - py) < 0.05)) { r = -1; end = true; }
                 if (learn) ag.traj.push({ o, h, m, a, r }); ag.t = (ag.t || 0) + 1; ag.won = end && r === 1; if (end || ag.t >= MAXT) ag.done = true;
             });
@@ -3768,8 +3768,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             K.line(ctx, C, K.rect(A.x, A.y, A.s, A.s * HT), -1, 0.5, true);
             st.walls.forEach(([x0, y0, x1, y1]) => { const [X0, Y0] = P(x0, y0), [X1, Y1] = P(x1, y1); K.line(ctx, C, K.rect(X0, Y0, X1 - X0, Y1 - Y0), -1, 0.5, true); for (let yy = Y0 + 2 * K.U; yy < Y1 - K.U; yy += 2 * K.U) for (let xx = X0 + 2 * K.U; xx < X1 - K.U; xx += 2 * K.U) K.pt(ctx, C, xx, yy, -1, 0.25); });
             st.pits.forEach(([px, py]) => { const [X, Y] = P(px, py); K.dotted(ctx, C, K.circle(X, Y, 0.05 * A.s).concat([K.circle(X, Y, 0.05 * A.s)[0]]), -1, 0.5); });
-            { const [X, Y] = P(...st.goal); K.line(ctx, C, K.circle(X, Y, 10 * K.U), 0, 1, true); K.line(ctx, C, K.circle(X, Y, 4 * K.U), 0, 1, true); }
-            (st.items || []).forEach(([qx, qy]) => K.pt(ctx, C, ...P(qx, qy), 1, 0.5));   // reward items
+            // the goal and the items drawn at the size they are reached at
+            { const [X, Y] = P(...st.goal); K.line(ctx, C, K.circle(X, Y, F.rlcont.GOAL_R * A.s), 0, 1, true); K.line(ctx, C, K.circle(X, Y, 4 * K.U), 0, 1, true); }
+            (st.items || []).forEach(([qx, qy]) => { const [X, Y] = P(qx, qy); ctx.globalAlpha = 0.5; ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(X, Y, F.rlcont.ITEM_R * A.s, 0, TAU); ctx.fill(); });
             { const [X, Y] = P(...st.start), ring = K.circle(X, Y, F.rlcont.SPREAD * A.s); K.dotted(ctx, C, ring.concat([ring[0]]), -1, 0.5); }   // where the agents start
             { const cx = st.btn.x, cy = st.btn.y, u5 = 4 * K.U;
               if (train) { K.line(ctx, C, [[cx - u5 / 2, cy - u5], [cx - u5 / 2, cy + u5]], 1, 1); K.line(ctx, C, [[cx + u5 / 2, cy - u5], [cx + u5 / 2, cy + u5]], 1, 1); }
