@@ -1453,8 +1453,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             F.fold.dataset(st, F.fold.shape(r)); st.prevLab = null; st.train = null;
             // trained before it is shown, off the page's way: started when the browser is first idle, then in ~6 ms chunks
             // that yield to the page between them (waiting for idle time again for each chunk could take minutes on a busy
-            // page). The best of up to four starts is kept; the figure fades in at the first start reaching 80% (or after the
-            // fourth), and a later, better start takes its place
+            // page). The first start reaching 80% is shown, else the best of four
             F.fold.reinit(st); st.acc = F.fold.accuracy(st); st.hidden = true;
             const pre = { tries: 0, steps: 0, best: null }, settle = () => { st.P = pre.best.P.slice(); st.acc = pre.best.a; st.m.fill(0); st.v.fill(0); st.it++; if (st.hidden) { st.hidden = false; st.shownAt = performance.now(); } st.request?.(); };
             const chunk = () => {
@@ -1463,8 +1462,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 if (pre.steps < 4 * F.fold.STEPS) { setTimeout(chunk, 0); return; }
                 const a = F.fold.accuracy(st), better = !pre.best || a > pre.best.a; if (better) pre.best = { a, P: st.P.slice() };
                 pre.tries++;
-                if (pre.best.a >= 0.9 || pre.tries >= 4) { settle(); return; }
-                if (better && pre.best.a >= 0.8) settle();
+                if (pre.best.a >= 0.8 || pre.tries >= 4) { settle(); return; }   // the shown weights are never trained on afterwards
                 F.fold.reinit(st); pre.steps = 0; setTimeout(chunk, 0);
             };
             idle(chunk);
@@ -1573,9 +1571,13 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 if (st.train.left <= 0) { if (st.acc < 0.93 && st.train.tries < 3) { const tr = st.train.tries + 1; F.fold.reinit(st); st.train = { left: F.fold.STEPS, tries: tr }; } else st.train = null; }
             }
             const u = st.u, mapped = st.pts.map((p) => F.fold.apply(st, p, u));
-            const mags = mapped.map((q) => Math.max(Math.abs(q[0]), Math.abs(q[1]))).sort((a, b) => a - b), ext = Math.max(0.6, mags[Math.floor(mags.length * 0.94)] * 1.05);
-            st.ext = still ? ext : st.ext + (ext - st.ext) * 0.2;
-            const rs = sc / st.ext, P = (c, q, s2 = sc) => [c[0] + q[0] * s2, c[1] - q[1] * s2];
+            // the output is framed on the points themselves (after the folds they all lie in one quadrant): centred on the
+            // cloud, as large as the panel allows from its 3rd to its 97th percentile, following it smoothly through the walk
+            const xs = mapped.map((q) => q[0]).sort((a, b) => a - b), ys = mapped.map((q) => q[1]).sort((a, b) => a - b), qn = (a, f) => a[Math.floor((a.length - 1) * f)];
+            const vx = (qn(xs, 0.03) + qn(xs, 0.97)) / 2, vy = (qn(ys, 0.03) + qn(ys, 0.97)) / 2, ext = Math.max(0.15, (Math.max(qn(xs, 0.97) - qn(xs, 0.03), qn(ys, 0.97) - qn(ys, 0.03)) / 2) * 1.2);
+            if (!st.view || still) st.view = { x: vx, y: vy, e: ext }; else { st.view.x += (vx - st.view.x) * 0.2; st.view.y += (vy - st.view.y) * 0.2; st.view.e += (ext - st.view.e) * 0.2; }
+            st.ext = st.view.e;
+            const rs = sc / st.view.e, P = (c, q, s2 = sc) => [c[0] + q[0] * s2, c[1] - q[1] * s2], Pout = (q) => [st.right[0] + (q[0] - st.view.x) * rs, st.right[1] - (q[1] - st.view.y) * rs];
             // the one point: size u·2^k, tone 2^−k; under 1.4px a square on the pixel grid
             if (st.hidden) return;
             const fadeIn = Math.min(1, (performance.now() - (st.shownAt || 0)) / (4 * TB * 1000)), fd = smooth(fadeIn);
@@ -1607,11 +1609,11 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             ctx.restore();
             // output panel: the same field and points, bent by the layers so far; at the end, the readout's line
             clipTo(st.right);
-            st.lat.forEach((g) => { const [x, y] = P(st.right, F.fold.apply(st, g, u), rs); pt(x, y, -1, 0.25); });
-            st.pts.forEach((p, i) => { const [x, y] = P(st.right, mapped[i], rs), [k, tone] = style(i); pt(x, y, k, tone); });
+            st.lat.forEach((g) => { const [x, y] = Pout(F.fold.apply(st, g, u)); pt(x, y, -1, 0.25); });
+            st.pts.forEach((p, i) => { const [x, y] = Pout(mapped[i]), [k, tone] = style(i); pt(x, y, k, tone); });
             const done = smooth((u - (L - 0.15)) / 0.15);
-            if (done > 0) { const o = L * 6, w0 = st.P[o], w1 = st.P[o + 1], c0 = st.P[o + 2], nn = w0 * w0 + w1 * w1 || 1, bz = [(-c0 * w0) / nn, (-c0 * w1) / nn], dd = [-w1 / Math.sqrt(nn), w0 / Math.sqrt(nn)], ex = 3 * st.ext;
-                const [xa, ya] = P(st.right, [bz[0] - dd[0] * ex, bz[1] - dd[1] * ex], rs), [xb, yb] = P(st.right, [bz[0] + dd[0] * ex, bz[1] + dd[1] * ex], rs);
+            if (done > 0) { const o = L * 6, w0 = st.P[o], w1 = st.P[o + 1], c0 = st.P[o + 2], nn = w0 * w0 + w1 * w1 || 1, bz = [st.view.x - ((w0 * st.view.x + w1 * st.view.y + c0) / nn) * w0, st.view.y - ((w0 * st.view.x + w1 * st.view.y + c0) / nn) * w1], dd = [-w1 / Math.sqrt(nn), w0 / Math.sqrt(nn)], ex = 3 * st.ext;
+                const [xa, ya] = Pout([bz[0] - dd[0] * ex, bz[1] - dd[1] * ex]), [xb, yb] = Pout([bz[0] + dd[0] * ex, bz[1] + dd[1] * ex]);
                 ctx.globalAlpha = done * fd; ctx.strokeStyle = C.ink; ctx.lineWidth = U; ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke(); }
             ctx.restore();
             // the depth: a slider over the layers (a tick each), the value where the plane is in the walk
@@ -1619,12 +1621,12 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             slider(ctx, C, st, A.x0, A.x1, A.y, u / L, `depth ${u >= L ? L : u.toFixed(1)} of ${L}`, L + 1);
             // labels, on hover only
             label(ctx, C, st, `input · ${st.shape.name}`, st.left[0], st.left[1] - side / 2 - 12, 'center');
-            const kk = Math.min(L - 1, Math.floor(u)), stage = st.train ? `training · ${Math.round(st.acc * 100)}%` : u >= L ? `separable · ${Math.round(st.acc * 100)}%` : (u - kk) * 2 < 1 ? `layer ${kk + 1} · stretch` : `layer ${kk + 1} · fold`;
+            const kk = Math.min(L - 1, Math.floor(u)), stage = st.train ? `training · ${Math.round(st.acc * 100)}%` : u >= L ? `after ${L} folds · the line splits ${Math.round(st.acc * 100)}%` : (u - kk) * 2 < 1 ? `layer ${kk + 1} · stretch` : `layer ${kk + 1} · fold`;
             label(ctx, C, st, stage, st.right[0], st.right[1] - side / 2 - 12, 'center', true);
             // the layers: a slider with a tick a layer
             { const LR = st.lrow, Lv = st.rowDrag ? st.Lpick : st.L; slider(ctx, C, st, LR.x0, LR.x1, LR.y, (Lv - F.fold.LMIN) / (F.fold.LMAX - F.fold.LMIN), `${Lv} layer${Lv > 1 ? 's' : ''} · ${st.reg ? st.reg.n : '–'} linear regions`, F.fold.LMAX - F.fold.LMIN + 1); }
             if (!still && (flipping || st.flipT == null && st.prevLab)) st.wake = Math.max(st.wake || 0, 0.3);
-            if (!still && (st.train || st.anim || st.press || Math.abs(st.ext - ext) > 0.01)) st.wake = Math.max(st.wake || 0, 0.3);
+            if (!still && (st.train || st.anim || st.press || Math.abs(st.view.e - ext) > 0.005)) st.wake = Math.max(st.wake || 0, 0.3);
         },
     };
 
