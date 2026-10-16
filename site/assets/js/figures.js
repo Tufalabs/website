@@ -43,6 +43,13 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     };
 
     const F = {};
+    // how much of the machine a figure may use: at most half its cores for workers; a worker that trains for long works
+    // in slices with rests on smaller machines (all of a core from 8 cores, 70% from 4, else half); a low-end device
+    // (2 cores or fewer, or 2 GB of memory or less) skips optional work
+    const DEVICE = (() => { const nav = typeof navigator === 'undefined' ? {} : navigator, cores = nav.hardwareConcurrency || 2, mem = nav.deviceMemory || 8;
+        return { workers: Math.max(1, Math.min(4, Math.floor(cores / 2))), duty: cores >= 8 ? 1 : cores >= 4 ? 0.7 : 0.5, low: cores <= 2 || mem <= 2 }; })();
+    // work that can wait starts when the browser is idle (never competing with the page loading)
+    const idle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
 
     // A feed-forward network: dotted connections; one signal travels as a soft glow
     F.mlp = {
@@ -1246,10 +1253,10 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     // 2^−k ink); a line is joined points (width u·2^k); dotted is points spaced four radii; a field is points on a lattice.
     // Spacing is in quarter lines; durations are beats τ·2^k.
     const K = {
-        U: 1.2, LN: 24, TB: 0.12,
+        U: 1.2, LN: 24, TB: 0.12, fade: 1,
         r(k) { return K.U * 2 ** k; },
-        pt(ctx, C, x, y, k, tone) { const rr = K.r(k); ctx.globalAlpha = tone; ctx.fillStyle = C.ink; if (rr < 1.4) { ctx.fillRect(x - rr, y - rr, 2 * rr, 2 * rr); return; } ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU); ctx.fill(); },
-        line(ctx, C, pts, k, tone, close) { if (pts.length < 2) return; ctx.globalAlpha = tone; ctx.strokeStyle = C.ink; ctx.lineWidth = K.r(k); ctx.setLineDash([]); ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); if (close) ctx.closePath(); ctx.stroke(); },
+        pt(ctx, C, x, y, k, tone) { const rr = K.r(k); ctx.globalAlpha = tone * K.fade; ctx.fillStyle = C.ink; if (rr < 1.4) { ctx.fillRect(x - rr, y - rr, 2 * rr, 2 * rr); return; } ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU); ctx.fill(); },
+        line(ctx, C, pts, k, tone, close) { if (pts.length < 2) return; ctx.globalAlpha = tone * K.fade; ctx.strokeStyle = C.ink; ctx.lineWidth = K.r(k); ctx.setLineDash([]); ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); if (close) ctx.closePath(); ctx.stroke(); },
         // points along a polyline, one every four radii, by arc length
         dotted(ctx, C, pts, k, tone) { const step = 4 * K.r(k); let carry = 0; for (let i = 1; i < pts.length; i++) { const [ax, ay] = pts[i - 1], [bx, by] = pts[i], L = Math.hypot(bx - ax, by - ay); let d = carry; while (d <= L) { K.pt(ctx, C, ax + ((bx - ax) * d) / L, ay + ((by - ay) * d) / L, k, tone); d += step; } carry = d - L; } },
         circle(cx, cy, rr, n = 48) { return Array.from({ length: n }, (_, i) => [cx + rr * Math.cos((i / n) * TAU), cy + rr * Math.sin((i / n) * TAU)]); },
@@ -3518,15 +3525,21 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             F.rlcont.generate(st);
             // a head start: trained quietly while the page opens (PRE seconds, as many batches as fit, at the larger learning
             // rate that learns fastest at first and later turns unstable), then a still of the policy's episode, until hovered
-            const base = st.p.alpha; st.p.alpha = F.rlcont.PRE_ALPHA; const spawned = F.rlcont.spawn(st, 1e6); st.p.alpha = base;
-            if (spawned) { st.mode = 'train'; st.pre = true; st.preT = setTimeout(() => { if (st.pre) { st.pre = false; st.afterPre = true; F.rlcont.mode(st, 'play'); } }, F.rlcont.PRE * 1000); }
+            // its contents wait, unseen, for the arena it will show (the opening, after the head start), then fade in
+            const show = () => { st.hidden = false; st.shownAt = performance.now(); st.request?.(); };
+            st.hidden = !DEVICE.low; st.show = show; if (DEVICE.low) st.shownAt = performance.now();
+            if (!DEVICE.low) idle(() => {
+                if (st.disposed || st.mode !== 'play' || st.batch) { show(); return; }
+                const base = st.p.alpha; st.p.alpha = F.rlcont.PRE_ALPHA; const spawned = F.rlcont.spawn(st, 1e6); st.p.alpha = base;
+                if (spawned) { st.mode = 'train'; st.pre = true; st.preT = setTimeout(() => { if (st.pre) { st.pre = false; st.afterPre = true; F.rlcont.mode(st, 'play'); } }, F.rlcont.PRE * 1000); } else show();
+            });
             return st;
         },
         // the opening still: of up to five fresh arenas at the level reached, the one whose episode brings the most agents to
         // the goal (a choice of picture only; training never sees it)
         opening(st) {
             let best = null;
-            for (let k = 0; k < 5; k++) {
+            for (let k = 0; k < (DEVICE.low ? 1 : 5); k++) {
                 F.rlcont.generate(st); F.rlcont.rollout(st); const won = st.agents.filter((ag) => ag.won).length;
                 if (!best || won > best.won) best = { won, start: st.start, goal: st.goal, walls: st.walls, pits: st.pits, items: st.items, agents: st.agents, lvl: st.arenaLevel };
                 if (won >= st.agents.length * 0.75) break;
@@ -3544,13 +3557,13 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         spawn(st, budget = 4000) {
             F.rlcont.dispose(st);
             if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return false;
-            const RL = F.rlcont, skip = ['init', 'draw', 'pointer', 'ROWS', 'spawn', 'dispose', 'mode'];
+            const RL = F.rlcont, skip = ['init', 'draw', 'pointer', 'ROWS', 'spawn', 'dispose', 'mode', 'away', 'back', 'opening', 'rollout', 'record'];
             const parts = Object.entries(RL).filter(([k]) => !skip.includes(k)).map(([k, v]) => (typeof v === 'function' ? v.toString() : `${k}: ${JSON.stringify(v)}`));
-            const src = `const TAU = Math.PI * 2, F = { rlcont: { ${parts.join(',\n')} } }, RL = F.rlcont; let st = null, budget = 0, timer = 0, sent = 0;
+            const src = `const TAU = Math.PI * 2, DUTY = ${DEVICE.duty}, F = { rlcont: { ${parts.join(',\n')} } }, RL = F.rlcont; let st = null, budget = 0, timer = 0, sent = 0;
                 const loop = () => { timer = 0; if (!st || budget <= 0) return; const t0 = Date.now();
-                    while (budget > 0 && Date.now() - t0 < 50) { RL.generate(st); const b = st.batch; while (st.batch === b) RL.step(st); budget--;
+                    while (budget > 0 && Date.now() - t0 < 40) { RL.generate(st); const b = st.batch; while (st.batch === b) RL.step(st); budget--;
                         postMessage({ batch: st.batch, level: st.level, ret: st.curve[st.curve.length - 1], won: st.won, net: Date.now() - sent > 100 ? (sent = Date.now(), { W1: Array.from(st.net.W1), W2: Array.from(st.net.W2) }) : null }); }
-                    timer = setTimeout(loop, 0); };
+                    timer = setTimeout(loop, Math.round((Date.now() - t0) * (1 - DUTY) / DUTY)); };   // slices with rests on smaller machines
                 onmessage = (e) => { const m = e.data;
                     if (m.init) { let s0 = m.seed >>> 0; const r = () => { s0 = (s0 + 0x6D2B79F5) >>> 0; let t = s0; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
                         st = { r, start: [0.07, RL.HT / 2], goal: [0.9, RL.HT / 2], walls: [], pits: [], agents: [], batch: m.batch, level: m.level, atLevel: [], curve: [], todo: 1e9, p: m.p,
@@ -3564,19 +3577,29 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             st.worker.onmessage = (e) => {
                 const m = e.data; st.lastMsg = performance.now();
                 if (m.final) { const f = m.final; Object.assign(st.net, { W1: Float64Array.from(f.W1), W2: Float64Array.from(f.W2), m: f.m.map((a) => Float64Array.from(a)), v: f.v.map((a) => Float64Array.from(a)), t: f.t }); st.batch = f.batch; st.level = f.level; F.rlcont.dispose(st); st.handing?.(); return; }
-                st.batch = m.batch; st.level = m.level; st.curve.push(m.ret); (st.wins = st.wins || []).push(m.won); if (st.curve.length > 3000) { st.curve.shift(); st.wins.shift(); }
+                st.batch = m.batch; st.level = m.level; F.rlcont.record(st, m.ret, m.won);
                 if (m.net) { st.net.W1 = Float64Array.from(m.net.W1); st.net.W2 = Float64Array.from(m.net.W2); }
                 st.request?.();
             };
             const n = st.net; st.worker.postMessage({ init: true, seed: Math.floor(st.r() * 2 ** 31), batch: st.batch, level: st.level || 0, p: st.p, net: { W1: Array.from(n.W1), W2: Array.from(n.W2), m: n.m.map((a) => Array.from(a)), v: n.v.map((a) => Array.from(a)), t: n.t }, more: budget });
             return true;
         },
+        // the run's history: buckets of `span` batches (mean return, share at goal); past 400 buckets neighbours merge and the
+        // span doubles, so the plot always shows the whole run at one resolution
+        record(st, ret, won) {
+            const H = (st.hist = st.hist || []), span = (st.span = st.span || 1), b = H[H.length - 1];
+            if (b && b.n < span) { b.r += (ret - b.r) / (b.n + 1); b.w += (won - b.w) / (b.n + 1); b.n++; } else H.push({ r: ret, w: won, n: 1 });
+            if (H.length > 400) { const M = []; for (let i = 0; i < H.length; i += 2) { const a = H[i], c = H[i + 1]; if (!c) { M.push(a); continue; } const n = a.n + c.n; M.push({ r: (a.r * a.n + c.r * c.n) / n, w: (a.w * a.n + c.w * c.n) / n, n }); } st.hist = M; st.span = span * 2; }
+        },
         dispose(st) { clearTimeout(st.preT); if (st.worker) { st.worker.terminate(); st.worker = null; } },
+        // out of sight: training stops at once (no worker left), the episode in flight runs out when it is seen again
+        away(st) { clearTimeout(st.preT); st.pre = false; st.afterPre = false; if (st.hidden) { st.hidden = false; st.shownAt = 0; } if (st.worker) { st.worker.terminate(); st.worker = null; } if (st.mode === 'train') { st.mode = 'play'; st.finishing = true; } },
+        back() {},
         // a click on the arena: start training (in the worker, across arenas) or stop it and try the trained policy here
         mode(st, to, keep = false) {
             if (to === st.mode) return;
             if (to === 'train') { if (!F.rlcont.spawn(st)) return; st.mode = 'train'; F.rlcont.generate(st); F.rlcont.newBatch(st, F.rlcont.AGENTS); }
-            else { st.handing = () => { st.handing = null; st.mode = 'play'; st.played = performance.now(); st.finishing = keep; if (st.afterPre) { st.afterPre = false; st.finishing = true; F.rlcont.opening(st); } else if (!keep) { F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); } st.request?.(); }; if (st.worker) st.worker.postMessage({ stop: true }); else st.handing(); }
+            else { st.handing = () => { st.handing = null; st.mode = 'play'; st.played = performance.now(); st.finishing = keep; if (st.afterPre) { st.afterPre = false; st.finishing = true; F.rlcont.opening(st); st.show?.(); } else if (!keep) { F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); } st.request?.(); }; if (st.worker) st.worker.postMessage({ stop: true }); else st.handing(); }
         },
         // the level's arena: walls (bars of random orientation), pits and the goal, kept only if a route clear of the pits
         // leads from every start to the goal, as a detour within the level's range (searched on the grid). Each level adds a
@@ -3738,10 +3761,10 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             [[net.W1, g1, 0], [net.W2, g2, 1]].forEach(([Wp, gp, i]) => { const m = net.m[i], v = net.v[i]; for (let k = 0; k < Wp.length; k++) { const gk = gp[k] / n; m[k] = b1 * m[k] + (1 - b1) * gk; v[k] = b2 * v[k] + (1 - b2) * gk * gk; Wp[k] += ALPHA * (m[k] / c1) / (Math.sqrt(v[k] / c2) + 1e-8); } });
             const mean = st.agents.reduce((a, ag) => a + ag.traj[0].G, 0) / n;
             st.won = st.agents.filter((ag) => ag.won).length / n; (st.wins = st.wins || []).push(st.won);
-            (st.atLevel = st.atLevel || []).push(st.won); const rec = (k) => st.atLevel.slice(-k).reduce((x, y) => x + y, 0) / k;
+            (st.atLevel = st.atLevel || []).push(st.won); if (st.atLevel.length > 60) st.atLevel.shift(); const rec = (k) => st.atLevel.slice(-k).reduce((x, y) => x + y, 0) / k;
             if (st.atLevel.length >= 15 && rec(15) >= 0.7 && (st.level || 0) < F.rlcont.LEVELS) { st.level = (st.level || 0) + 1; st.atLevel = []; }
             else if (st.atLevel.length >= 30 && rec(30) < 0.15 && st.level > 0) { st.level--; st.atLevel = []; }
-            st.curve.push(mean); if (st.curve.length > 600) { st.curve.shift(); st.wins.shift(); } st.batch++; st.todo--;
+            st.curve.push(mean); if (st.curve.length > 8) { st.curve.shift(); st.wins.shift(); } st.batch++; st.todo--;
             F.rlcont.newBatch(st);
         },
         // the rows: what each sets, its range, and how it reads
@@ -3753,7 +3776,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const A = st.arena, ux = (x - A.x) / A.s, uy = (y - A.y) / A.s, inA = ux > 0 && ux < 1 && uy > 0 && uy < F.rlcont.HT, pn = st.panel, play = st.mode === 'play';
             st.played = performance.now();   // handled: the agents keep moving for a while
             if (type === 'leave') { if (st.mode === 'train') F.rlcont.mode(st, 'play', true); else st.finishing = true; return; }   // out of the figure: training stops, the episode runs out
-            if (type === 'enter') { st.finishing = false; if (st.pre) { st.pre = false; clearTimeout(st.preT); st.worker?.postMessage({ more: 4000, p: st.p }); } F.rlcont.mode(st, 'train'); st.wake = 6; return; }   // on it: training (again)
+            if (type === 'enter') { st.finishing = false; if (st.pre) { st.pre = false; clearTimeout(st.preT); st.worker?.postMessage({ more: 4000, p: st.p }); } if (st.hidden) st.show?.(); F.rlcont.mode(st, 'train'); st.wake = 6; return; }   // on it: training (again)
             if (type === 'down') st.finishing = false;
             const onBtn = Math.hypot(x - st.btn.x, y - st.btn.y) < st.btn.r + 4;
             if (type === 'down' && onBtn) { F.rlcont.mode(st, play ? 'train' : 'play'); st.wake = 6; st.row = -1; st.grab = null; st.downAt = null; return; }
@@ -3792,7 +3815,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (!inA || (st.downAt && Math.hypot(x - st.downAt[0], y - st.downAt[1]) > 6)) return;
             // a double click while trying it: a new arena at this level
             const now = performance.now(), dbl = st.lastClick && now - st.lastClick < 320; st.lastClick = dbl ? 0 : now;
-            if (dbl && play) { F.rlcont.generate(st); F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); st.wake = 6; }
+            if (dbl) { F.rlcont.generate(st); F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); st.played = performance.now(); st.wake = 6; }   // a new arena, training or paused
         },
         draw(ctx, R, t, C, st, still) {
             const { TICK } = F.rlcont, A = st.arena, P = (x, y) => [A.x + x * A.s, A.y + y * A.s];
@@ -3802,18 +3825,22 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const ended = st.finishing && !train && st.agents.every((ag) => ag.done), go = live && !ended;
             if (go) { const k = Math.min(12, Math.floor((t - st.last) / TICK)); for (let i = 0; i < k; i++) { if (st.agents.every((ag) => ag.done)) { if (st.finishing && !train) break; if (train) F.rlcont.generate(st); F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); } F.rlcont.step(st, false); } if (k > 0) st.last = t; } else st.last = t;
             const u = go ? Math.min(1, (t - st.last) / TICK) : 1;
-            // the arena: a closed line; walls a closed line around a field; pits a dotted ring; the goal a ring
+            // the arena and its obstacles in outline: the arena, each wall a closed line (u/2, context tone), each pit a ring
+            // (u/2); the goal two rings (u, focus), the start a dotted ring, the items small discs
             const HT = F.rlcont.HT;
             K.line(ctx, C, K.rect(A.x, A.y, A.s, A.s * HT), -1, 0.5, true);
-            st.walls.forEach(([x0, y0, x1, y1]) => { const [X0, Y0] = P(x0, y0), [X1, Y1] = P(x1, y1); K.line(ctx, C, K.rect(X0, Y0, X1 - X0, Y1 - Y0), -1, 0.5, true); for (let yy = Y0 + 2 * K.U; yy < Y1 - K.U; yy += 2 * K.U) for (let xx = X0 + 2 * K.U; xx < X1 - K.U; xx += 2 * K.U) K.pt(ctx, C, xx, yy, -1, 0.25); });
-            st.pits.forEach(([px, py]) => { const [X, Y] = P(px, py); K.dotted(ctx, C, K.circle(X, Y, 0.05 * A.s).concat([K.circle(X, Y, 0.05 * A.s)[0]]), -1, 0.5); });
+            const fadeIn = st.hidden ? 0 : Math.min(1, (performance.now() - (st.shownAt || 0)) / (4 * K.TB * 1000));
+            K.fade = K.ease(fadeIn); if (fadeIn < 1 && !st.hidden) st.wake = Math.max(st.wake || 0, 0.1);
+            st.walls.forEach(([x0, y0, x1, y1]) => { const [X0, Y0] = P(x0, y0), [X1, Y1] = P(x1, y1); K.line(ctx, C, K.rect(X0, Y0, X1 - X0, Y1 - Y0), -1, 0.5, true); });
+            st.pits.forEach(([px, py]) => { const [X, Y] = P(px, py); K.line(ctx, C, K.circle(X, Y, 0.05 * A.s), -1, 0.5, true); });
             // the goal and the items drawn at the size they are reached at
             { const [X, Y] = P(...st.goal); K.line(ctx, C, K.circle(X, Y, F.rlcont.GOAL_R * A.s), 0, 1, true); K.line(ctx, C, K.circle(X, Y, 4 * K.U), 0, 1, true); }
-            (st.items || []).forEach(([qx, qy]) => { const [X, Y] = P(qx, qy); ctx.globalAlpha = 0.5; ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(X, Y, F.rlcont.ITEM_R * A.s, 0, TAU); ctx.fill(); });
+            (st.items || []).forEach(([qx, qy]) => { const [X, Y] = P(qx, qy); ctx.globalAlpha = 0.5 * K.fade; ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(X, Y, F.rlcont.ITEM_R * A.s, 0, TAU); ctx.fill(); });
             { const [X, Y] = P(...st.start), ring = K.circle(X, Y, F.rlcont.SPREAD * A.s); K.dotted(ctx, C, ring.concat([ring[0]]), -1, 0.5); }   // where the agents start
+            { const kf = K.fade; K.fade = 1;   // the button is the panel's, never faded
             { const cx = st.btn.x, cy = st.btn.y, u5 = 4 * K.U;
               if (train) { K.line(ctx, C, [[cx - u5 / 2, cy - u5], [cx - u5 / 2, cy + u5]], 1, 1); K.line(ctx, C, [[cx + u5 / 2, cy - u5], [cx + u5 / 2, cy + u5]], 1, 1); }
-              else K.line(ctx, C, [[cx - u5 * 0.8, cy - u5], [cx + u5, cy], [cx - u5 * 0.8, cy + u5]], 0, 1, true); }
+              else K.line(ctx, C, [[cx - u5 * 0.8, cy - u5], [cx + u5, cy], [cx - u5 * 0.8, cy + u5]], 0, 1, true); } K.fade = kf; }
             // the agents: data points in focus tone (context once their episode ends), trails as lines at context tone
             st.agents.forEach((ag) => {
                 const tx = ag.px + (ag.x - ag.px) * u, ty = ag.py + (ag.y - ag.py) * u; if (ag.sx == null || still) { ag.sx = tx; ag.sy = ty; } else { ag.sx += (tx - ag.sx) * 0.3; ag.sy += (ty - ag.sy) * 0.3; }
@@ -3823,17 +3850,22 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             });
             st.agents.forEach((ag) => { if (ag.trail && ag.trail.length > 1) K.line(ctx, C, ag.trail, -1, 0.25); });
             st.agents.forEach((ag) => { if (ag.sx != null) K.pt(ctx, C, ...P(ag.sx, ag.sy), 0, ag.done ? 0.25 : 1); });
+            K.fade = 1;
             // the learning curve: two axes; every batch's mean return (a u line, smoothed over a few batches, ending in a
             // focus point) and the share reaching the goal (dotted, on its own 0–100% scale)
-            const pl = st.plot, gx = pl.x, gw = pl.w, gy0 = pl.y, gy1 = pl.y + pl.h, cv = st.curve, nC = cv.length;
+            const pl = st.plot, gx = pl.x, gw = pl.w, gy0 = pl.y, gy1 = pl.y + pl.h, H = st.hist || [], nC = H.length;
             K.line(ctx, C, [[gx, gy0], [gx, gy1], [gx + gw, gy1]], -1, 0.5);
             const ema = (xs) => { const o = []; xs.forEach((v, i) => o.push(i ? 0.8 * o[i - 1] + 0.2 * v : v)); return o; };
+            const sr = ema(H.map((b) => b.r)), sw = ema(H.map((b) => b.w));
             if (nC > 1) {
-                const sm = ema(cv), lo = Math.min(...sm), hi = Math.max(...sm), pad = Math.max(0.1, (hi - lo) * 0.1), X = (i) => gx + (i / (nC - 1)) * gw, Y = (v) => gy1 - ((v - lo + pad) / (hi - lo + 2 * pad)) * (gy1 - gy0);
-                const step = Math.max(1, Math.floor(nC / 240)), pts = []; for (let i = 0; i < nC; i += step) pts.push([X(i), Y(sm[i])]); pts.push([X(nC - 1), Y(sm[nC - 1])]);
+                K.fade = K.ease(fadeIn);   // the curve fades in with the arena's contents
+                // x by batches done (buckets hold different spans), y the smoothed mean return on its own range
+                const tot = H.reduce((a, b) => a + b.n, 0), xs = []; let acc = 0; H.forEach((b) => { xs.push(gx + ((acc + b.n / 2) / tot) * gw); acc += b.n; });
+                const lo = Math.min(...sr), hi = Math.max(...sr), pad = Math.max(0.1, (hi - lo) * 0.1), Y = (v) => gy1 - ((v - lo + pad) / (hi - lo + 2 * pad)) * (gy1 - gy0);
+                const pts = sr.map((v, i) => [xs[i], Y(v)]);
                 K.line(ctx, C, pts, 0, 1); K.pt(ctx, C, ...pts[pts.length - 1], 1, 1);
-                const ws = ema(st.wins || []), wp = []; for (let i = 0; i < nC; i += step) wp.push([X(i), gy1 - ws[i] * (gy1 - gy0)]);
-                K.dotted(ctx, C, wp, -1, 0.5);
+                K.dotted(ctx, C, sw.map((v, i) => [xs[i], gy1 - v * (gy1 - gy0)]), -1, 0.5);
+                K.fade = 1;
             }
             // the rows: track at context tone, up to the value at data tone, the value a focus point
             const pn = st.panel;
@@ -3843,8 +3875,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 label(ctx, C, st, `${name} ${fmt(v)}`, pn.x, st.rows[i].y + st.rows[i].h * 0.3, 'left', true);
             });
             { const y = st.rows[4].y + st.rows[4].h * 0.55; label(ctx, C, st, train ? 'training · pause to test it' : st.batch ? 'paused · drag things to test it' : 'hover to train', pn.x, y, 'left', true); }
-            const wins = st.wins || [], lastW = wins.length ? ema(wins)[wins.length - 1] : 0;
-            if (nC) { label(ctx, C, st, `level ${st.level || 0} · batch ${st.batch}`, gx + K.LN, gy0 - K.LN / 2, 'left', true); label(ctx, C, st, `${Math.round(lastW * 100)}% at goal`, gx + gw, gy0 - K.LN / 2, 'right', true); }
+            const lastW = nC ? sw[nC - 1] : 0;
+            if (nC) { label(ctx, C, st, `level ${st.level || 0} · batch ${st.batch}`, gx + K.LN, gy0 - K.LN / 2, 'left', true); label(ctx, C, st, `goal ${Math.round(lastW * 100)}%`, gx + gw, gy0 - K.LN / 2, 'right', true); }
             if (go) st.wake = Math.max(st.wake || 0, 0.3);   // awake while it trains, or for a while after it was handled
         },
     };
@@ -3921,7 +3953,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         init(R, rand) {
             const lay = K.stack(R, 4 / 3, 2), rp = lay.main, rc = lay.strip;
             const st = { r: rand(41), plot: { x: rp.x, y: rp.y, w: rp.w, h: rp.h }, panel: { x: rc.x, w: rc.w }, eta: 0.05, noise: 0.01, rows: [0, 1].map((i) => ({ y: rc.y + i * rc.h / 2, h: rc.h / 2 })), data: [], E: 0 };
-            F.scaling2.train(st);
+            idle(() => { if (!st.disposed) F.scaling2.train(st); });
             return st;
         },
         // the sizes shared out over up to four workers (one core left for the page), the largest first to the least loaded
@@ -3930,7 +3962,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         train(st) {
             const S = F.scaling2; F.scaling2.dispose(st); st.data = []; st.E = st.noise / (1 + st.noise); st.done = false;
             if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return;
-            const seed = Math.floor(st.r() * 2 ** 31), K = Math.max(1, Math.min(4, S.SIZES.length, (navigator.hardwareConcurrency || 2) - 1));
+            const seed = Math.floor(st.r() * 2 ** 31), K = Math.min(DEVICE.workers, S.SIZES.length);
             const parts = Array.from({ length: K }, () => ({ mine: [], load: 0 }));
             S.SIZES.map((N, i) => [N, i]).sort((x, y) => y[0] - x[0]).forEach(([N, i]) => { const pt = parts.reduce((m, q) => (q.load < m.load ? q : m)); pt.mine.push(i); pt.load += N; });
             const src = `const experiment = ${S.experiment.toString().replace(/^experiment/, 'function')};\nonmessage = (e) => { experiment(e.data, (m) => postMessage(m)); postMessage({ done: true }); };`;
@@ -3949,6 +3981,10 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             URL.revokeObjectURL(url);
         },
         dispose(st) { (st.workers || []).forEach((w) => w.terminate()); st.workers = null; },
+        // out of sight (hidden tab, scrolled away, page put away): no worker keeps running; back in sight, a run cut short
+        // starts again
+        away(st) { if (st.workers && !st.done) { F.scaling2.dispose(st); st.cut = true; } },
+        back(st) { if (st.cut) { st.cut = false; F.scaling2.train(st); } },
         // drag along a row to set it; on release everything trains again
         pointer(type, x, y, st) {
             const S = F.scaling2, pn = st.panel, at = ([lo, hi], log) => { const k = Math.max(0, Math.min(1, (x - pn.x) / pn.w)); return log ? lo * (hi / lo) ** k : lo + k * (hi - lo); };
@@ -4220,7 +4256,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             W = box.width; H = box.height;
             if (opts.size) { canvas.style.width = `${W}px`; canvas.style.height = `${H}px`; }
             canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            R = regionFn(W, H, fig); const hov = state && state.hover; if (state) fig.dispose?.(state); state = fig.init(R, rand); state.touched = touched; state.hover = hov;
+            R = regionFn(W, H, fig); const hov = state && state.hover; if (state) { state.disposed = true; fig.dispose?.(state); } state = fig.init(R, rand); state.touched = touched; state.hover = hov;
             state.request = () => { if (!raf && visible && !dead) raf = requestAnimationFrame(frame); };   // a figure fed from elsewhere (a worker) asks for a frame
         };
         let dead = false;
@@ -4250,14 +4286,21 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         };
         const start = () => { if (dead) return; colors(); cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); };
         const onResize = () => { if (dead) return; resize(); start(); };
-        const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) start(); }); io.observe(canvas);
+        // out of sight (a hidden tab, scrolled away, the page put away in the back-forward cache): the figure lets its
+        // background work go (fig.away), and may take it up again when seen (fig.back)
+        let wasAway = false;
+        const sight = () => { const away = document.hidden || !visible || pageHidden; if (away !== wasAway && state) { if (away) fig.away?.(state); else fig.back?.(state); } wasAway = away; };
+        let pageHidden = false;
+        const onVis = () => sight(), onHide = () => { pageHidden = true; sight(); }, onShow = () => { pageHidden = false; sight(); };
+        document.addEventListener('visibilitychange', onVis); addEventListener('pagehide', onHide); addEventListener('pageshow', onShow);
+        const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; sight(); if (visible) start(); }); io.observe(canvas);
         const mo = new MutationObserver(start); mo.observe(root, { attributes: true, attributeFilter: ['data-theme', 'class'] });
         addEventListener('resize', onResize);
         document.fonts?.ready.then(onResize);
         resize(); start();
         return {
             // the page is left (router.js): the figure stops and lets go of everything it listens to
-            destroy() { dead = true; cancelAnimationFrame(raf); raf = 0; if (state) fig.dispose?.(state); io.disconnect(); mo.disconnect(); removeEventListener('resize', onResize); probe.remove(); },
+            destroy() { dead = true; cancelAnimationFrame(raf); raf = 0; if (state) { state.disposed = true; fig.dispose?.(state); } document.removeEventListener('visibilitychange', onVis); removeEventListener('pagehide', onHide); removeEventListener('pageshow', onShow); io.disconnect(); mo.disconnect(); removeEventListener('resize', onResize); probe.remove(); },
             // the reader touched the figure: it comes alive and takes the accent
             touch() { if (touched) return; touched = true; state.touched = true; state.hold = true; t0 = performance.now(); },
             // each interaction wakes the figure for as long as it asks (state.wake), then it comes to rest
