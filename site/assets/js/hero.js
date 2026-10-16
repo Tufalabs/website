@@ -31,7 +31,7 @@
         epicycles: { cite: 'Fourier series · 3Blue1Brown 2019', title: 'But what is a Fourier series? From heat flow to drawing with circles', href: 'https://www.youtube.com/watch?v=r6sGWTCMz2k', hint: 'Draw a closed shape, drag the scale for more circles' },
         arc3: { cite: 'ARC-AGI-3 · ARC Prize 2025', title: 'ARC-AGI-3: Interactive Reasoning Benchmark', href: 'https://arcprize.org/arc-agi/3/', hint: 'Arrow keys or click to move' },
         arc: { cite: 'ARC · Chollet 2019', title: 'On the Measure of Intelligence', href: 'https://arxiv.org/abs/1911.01547', hint: 'Click cells to solve the test' },
-        descent: { cite: 'Adam · Kingma & Ba 2014', title: 'Adam: A Method for Stochastic Optimization', href: 'https://arxiv.org/abs/1412.6980', hint: 'Drag the start or a valley; hover a path or a curve for its optimizer and settings' },
+        descent: { cite: 'Adam · Kingma & Ba 2014', title: 'Adam: A Method for Stochastic Optimization', href: 'https://arxiv.org/abs/1412.6980', hint: 'Drag the start or a valley; hover a path for its optimizer and settings' },
         klpolicy: { cite: 'DPO · Rafailov et al. 2023', title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward Model', href: 'https://arxiv.org/abs/2305.18290', hint: 'Move to set β, click an answer to reward it' },
         chinchilla: { cite: 'Chinchilla · Hoffmann et al. 2022', title: 'Training Compute-Optimal Large Language Models', href: 'https://arxiv.org/abs/2203.15556', hint: 'Move to set a budget, click to race' },
         grpo: { cite: 'GRPO · Shao et al. 2024', title: 'DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models', href: 'https://arxiv.org/abs/2402.03300', hint: 'Click an answer to flip its reward' },
