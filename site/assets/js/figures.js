@@ -3041,8 +3041,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 if (dbl) { st.anc = null; flyTo(1, 50, 32); return; }                                                // double click: home
                 const ho = st.hitObj;
                 if (ho && !ho.deeper) { st.flash = { box: ho.box, t: performance.now() }; st.wake = 1; return; }   // nothing below it: it says so, the view stays
-                if (!ho && !st.fly && st.z > 1.05) { const stops = [1, 3, 15, 60, 250, 1500, 14000, 4e5, 3e7, 1.5e9], z1 = stops.filter((q) => q < st.z / 1.2).pop() || 1; if (z1 < 1.2e6) st.anc = null; flyTo(z1, z1 <= 1 ? 50 : st.cx, z1 <= 1 ? 32 : st.cy); return; }   // empty space: a level out
+                if (!ho && !st.fly && st.z > 1.05) { const stops = [1, 3, 15, 60, 250, 1500, 14000, 4e5, 3e7, 1.5e9], z1 = stops.filter((q) => q < st.z / 1.2).pop() || 1; if (z1 < 1.2e6) st.anc = null; if (z1 < 6500) st.mat = null; flyTo(z1, z1 <= 1 ? 50 : st.cx, z1 <= 1 ? 32 : st.cy); return; }   // empty space: a level out
                 if (ho && ho.anc) { st.anc = ho.anc; flyTo(Math.max(ho.goZ, st.z * 1.5), ho.anc[0], ho.anc[1]); return; }   // an atom
+                if (ho && ho.goZ === 4e5) st.mat = /^(source|drain)/.test(ho.name) ? 'doped' : /^gate/.test(ho.name) ? 'gate' : 'si';   // the crystal below shows what that part is made of
                 if (ho && ho.goZ && ho.goZ > st.z * 1.2) { const [cx1, cy1] = F.chip.toC(st, (ho.box[0] + ho.box[2]) / 2, (ho.box[1] + ho.box[3]) / 2); if (st.z < 300) { F.chip.target(st, cx1, cy1); st.tgt = [cx1, cy1]; } flyTo(ho.goZ, st.z < 300 ? cx1 : st.cx, st.z < 300 ? cy1 : st.cy); return; }   // the next stage, centred on the part clicked
                 if (ho && st.z < 300) { const bw = ho.box[2] - ho.box[0], bh2 = ho.box[3] - ho.box[1], k = Math.min(st.view.w / bw, st.view.h / bh2) * 0.8;   // frame the hovered part
                     if (k > 1.3) { const [cx1, cy1] = F.chip.toC(st, (ho.box[0] + ho.box[2]) / 2, (ho.box[1] + ho.box[3]) / 2), own2 = st.blocks[F.chip.at(st, cx1, cy1)]; const z1 = Math.min(own2 && own2.kind !== 'gpc' ? F.chip.zmax(st, own2) : F.chip.ZMAX, st.z * k); st.tgt = own2 && own2.kind === 'gpc' ? F.chip.target(st, cx1, cy1) : st.tgt; flyTo(z1, cx1, cy1); return; } }
@@ -3268,7 +3269,19 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                     ring(RN, 0.5 * f9); if (f9 > 0.5) regS(CX - RN, CY - RN, CX + RN, CY + RN, 'Si-28 nucleus · 14 p, 14 n', false);   // the radius, 3.4 fm
                 }
                 if (f6 > 0) { const a2 = (mac / 2500) * s2, b2 = a2 * 1.41;
-                    grid(a2, b2, (x, y, i, j) => { const off = (j % 2) * a2 * 0.5, ax = x + off, ay = y, bx = ax + a2 * 0.25, by = ay + b2 * 0.25; dot(ax, ay, Math.min(4, a2 * 0.12), 1 * f6, C.ink); dot(bx, by, Math.min(4, a2 * 0.12), 1 * f6, C.ink); if (f6 > 0.5) { const hr = Math.max(4, a2 * 0.12), [ux2, uy2] = F.chip.toC(st, ax, ay); regS(ax - hr, ay - hr, ax + hr, ay + hr, 'Si atom · 4 sp³ bonds', true, 3e7, [ux2, uy2]); } lineDots(ax, ay, bx, by, 2.5, 0.5, 0.5 * f6, C.ink2); lineDots(bx, by, bx + a2 * 0.25, by - b2 * 0.25 + b2 * 0.5 * 0, 2.5, 0.45, 0.25 * f6, C.ink3); });
+                    // what the clicked part is made of: the fin, crystalline Si; source and drain, Si with phosphorus donors (about one
+                    // atom in thirty here, far denser in a real n⁺ region but shown sparse to stay legible); the gate, the stack above
+                    // the channel: amorphous TiN metal, a ~2 nm HfO₂ high-k oxide (four rows), then the Si channel
+                    const mat = st.mat || 'si', r1 = Math.min(4, a2 * 0.12), hr = Math.max(4, a2 * 0.12);
+                    grid(a2, b2, (x, y, i, j) => { const off = (j % 2) * a2 * 0.5, ax = x + off, ay = y, bx = ax + a2 * 0.25, by = ay + b2 * 0.25, [ux2, uy2] = F.chip.toC(st, ax, ay);
+                        if (mat === 'gate' && j < 0) { const jx = (hash(i, j) - 0.5) * a2 * 0.5, jy = (hash(j, i) - 0.5) * b2 * 0.4, ox = j >= -4;   // above the channel: no lattice
+                            dot(ax + jx, ay + jy, ox ? r1 : r1 * 0.7, (ox ? 1 : 0.5) * f6, C.ink); if (ox) dot(ax + jx + a2 * 0.3, ay + jy + b2 * 0.2, r1 * 0.5, 0.5 * f6, C.ink);
+                            if (f6 > 0.5) regS(ax + jx - hr, ay + jy - hr, ax + jx + hr, ay + jy + hr, ox ? 'HfO₂ · high-k gate oxide, ~2 nm' : 'TiN · gate metal, amorphous', false); return; }
+                        const dop = mat === 'doped' && hash(i, j) < 0.035;
+                        if (dop) { ctx.globalAlpha = f6; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.beginPath(); ctx.arc(ax, ay, Math.max(3, r1 * 1.6), 0, TAU); ctx.stroke(); } else dot(ax, ay, r1, 1 * f6, C.ink);
+                        dot(bx, by, r1, 1 * f6, C.ink);
+                        if (f6 > 0.5) regS(ax - hr, ay - hr, ax + hr, ay + hr, dop ? 'P donor · 5 valence e⁻, one free' : 'Si atom · 4 sp³ bonds', !dop, 3e7, dop ? null : [ux2, uy2]);
+                        lineDots(ax, ay, bx, by, 2.5, 0.5, 0.5 * f6, C.ink2); lineDots(bx, by, bx + a2 * 0.25, by - b2 * 0.25 + b2 * 0.5 * 0, 2.5, 0.45, 0.25 * f6, C.ink3); });
                 }
             }
             // wiring for the hovered block (chip level)
@@ -3284,12 +3297,12 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             // the hovered component: the smallest box under the pointer, outlined at full tone, its name by the pointer
             st.hit = null;
             if (st.mouse && !st.press) { const [mx, my] = st.mouse; let best = null; hits.forEach((h2) => { if (z > 300 && h2[5] && h2[0] <= v.x && h2[2] >= v.x + v.w && h2[1] <= v.y && h2[3] >= v.y + v.h) return;   /* a part the view is inside: not a hover target (a click there goes out) */ if (mx >= h2[0] && mx <= h2[2] && my >= h2[1] && my <= h2[3]) { const ar = (h2[2] - h2[0]) * (h2[3] - h2[1]); if (!best || ar <= best[8]) best = [...h2, ar]; } });   // equal boxes: the later, deeper one
-                if (best) { st.hit = best[4] + (best[5] ? '  ›' : ''); st.hitObj = { box: best.slice(0, 4), deeper: best[5], goZ: best[6], anc: best[7] }; ctx.globalAlpha = 1; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.setLineDash(best[5] ? [] : [K.U, 2 * K.U]); ctx.strokeRect(best[0], best[1], best[2] - best[0], best[3] - best[1]); ctx.setLineDash([]); } else st.hitObj = null; }
+                if (best) { st.hit = best[4] + (best[5] ? '  ›' : ''); st.hitObj = { box: best.slice(0, 4), deeper: best[5], goZ: best[6], anc: best[7], name: best[4] }; ctx.globalAlpha = 1; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.setLineDash(best[5] ? [] : [K.U, 2 * K.U]); ctx.strokeRect(best[0], best[1], best[2] - best[0], best[3] - best[1]); ctx.setLineDash([]); } else st.hitObj = null; }
             if (st.flash) { const e = (performance.now() - st.flash.t) / 1000, [x0, y0, x1, y1] = st.flash.box; if (e > 0.8) st.flash = null; else { ctx.globalAlpha = Math.floor(e * 5) % 2 ? 0.25 : 1; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U * 2; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0); if (st.hit) st.hit = st.hit.replace('  ›', '') + ' · deepest level'; st.wake = Math.max(st.wake || 0, 0.2); } }   // an end, clicked: it flashes
             ctx.restore();
             if (st.hit) label(ctx, C, st, st.hit, st.mouse[0] + K.LN / 2, st.mouse[1] - K.LN / 2, 'left', true);
             // labels
-            const level = z < 2.5 ? 'chip' : z < 12 ? 'GPC · 10 TPCs × 2 SMs' : z < 55 ? 'SM · 4 quadrants, L1 / shared memory' : z < 700 ? 'tensor core · MAC array' : z < 6500 ? 'MAC unit · multiplier, adder tree, accumulator' : z < 90000 ? 'FinFET · gate over 3 fins' : z < 3e6 ? 'Si crystal · 0.54 nm lattice · click an atom' : z < 7e8 ? 'Si atom · sp³ bond orbital ψ' : 'nucleus · Woods–Saxon density, r ≈ 3.4 fm';
+            const level = z < 2.5 ? 'chip' : z < 12 ? 'GPC · 10 TPCs × 2 SMs' : z < 55 ? 'SM · 4 quadrants, L1 / shared memory' : z < 700 ? 'tensor core · MAC array' : z < 6500 ? 'MAC unit · multiplier, adder tree, accumulator' : z < 90000 ? 'FinFET · gate over 3 fins' : z < 3e6 ? (st.mat === 'doped' ? 'n⁺ Si · phosphorus donors in the lattice' : st.mat === 'gate' ? 'gate stack · TiN / HfO₂ / Si channel' : 'Si crystal · 0.54 nm lattice') : z < 7e8 ? 'Si atom · sp³ bond orbital ψ' : 'nucleus · Woods–Saxon density, r ≈ 3.4 fm';
             const cb = st.blocks[F.chip.at(st, st.cx, st.cy)], deepIn = cb && cb.kind !== 'gpc' && z >= 2.5 ? (F.chip.DEPTH[cb.kind] || []).filter((d, k) => lvl(cb, k) > 0.5).pop() : null;
             label(ctx, C, st, deepIn ? deepIn[1] : `${level} · ${z < 10 ? z.toFixed(1) : z < 10000 ? Math.round(z) : z < 1e6 ? Math.round(z / 1000) + 'k' : '10' + String(Math.floor(Math.log10(z))).split('').map((d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]).join('')}×`, st.fx + K.LN / 4, st.vy0 + K.LN / 4, 'left', true);
             if (!still && (st.fly || st.press || (hb && z < 2.5) || z > 40)) st.wake = Math.max(st.wake || 0, 0.3);
