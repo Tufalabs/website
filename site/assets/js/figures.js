@@ -2995,7 +2995,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         deep(st) { const mac = st.mac || 0.035, a2 = mac / 2500, R0 = 12 / (5e7 * st.s0); return { a2, b2: a2 * 1.41, R0, rn: R0 * 0.2 }; },
         atomNear(st, x, y) { const { a2, b2 } = F.chip.deep(st), [tx, ty] = st.tgt; let best = null, bd = Infinity; const j0 = Math.round((y - ty) / b2); for (let j = j0 - 1; j <= j0 + 1; j++) { const off = (j % 2) * a2 * 0.5, i2 = Math.round((x - tx - off) / a2); for (let i = i2 - 1; i <= i2 + 1; i++) { const ax = tx + i * a2 + off, ay = ty + j * b2, d = Math.hypot(ax - x, ay - y); if (d < bd) { bd = d; best = [ax, ay]; } } } return best; },
         // the deep object the view settles on at this zoom: the chosen atom
-        focus(st, z = st.z) { return z < 1.2e6 || !st.anc ? null : st.anc; },
+        focus(st, z = st.z) { return z >= 1.2e6 && st.anc ? st.anc : z >= 1500 && st.tgt ? st.tgt : null; },
         // pick what a point is nearest to, at the depth the zoom is heading for
         pick(st, x, y, z) {
             if (z >= 1.2e6 && (!st.anc || st.z < 5e6)) { st.anc = F.chip.atomNear(st, x, y); return; }   // while the crystal shows, a click picks another atom
@@ -3008,7 +3008,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const sw = (tw - 0.8) / 2 - 0.2, sh = th - 0.8, sm = cl(Math.floor((px - tx - 0.4) / ((tw - 0.8) / 2)), 0, 1), sx = tx + 0.4 + sm * ((tw - 0.8) / 2), sy = ty + 0.4;
             const l1h = sh * 0.16, qw = sw / 2, qh = (sh - l1h) / 2, qc = cl(Math.floor((px - sx) / qw), 0, 1), qr = cl(Math.floor((py - sy) / qh), 0, 1);   // the SM and quadrant nearest the point
             const qx = sx + qc * qw, qy = sy + qr * qh, tcx = qx + qw * 0.54, tcy = qy + qh * 0.42, tcw = qw * 0.38, tch = qh * 0.5;
-            st.mac = tcw / 16; return [tcx + (7.5 / 16) * tcw, tcy + (5.5 / 12) * tch];   // a MAC unit: the zoom keeps going into it
+            st.mac = tcw / 16; st.macH = tch / 12; return [tcx + (7.5 / 16) * tcw, tcy + (5.5 / 12) * tch];   // a MAC cell's centre: the zoom keeps going into it
         },
         pointer(type, x, y, st) {
             if (type === 'enter') return;
@@ -3039,6 +3039,13 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const now = performance.now(), dbl = st.lastClick && now - st.lastClick < 320 && Math.hypot(x - st.lastXY[0], y - st.lastXY[1]) < 14; st.lastClick = dbl ? 0 : now; st.lastXY = [x, y];
                 const flyTo = (z1, cx1, cy1) => { st.fly = { start: null, z0: st.z, cx0: st.cx, cy0: st.cy, z1, cx1, cy1 }; st.wake = 1.4; };
                 if (dbl) { st.anc = null; flyTo(1, 50, 32); return; }                                                // double click: home
+                const ho = st.hitObj;
+                if (ho && !ho.deeper) { st.flash = { box: ho.box, t: performance.now() }; st.wake = 1; return; }   // nothing below it: it says so, the view stays
+                if (!ho && !st.fly && st.z > 1.05) { const stops = [1, 3, 15, 60, 250, 1500, 14000, 4e5, 3e7, 1.5e9], z1 = stops.filter((q) => q < st.z / 1.2).pop() || 1; if (z1 < 1.2e6) st.anc = null; flyTo(z1, z1 <= 1 ? 50 : st.cx, z1 <= 1 ? 32 : st.cy); return; }   // empty space: a level out
+                if (ho && ho.anc) { st.anc = ho.anc; flyTo(Math.max(ho.goZ, st.z * 1.5), ho.anc[0], ho.anc[1]); return; }   // an atom
+                if (ho && ho.goZ && ho.goZ > st.z * 1.2) { const [cx1, cy1] = F.chip.toC(st, (ho.box[0] + ho.box[2]) / 2, (ho.box[1] + ho.box[3]) / 2); if (st.z < 300) { F.chip.target(st, cx1, cy1); st.tgt = [cx1, cy1]; } flyTo(ho.goZ, st.z < 300 ? cx1 : st.cx, st.z < 300 ? cy1 : st.cy); return; }   // the next stage, centred on the part clicked
+                if (ho && st.z < 300) { const bw = ho.box[2] - ho.box[0], bh2 = ho.box[3] - ho.box[1], k = Math.min(st.view.w / bw, st.view.h / bh2) * 0.8;   // frame the hovered part
+                    if (k > 1.3) { const [cx1, cy1] = F.chip.toC(st, (ho.box[0] + ho.box[2]) / 2, (ho.box[1] + ho.box[3]) / 2), own2 = st.blocks[F.chip.at(st, cx1, cy1)]; const z1 = Math.min(own2 && own2.kind !== 'gpc' ? F.chip.zmax(st, own2) : F.chip.ZMAX, st.z * k); st.tgt = own2 && own2.kind === 'gpc' ? F.chip.target(st, cx1, cy1) : st.tgt; flyTo(z1, cx1, cy1); return; } }
                 // a component whose framing would bring us closer: frame it; otherwise go six times deeper
                 const b = st.blocks[F.chip.at(st, pr.fx, pr.fy)], thin = b && b.h > 4 * b.w, zb = b ? Math.max(1.2, thin ? (st.view.w * 0.25) / (b.w * st.s0) : Math.min(st.view.w / (b.w * st.s0), st.view.h / (b.h * st.s0)) * 0.9) : 0;
                 if (b && zb > st.z * 1.3) { const z1 = zb, fy1 = thin ? Math.max(b.y, Math.min(b.y + b.h, pr.fy)) : b.y + b.h / 2; st.tgt = F.chip.target(st, b.x + b.w / 2, fy1); flyTo(z1, b.x + b.w / 2, fy1); }   // a component: frame it (a thin one around the click)
@@ -3081,8 +3088,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const ctrl = (x, y, w, a) => { const [X, Y] = S(x, y); ctx.globalAlpha = a; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(Math.max(VX0, X), Y); ctx.lineTo(Math.min(VX1, X + w * s2), Y); ctx.stroke(); };
             const fadeIn = (lo, hi) => Math.max(0, Math.min(1, (Math.log(z) - Math.log(lo)) / (Math.log(hi) - Math.log(lo))));
             // what can be hovered: each component drawn this frame registers its box on screen and a name
-            const hits = [], regS = (X0, Y0, X1, Y1, name) => { if (X1 - X0 < 5 || Y1 - Y0 < 5 || X1 < VX0 || X0 > VX1 || Y1 < VY0 || Y0 > VY1) return; hits.push([X0, Y0, X1, Y1, name]); };
-            const reg = (x, y, w, h, name) => { const [X0, Y0] = S(x, y), [X1, Y1] = S(x + w, y + h); regS(X0, Y0, X1, Y1, name); };
+            const hits = [], regS = (X0, Y0, X1, Y1, name, deeper = true, goZ = 0, anc = null) => { if (X1 - X0 < 5 || Y1 - Y0 < 5 || X1 < VX0 || X0 > VX1 || Y1 < VY0 || Y0 > VY1) return; hits.push([X0, Y0, X1, Y1, name, deeper, goZ, anc]); };
+            const reg = (x, y, w, h, name, deeper = true, goZ = 0) => { const [X0, Y0] = S(x, y), [X1, Y1] = S(x + w, y + h); regS(X0, Y0, X1, Y1, name, deeper, goZ); };
             const prog = 1, gpcs = st.blocks.filter((q) => q.kind === 'gpc'), smOn = () => true;   // every SM at work (its tensor core's array runs)
             const mid = (q) => [q.x + q.w / 2, q.y + q.h / 2], lerpPath = (path, f) => { const L = path.slice(1).map((q, k) => Math.hypot(q[0] - path[k][0], q[1] - path[k][1])), tot = L.reduce((x2, y2) => x2 + y2, 0); let d = f * tot; for (let k = 0; k < L.length; k++) { if (d <= L[k]) { const g = d / (L[k] || 1); return [path[k][0] + (path[k + 1][0] - path[k][0]) * g, path[k][1] + (path[k + 1][1] - path[k][1]) * g]; } d -= L[k]; } return path[path.length - 1]; };
             // an array at a fixed pitch on screen within a rectangle, only its visible part: lines across and down, a point at
@@ -3108,31 +3115,31 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                     const a0 = l0, a1 = l1;
                     if (a0 > 0) { const n = 12, bh = h * 0.18, sh = (h - bh - h * 0.1) / n;                     // the stack from the side
                         for (let q = 0; q < n; q++) { reg(x + w * 0.04, y + h * 0.05 + q * sh, w * 0.92, sh * 0.8, `DRAM die ${q + 1} of 12`); rectD(x + w * 0.04, y + h * 0.05 + q * sh, w * 0.92, sh * 0.8, 0.5 * a0, C.ink2); stipple(x + w * 0.05, y + h * 0.05 + q * sh + sh * 0.15, w * 0.9, sh * 0.5, 2, 0.25 * a0, C.ink3); }
-                        cells(x + w * 0.04, y + h - bh - h * 0.04, w * 0.92, bh, 24, 1, 0.5 * a0); reg(x + w * 0.04, y + h - bh - h * 0.04, w * 0.92, bh, 'base logic die');
+                        cells(x + w * 0.04, y + h - bh - h * 0.04, w * 0.92, bh, 24, 1, 0.5 * a0); reg(x + w * 0.04, y + h - bh - h * 0.04, w * 0.92, bh, 'base logic die', false);
                         for (let q = 1; q < 8; q++) { const xx = x + w * (0.04 + 0.92 * q / 8), [X, Y0] = S(xx, y + h * 0.05), [, Y1] = S(xx, y + h - h * 0.04); for (let yy = Y0; yy < Y1; yy += 2 * K.U) dot(X, yy, 0.6, a0, C.ink); if (on) { const u = (t * 0.8 + q * 0.13) % 1; dot(X, Y1 - u * (Y1 - Y0), 1.2, a0, C.ink); } } }
                     if (a1 > 0) { const gx = 4, gy = 4, cw2 = w / gx, ch2 = h / gy;                                // a die: bank groups
                         for (let i = 0; i < gx; i++) for (let j = 0; j < gy; j++) { const bx = x + i * cw2, by = y + j * ch2; reg(bx + cw2 * 0.06, by + ch2 * 0.08, cw2 * 0.88, ch2 * 0.84, 'bank group · 4 banks'); rectD(bx + cw2 * 0.06, by + ch2 * 0.08, cw2 * 0.88, ch2 * 0.84, 0.5 * a1, C.ink2); stipple(bx + cw2 * 0.1, by + ch2 * 0.14, cw2 * 0.8, ch2 * 0.58, 2, 0.25 * a1, C.ink3); ctrl(bx + cw2 * 0.1, by + ch2 * 0.8, cw2 * 0.8, 0.5 * a1); } }
-                    if (l2 > 0) { array(x, y, w, h * 0.86, 12, l2, on); const [, SY] = S(x, y + h * 0.86); if (SY < VY1) cells(x, y + h * 0.86, w, h * 0.12, Math.max(4, Math.round((w * s2) / 24)), 1, 0.5 * l2); }   // a bank: the cell array, sense amplifiers below
+                    if (l2 > 0) { reg(x, y, w, h * 0.86, 'cell array · 1T1C, 1 bit each', false); reg(x, y + h * 0.86, w, h * 0.12, 'sense amplifiers · one per bit line', false); array(x, y, w, h * 0.86, 12, l2, on); const [, SY] = S(x, y + h * 0.86); if (SY < VY1) cells(x, y + h * 0.86, w, h * 0.12, Math.max(4, Math.round((w * s2) / 24)), 1, 0.5 * l2); }   // a bank: the cell array, sense amplifiers below
                     return 1 - open;
                 }
                 if (b2.kind === 'l2') {
                     const a0 = l0;
                     if (a0 > 0) for (let i = 0; i < 2; i++) for (let j = 0; j < 8; j++) { const sx = x + w * (0.06 + i * 0.46), sy = y + h * (0.02 + j * 0.12), sw2 = w * 0.42, sh2 = h * 0.11; reg(sx, sy, sw2, sh2, 'L2 slice · tags + SRAM'); rectD(sx, sy, sw2, sh2, 0.5 * a0, C.ink2); ctrl(sx + sw2 * 0.08, sy + sh2 * 0.15, sw2 * 0.84, 0.5 * a0); stipple(sx + sw2 * 0.08, sy + sh2 * 0.3, sw2 * 0.84, sh2 * 0.6, 2, (on && (i + j + Math.floor(t * 4)) % 5 === 0 ? 0.5 : 0.25) * a0, C.ink3); }
-                    if (l1 > 0) array(x, y, w, h, 12, l1, on);                                                      // SRAM: bit cells at the crossings
+                    if (l1 > 0) { reg(x, y, w, h, 'SRAM · 6T cells', false); array(x, y, w, h, 12, l1, on); }               // SRAM: bit cells at the crossings
                     return 1 - open;
                 }
                 if (b2.kind === 'giga' && l0 > 0) {                                                                     // the queue, and blocks handed out
-                    const nq = 18, qw = (w * 0.5) / nq; for (let q = 0; q < nq; q++) { const filled = on ? q < nq * (1 - prog) : q < 4; rectD(x + w * 0.02 + q * qw, y + h * 0.3, qw * 0.8, h * 0.4, (filled ? 1 : 0.25) * l0, C.ink); }
+                    reg(x, y, w, h, 'GigaThread · block queue', false); const nq = 18, qw = (w * 0.5) / nq; for (let q = 0; q < nq; q++) { const filled = on ? q < nq * (1 - prog) : q < 4; rectD(x + w * 0.02 + q * qw, y + h * 0.3, qw * 0.8, h * 0.4, (filled ? 1 : 0.25) * l0, C.ink); }
                     gpcs.filter((g) => g.d === b2.d).forEach((g, gi) => { const gx2 = g.x + g.w / 2; ctrl(Math.min(x + w * 0.55, gx2), y + h / 2, Math.abs(gx2 - (x + w * 0.55)), 0.25 * l0); if (on) { const u = (t * 1.5 + gi * 0.25) % 1, [X, Y] = S(x + w * 0.55 + (gx2 - x - w * 0.55) * u, y + h / 2); dot(X, Y, 2.4, l0, C.ink); } });
                     return 1 - l0;
                 }
                 if ((b2.kind === 'hbi' || b2.kind === 'nvlink' || b2.kind === 'pcie' || b2.kind === 'c2c') && l0 > 0) {   // lanes: lines with bits riding them
                     const n = b2.kind === 'hbi' ? 60 : b2.kind === 'nvlink' ? 36 : b2.kind === 'pcie' ? 16 : 28, gap = h / n, speed = b2.kind === 'hbi' ? 2 : 0.8;
-                    for (let q = 0; q < n; q++) { const yy = y + (q + 0.5) * gap; reg(x + w * 0.04, yy - gap * 0.45, w * 0.92, gap * 0.9, b2.kind === 'hbi' ? 'die-to-die wire' : b2.kind === 'nvlink' ? `link ${(q >> 1) + 1} of 18 · lane ${(q % 2) + 1}` : `lane ${q + 1}`); if (b2.kind === 'nvlink' && q % 2 === 0) rectD(x + w * 0.04, yy - gap * 0.45, w * 0.92, gap * 1.9, 0.25 * l0, C.ink3); ctrl(x + w * 0.08, yy, w * 0.84, 0.5 * l0);
+                    for (let q = 0; q < n; q++) { const yy = y + (q + 0.5) * gap; reg(x + w * 0.04, yy - gap * 0.45, w * 0.92, gap * 0.9, b2.kind === 'hbi' ? 'die-to-die wire' : b2.kind === 'nvlink' ? `link ${(q >> 1) + 1} of 18 · lane ${(q % 2) + 1}` : `lane ${q + 1}`, false); if (b2.kind === 'nvlink' && q % 2 === 0) rectD(x + w * 0.04, yy - gap * 0.45, w * 0.92, gap * 1.9, 0.25 * l0, C.ink3); ctrl(x + w * 0.08, yy, w * 0.84, 0.5 * l0);
                         if (on || b2.kind !== 'hbi') { const dir = q % 2 ? 1 : -1, u = ((t * speed * (on ? 1.6 : 0.4) + q * 0.37) % 1 + 1) % 1, [X, Y] = S(x + w * 0.08 + w * 0.84 * (dir > 0 ? u : 1 - u), yy); dot(X, Y, 1.2, l0, C.ink); } }
                     return 1 - l0;
                 }
-                if (b2.kind === 'nvdec' && l0 > 0) { for (let q = 0; q < 4; q++) { reg(x + w * 0.1, y + h * (0.06 + q * 0.23), w * 0.8, h * 0.2, ['entropy decode', 'inverse transform', 'motion compensation', 'deblocking'][q]); cells(x + w * 0.1, y + h * (0.06 + q * 0.23), w * 0.8, h * 0.2, 3, 1, 0.5 * l0); } return 1 - l0; }
+                if (b2.kind === 'nvdec' && l0 > 0) { for (let q = 0; q < 4; q++) { reg(x + w * 0.1, y + h * (0.06 + q * 0.23), w * 0.8, h * 0.2, ['entropy decode', 'inverse transform', 'motion compensation', 'deblocking'][q], false); cells(x + w * 0.1, y + h * (0.06 + q * 0.23), w * 0.8, h * 0.2, 3, 1, 0.5 * l0); } return 1 - l0; }
                 return 1;
             };
             // level 0: the floorplan
@@ -3161,22 +3168,22 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                         if (f2 <= 0 || sw * s2 < 20) { cells(sx, sy, sw, sh * 0.84, 2, 2, 0.25 * f1); stipple(sx, sy + sh * 0.84, sw, sh * 0.16, 2, 0.25 * f1, C.ink3); continue; }
                         // level 2: an SM: four quadrants (scheduler, register file, cores, tensor core) above L1 / shared memory
                         const l1h = sh * 0.16, qw = sw / 2, qh = (sh - l1h) / 2;
-                        stipple(sx, sy + sh - l1h, sw, l1h, 2.4, 0.25 * f2, C.ink2); reg(sx, sy + sh - l1h, sw, l1h, 'L1 / shared memory · 256 KB');   // memory, a field
+                        stipple(sx, sy + sh - l1h, sw, l1h, 2.4, 0.25 * f2, C.ink2); reg(sx, sy + sh - l1h, sw, l1h, 'L1 / shared memory · 256 KB', false);   // memory, a field
                         for (let qd = 0; qd < 4; qd++) {
                             const qx = sx + (qd % 2) * qw, qy = sy + Math.floor(qd / 2) * qh;
                             if (!vis(qx, qy, qw, qh)) continue;
                             rectD(qx + qw * 0.04, qy + qh * 0.04, qw * 0.92, qh * 0.92, 0.25 * f2, C.ink3, 2.2, 0.5);
-                            ctrl(qx + qw * 0.08, qy + qh * 0.12, qw * 0.84, 1 * f2); reg(qx + qw * 0.08, qy + qh * 0.06, qw * 0.84, qh * 0.12, 'warp scheduler, dispatch');   // control, a line
-                            stipple(qx + qw * 0.08, qy + qh * 0.22, qw * 0.84, qh * 0.16, 1.6, 0.5 * f2, C.ink2); reg(qx + qw * 0.08, qy + qh * 0.22, qw * 0.84, qh * 0.16, 'register file · 64 KB');   // memory, a dense field
-                            cells(qx + qw * 0.08, qy + qh * 0.42, qw * 0.4, qh * 0.5, 4, 8, 0.5 * f2); reg(qx + qw * 0.08, qy + qh * 0.42, qw * 0.4, qh * 0.5, '32 FP32 / INT32 lanes');   // compute, cells
+                            ctrl(qx + qw * 0.08, qy + qh * 0.12, qw * 0.84, 1 * f2); reg(qx + qw * 0.08, qy + qh * 0.06, qw * 0.84, qh * 0.12, 'warp scheduler, dispatch', false);   // control, a line
+                            stipple(qx + qw * 0.08, qy + qh * 0.22, qw * 0.84, qh * 0.16, 1.6, 0.5 * f2, C.ink2); reg(qx + qw * 0.08, qy + qh * 0.22, qw * 0.84, qh * 0.16, 'register file · 64 KB', false);   // memory, a dense field
+                            cells(qx + qw * 0.08, qy + qh * 0.42, qw * 0.4, qh * 0.5, 4, 8, 0.5 * f2); reg(qx + qw * 0.08, qy + qh * 0.42, qw * 0.4, qh * 0.5, '32 FP32 / INT32 lanes', false);   // compute, cells
                             const tcx = qx + qw * 0.54, tcy = qy + qh * 0.42, tcw = qw * 0.38, tch = qh * 0.5;
                             rectD(tcx, tcy, tcw, tch, 1 * f2, C.ink, 2, 0.55); reg(tcx, tcy, tcw, tch, 'tensor core · 5th gen');
                             if (fadeIn(45, 80) <= 0 && z < 900) cells(tcx, tcy, tcw, tch, 4, 3, 0.5 * f2);                               // its MAC array, coarse until level 3
                             // level 3: the tensor core as a grid of multiply-accumulate units, operands flowing in
-                            const f3 = fadeIn(45, 80) * (1 - fadeIn(500, 900));   // gone once a single MAC unit is drawn
+                            const f3 = fadeIn(45, 80) * (1 - fadeIn(600, 900));   // gone before the single MAC unit comes in
                             if (f3 > 0 && tcw * s2 > 50) {
                                 const n = 16, m = 12, mw = tcw / n, mh = tch / m;
-                                cells(tcx, tcy, tcw, tch, n, m, 0.5 * f3); if (mw * s2 > 8) for (let a2 = 0; a2 < n; a2++) for (let c3 = 0; c3 < m; c3++) reg(tcx + a2 * mw, tcy + c3 * mh, mw, mh, 'MAC unit');
+                                cells(tcx, tcy, tcw, tch, n, m, 0.5 * f3); if (mw * s2 > 8 && z < 900) for (let a2 = 0; a2 < n; a2++) for (let c3 = 0; c3 < m; c3++) reg(tcx + a2 * mw, tcy + c3 * mh, mw, mh, 'MAC unit', true, 1500);
                                 if (smBusy) for (let a = 0; a < n; a++) { const u = (t * 1.2 + a * 0.07) % 1, [X, Y] = S(tcx + (a + 0.5) * mw, tcy + u * tch); dot(X, Y, 2, 0.5 * f3, C.ink); }      // B operands down the columns (while its SM works)
                                 if (smBusy) for (let c2 = 0; c2 < m; c2++) { const u = (t * 1.2 + c2 * 0.09) % 1, [X, Y] = S(tcx + u * tcw, tcy + (c2 + 0.5) * mh); dot(X, Y, 2, 0.5 * f3, C.ink); }     // A operands along the rows
                                 if (smBusy) for (let a = 0; a < n; a++) for (let c2 = 0; c2 < m; c2++) { const ph = (t * 1.6 - (a + c2) * 0.08) % 1; if (ph < 0.2) { const [X, Y] = S(tcx + (a + 0.5) * mw, tcy + (c2 + 0.5) * mh); dot(X, Y, 1.2, f3, C.ink); } }   // products accumulating, a wave across the array
@@ -3197,11 +3204,10 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 // products, a parallelogram of AND gates (each row shifted one, as long multiplication is written); the adder tree
                 // narrowing 8 → 4 → 2 → 1; the accumulator, a column of flip-flops whose output loops back into the sum. Operands
                 // come in at the edges and the product flows right
-                const f4 = band(500, 1100, 4500, 6500);
+                const f4 = band(900, 1300, 4500, 6500);
                 if (f4 > 0) {
-                    const UW = mac * s2, UH = UW * 0.7, ux = OX - UW / 2, uy = OY - UH / 2, box = (x0, y0, w0, h0, tone, lw = K.U / 2) => { ctx.globalAlpha = tone * f4; ctx.strokeStyle = C.ink; ctx.lineWidth = lw; ctx.strokeRect(x0, y0, w0, h0); };
-                    for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) if (di || dj) box(ux + di * UW * 1.08, uy + dj * UH * 1.12, UW, UH, 0.25);   // the neighbours
-                    box(ux, uy, UW, UH, 1, K.U);
+                    const CW = mac * s2, CHh = (st.macH || mac * 0.7) * s2, box = (x0, y0, w0, h0, tone, lw = K.U / 2) => { ctx.globalAlpha = tone * f4; ctx.strokeStyle = C.ink; ctx.lineWidth = lw; ctx.strokeRect(x0, y0, w0, h0); };
+                    const UW = Math.min(CW, CHh / 0.7) * 0.9, UH = UW * 0.7, ux = OX - UW / 2, uy = OY - UH / 2; box(ux, uy, UW, UH, 1, K.U);   // the unit, alone
                     const n = 8, mw = (UW * 0.52) / (n * 1.5), mx0 = ux + UW * 0.04, my0 = uy + UH * 0.12, mh = (UH * 0.76) / n;   // the multiplier
                     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) box(mx0 + (c + (n - 1 - r) * 0.5) * mw, my0 + r * mh + mh * 0.15, mw * 0.8, mh * 0.7, 0.5);
                     const tx0 = ux + UW * 0.6, tw = UW * 0.22, rowsT = [8, 4, 2, 1];                                       // the adder tree
@@ -3211,7 +3217,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                     ctx.globalAlpha = 0.5 * f4; ctx.lineWidth = K.U / 2; ctx.beginPath(); ctx.moveTo(ax0 + aw, uy + UH * 0.5); ctx.lineTo(ax0 + aw + UW * 0.03, uy + UH * 0.5); ctx.lineTo(ax0 + aw + UW * 0.03, uy + UH * 0.94); ctx.lineTo(tx0 + tw * 0.75, uy + UH * 0.94); ctx.lineTo(tx0 + tw * 0.75, uy + UH * 0.88); ctx.stroke();   // its loop back into the sum
                     if (!still) { const u = (t * 0.6) % 1; for (let c = 0; c < n; c++) { dot(mx0 + (c + (n - 1) * 0.5) * mw + mw * 0.4, uy + UH * 0.04 + u * UH * 0.08, 1.2, f4, C.ink); dot(ux - UW * 0.02 + u * UW * 0.05, my0 + (c + 0.5) * mh, 1.2, f4, C.ink); }   // operands in
                         dot(tx0 - UW * 0.04 + u * (ax0 - tx0 + UW * 0.04), uy + UH * 0.5, 2.4, f4, C.ink); }                      // the product on its way
-                    if (f4 > 0.5) { regS(mx0, my0, tx0 - UW * 0.03, my0 + UH * 0.76, 'multiplier · partial products'); regS(tx0, my0, tx0 + tw, my0 + UH * 0.76, 'adder tree · 8 → 1'); regS(ax0, my0, ax0 + aw, my0 + UH * 0.76, 'accumulator · flip-flops'); regS(ux, uy, ux + UW, uy + UH, 'MAC unit'); }
+                    if (f4 > 0.5) { regS(mx0, my0, tx0 - UW * 0.03, my0 + UH * 0.76, 'multiplier · partial products', true, 14000); regS(tx0, my0, tx0 + tw, my0 + UH * 0.76, 'adder tree · 8 → 1', true, 14000); regS(ax0, my0, ax0 + aw, my0 + UH * 0.76, 'accumulator · flip-flops', true, 14000); regS(ux, uy, ux + UW, uy + UH, 'MAC unit', true, 14000); }
                 }
                 // a FinFET, one, in the middle (its neighbours faint): three silicon fins across, the gate wrapped over them (a band,
                 // so one gate controls all three), source and drain on either side with their contacts; switched on, charge
@@ -3226,8 +3232,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                     box(tx + TW * 0.06, ty + TH * 0.2, TW * 0.28, TH * 0.6, 0.5); box(tx + TW * 0.66, ty + TH * 0.2, TW * 0.28, TH * 0.6, 0.5);   // source, drain
                     finY.forEach((y0) => { dot(tx + TW * 0.2, y0, 2.4, f5, C.ink); dot(tx + TW * 0.8, y0, 2.4, f5, C.ink); });   // contacts
                     if (!still) finY.forEach((y0, k) => { const u = (t * 0.8 + k * 0.3) % 1; dot(tx + TW * (0.2 + 0.6 * u), y0, 1.2, f5, C.ink); });   // charge, source to drain
-                    if (f5 > 0.5) { regS(tx + TW * 0.06, ty + TH * 0.2, tx + TW * 0.34, ty + TH * 0.8, 'source'); regS(tx + TW * 0.42, ty + TH * 0.12, tx + TW * 0.58, ty + TH * 0.88, 'gate · wraps 3 fins'); regS(tx + TW * 0.66, ty + TH * 0.2, tx + TW * 0.94, ty + TH * 0.8, 'drain');
-                        finY.forEach((y0) => regS(tx - TW * 0.05, y0 - 4, tx + TW * 1.05, y0 + 4, 'Si fin')); regS(tx, ty, tx + TW, ty + TH, 'FinFET'); }
+                    if (f5 > 0.5) { regS(tx + TW * 0.06, ty + TH * 0.2, tx + TW * 0.34, ty + TH * 0.8, 'source', true, 4e5); regS(tx + TW * 0.42, ty + TH * 0.12, tx + TW * 0.58, ty + TH * 0.88, 'gate · wraps 3 fins', true, 4e5); regS(tx + TW * 0.66, ty + TH * 0.2, tx + TW * 0.94, ty + TH * 0.8, 'drain', true, 4e5);
+                        finY.forEach((y0) => regS(tx - TW * 0.05, y0 - 4, tx + TW * 1.05, y0 + 4, 'Si fin', true, 4e5)); regS(tx, ty, tx + TW, ty + TH, 'FinFET', true, 4e5); }
                 }
                 // the silicon lattice: atoms in pairs (the diamond structure seen along [110]) and their bonds
                 const f6 = band(60000, 140000, 2e6, 5e6);
@@ -3243,8 +3249,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const f7 = 0, f8 = band(2e6, 5e6, 4e8, 7e8), f9 = fadeIn(7e8, 1.1e9);   // the crystal gives way to one atom's bond orbital
                 const TH = [54.7, 125.3, 234.7, 305.3].map((d) => (d * Math.PI) / 180), aV = Math.min(r0 * 1.1, Math.min(v.w, v.h) * 0.11);
                 if (f8 > 0) {                                                                                          // one hybrid's ψ as contour lines
-                    const RR = Math.max(v.w, v.h) * 0.75, a3 = (Math.min(v.w, v.h) * 0.42 * (1 + 0.25 * Math.log10(Math.max(1, z / 1e7)))) / 4.5, th = TH[0], G = 96, X0 = CX - RR, Y0 = CY - RR, cs = (2 * RR) / G;
-                    const psi = (x, y) => { const dx = x - CX, dy = y - CY, r = Math.hypot(dx, dy) / a3, c = r ? (dx * Math.cos(th) + dy * Math.sin(th)) / (r * a3) : 0; return Math.exp(-r) * (1 + 2.2 * r * c); };
+                    const RR = Math.max(v.w, v.h) * 0.75, a3 = (Math.min(v.w, v.h) * 0.3 * Math.min(2.5, Math.max(1, z / 5e6) ** 0.25)) / 4.5, th = TH[0], sh = 1.3 * a3 * (1 - fadeIn(1e8, 5e8)), CXo = CX - sh * Math.cos(th), CYo = CY - sh * Math.sin(th), G = 96, X0 = CXo - RR, Y0 = CYo - RR, cs = (2 * RR) / G;
+                    const psi = (x, y) => { const dx = x - CXo, dy = y - CYo, r = Math.hypot(dx, dy) / a3, c = r ? (dx * Math.cos(th) + dy * Math.sin(th)) / (r * a3) : 0; return Math.exp(-r) * (1 + 2.2 * r * c); };
                     const V = new Float64Array((G + 1) * (G + 1)); let mx = 0; for (let j = 0; j <= G; j++) for (let i = 0; i <= G; i++) { const val = psi(X0 + i * cs, Y0 + j * cs); V[j * (G + 1) + i] = val; mx = Math.max(mx, Math.abs(val)); }
                     const iso = (lv, solid, tone) => { ctx.globalAlpha = tone * f8; ctx.strokeStyle = C.ink; ctx.lineWidth = solid ? K.U : K.U / 2; ctx.setLineDash(solid ? [] : [K.U, 2 * K.U]); ctx.beginPath();
                         for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const c4 = [V[j * (G + 1) + i] - lv, V[j * (G + 1) + i + 1] - lv, V[(j + 1) * (G + 1) + i + 1] - lv, V[(j + 1) * (G + 1) + i] - lv], xy = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], cut = [];
@@ -3252,16 +3258,17 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                             for (let e = 0; e + 1 < cut.length; e += 2) { ctx.moveTo(cut[e][0], cut[e][1]); ctx.lineTo(cut[e + 1][0], cut[e + 1][1]); } }
                         ctx.stroke(); ctx.setLineDash([]); };
                     [0.08, 0.25, 0.5, 0.8].forEach((q) => iso(q * mx, true, 1)); [0.04, 0.1].forEach((q) => iso(-q * mx, false, 0.5)); iso(0, false, 0.25);
-                    dot(CX, CY, 2.4, f8, C.ink);
-                    if (f8 > 0.5) { const L1 = a3 * 4; regS(CX - L1 * 0.4, CY - L1 * 0.4, CX + L1 * 1.4, CY + L1 * 1.4, 'ψ > 0 · bond lobe'); regS(CX - L1 * 1.6, CY - L1 * 1.6, CX - L1 * 0.2, CY - L1 * 0.2, 'ψ < 0 · back lobe'); regS(CX - 6, CY - 6, CX + 6, CY + 6, 'nucleus'); }
+                    dot(CXo, CYo, 2.4, f8, C.ink);
+                    if (f8 > 0.5) { const bb = (sel) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (let j = 0; j <= G; j++) for (let i = 0; i <= G; i++) if (sel(V[j * (G + 1) + i])) { x0 = Math.min(x0, i); x1 = Math.max(x1, i); y0 = Math.min(y0, j); y1 = Math.max(y1, j); } return [X0 + x0 * cs, Y0 + y0 * cs, X0 + x1 * cs, Y0 + y1 * cs]; };   // each lobe's box: its outermost drawn contour
+                        regS(...bb((q) => q > 0.08 * mx), 'ψ > 0 · bond lobe', true, 1.5e9); regS(...bb((q) => q < -0.04 * mx), 'ψ < 0 · back lobe', true, 1.5e9); regS(CXo - 6, CYo - 6, CXo + 6, CYo + 6, 'nucleus', true, 1.5e9); }
                 }
                 if (f9 > 0) {                                                                                           // the nucleus: its density, sampled
                     if (!st.nuc) { const P3 = []; for (let q = 0; q < 1600; q++) { let r; for (;;) { r = Math.random() * 1.6; if (Math.random() < (r * r * 2.6) / (1 + Math.exp((r - 1) / 0.16)) / 1.1) break; } const c = 2 * Math.random() - 1, an = Math.random() * TAU; P3.push([r * Math.sqrt(1 - c * c), an]); } st.nuc = P3; }
                     const RN = Math.min(v.w, v.h) * 0.3; st.nuc.forEach(([r, an]) => dot(CX + r * RN * Math.cos(an), CY + r * RN * Math.sin(an), 0.6, 0.5 * f9, C.ink));
-                    ring(RN, 0.5 * f9); if (f9 > 0.5) regS(CX - RN, CY - RN, CX + RN, CY + RN, 'Si-28 nucleus · 14 p, 14 n');   // the radius, 3.4 fm
+                    ring(RN, 0.5 * f9); if (f9 > 0.5) regS(CX - RN, CY - RN, CX + RN, CY + RN, 'Si-28 nucleus · 14 p, 14 n', false);   // the radius, 3.4 fm
                 }
                 if (f6 > 0) { const a2 = (mac / 2500) * s2, b2 = a2 * 1.41;
-                    grid(a2, b2, (x, y, i, j) => { const off = (j % 2) * a2 * 0.5, ax = x + off, ay = y, bx = ax + a2 * 0.25, by = ay + b2 * 0.25; dot(ax, ay, Math.min(4, a2 * 0.12), 1 * f6, C.ink); dot(bx, by, Math.min(4, a2 * 0.12), 1 * f6, C.ink); lineDots(ax, ay, bx, by, 2.5, 0.5, 0.5 * f6, C.ink2); lineDots(bx, by, bx + a2 * 0.25, by - b2 * 0.25 + b2 * 0.5 * 0, 2.5, 0.45, 0.25 * f6, C.ink3); });
+                    grid(a2, b2, (x, y, i, j) => { const off = (j % 2) * a2 * 0.5, ax = x + off, ay = y, bx = ax + a2 * 0.25, by = ay + b2 * 0.25; dot(ax, ay, Math.min(4, a2 * 0.12), 1 * f6, C.ink); dot(bx, by, Math.min(4, a2 * 0.12), 1 * f6, C.ink); if (f6 > 0.5) { const hr = Math.max(4, a2 * 0.12), [ux2, uy2] = F.chip.toC(st, ax, ay); regS(ax - hr, ay - hr, ax + hr, ay + hr, 'Si atom · 4 sp³ bonds', true, 3e7, [ux2, uy2]); } lineDots(ax, ay, bx, by, 2.5, 0.5, 0.5 * f6, C.ink2); lineDots(bx, by, bx + a2 * 0.25, by - b2 * 0.25 + b2 * 0.5 * 0, 2.5, 0.45, 0.25 * f6, C.ink3); });
                 }
             }
             // wiring for the hovered block (chip level)
@@ -3276,8 +3283,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             }
             // the hovered component: the smallest box under the pointer, outlined at full tone, its name by the pointer
             st.hit = null;
-            if (st.mouse && !st.press) { const [mx, my] = st.mouse; let best = null; hits.forEach((h2) => { if (mx >= h2[0] && mx <= h2[2] && my >= h2[1] && my <= h2[3]) { const ar = (h2[2] - h2[0]) * (h2[3] - h2[1]); if (!best || ar < best[5]) best = [...h2, ar]; } });
-                if (best) { st.hit = best[4]; ctx.globalAlpha = 1; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.setLineDash([]); ctx.strokeRect(best[0], best[1], best[2] - best[0], best[3] - best[1]); } }
+            if (st.mouse && !st.press) { const [mx, my] = st.mouse; let best = null; hits.forEach((h2) => { if (z > 300 && h2[5] && h2[0] <= v.x && h2[2] >= v.x + v.w && h2[1] <= v.y && h2[3] >= v.y + v.h) return;   /* a part the view is inside: not a hover target (a click there goes out) */ if (mx >= h2[0] && mx <= h2[2] && my >= h2[1] && my <= h2[3]) { const ar = (h2[2] - h2[0]) * (h2[3] - h2[1]); if (!best || ar <= best[8]) best = [...h2, ar]; } });   // equal boxes: the later, deeper one
+                if (best) { st.hit = best[4] + (best[5] ? '  ›' : ''); st.hitObj = { box: best.slice(0, 4), deeper: best[5], goZ: best[6], anc: best[7] }; ctx.globalAlpha = 1; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.setLineDash(best[5] ? [] : [K.U, 2 * K.U]); ctx.strokeRect(best[0], best[1], best[2] - best[0], best[3] - best[1]); ctx.setLineDash([]); } else st.hitObj = null; }
+            if (st.flash) { const e = (performance.now() - st.flash.t) / 1000, [x0, y0, x1, y1] = st.flash.box; if (e > 0.8) st.flash = null; else { ctx.globalAlpha = Math.floor(e * 5) % 2 ? 0.25 : 1; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U * 2; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0); if (st.hit) st.hit = st.hit.replace('  ›', '') + ' · deepest level'; st.wake = Math.max(st.wake || 0, 0.2); } }   // an end, clicked: it flashes
             ctx.restore();
             if (st.hit) label(ctx, C, st, st.hit, st.mouse[0] + K.LN / 2, st.mouse[1] - K.LN / 2, 'left', true);
             // labels
