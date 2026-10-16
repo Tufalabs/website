@@ -3656,17 +3656,14 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
     };
 
-    // Attention patterns: the same causal attention matrix (queries down, keys across) with different
-    // sparsity: full; a sliding window; strided sparse attention (Child et al.); global tokens plus a window
-    // (Longformer); block-sparse; random plus window plus global (BigBird); attention sinks plus a window
-    // (StreamingLLM); deformable attention over time (as in deformable / DeformTime-style forecasters): each
-    // query predicts a few offsets into the past and reads the interpolated keys there, so it chooses how far
-    // back to look. Inside each mask the weights are learned: a click switches pattern and replays training,
-    // the softmax sharpening from uniform at initialisation into the structure trained heads show (a sink on
-    // the first token, the previous token, earlier copies of the current token), and the deformable offsets
-    // drifting from a fixed grid to query-dependent lags. Hovering a row shows that query's keys as arcs.
+    // Sparse attention, trained: a two-layer attention-only transformer (one head per layer, d = 32) learns to continue a
+    // repeated sequence: random tokens, then the same tokens again, the repeat 6–10 long so that no fixed offset solves it.
+    // Full causal attention finds the circuit known as an induction head: layer 1 attends to the previous token, layer 2
+    // from each token to the one that followed its earlier occurrence, and the loss drops from its plateau at once. Each
+    // sparse pattern masks both layers; where the induction lag lies outside the mask the model has to route around it
+    // through the two layers or fails. Training runs in a worker while the figure is pointed at
     F.attnpat = {
-        bleed: true, tall: true, T: 20, TRAIN: 16 * 0.12,
+        bleed: true, tall: true, T: 20, V: 16, STEPS: 3000, RATE: 120,
         PATTERNS: [
             ['full causal', 'O(n²)', (q, k) => k <= q],
             ['sliding window', 'O(n·w)', (q, k) => k <= q && q - k < 5],
@@ -3675,61 +3672,115 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             ['block-sparse', 'O(n·b)', (q, k) => k <= q && Math.floor(q / 4) - Math.floor(k / 4) <= 1],
             ['random + window + global (BigBird)', 'O(n)', (q, k) => k <= q && (q - k < 3 || k === 0 || ((q * 7 + k * 13) % 11) === 0)],
             ['sinks + window (StreamingLLM)', 'O(n·w)', (q, k) => k <= q && (k < 2 || q - k < 4)],
-            ['deformable (learned offsets in time)', 'O(n·K)', null],
         ],
-        tok(i) { return [0, 3, 1, 4, 2, 3, 5, 1, 2, 0, 4, 3, 1, 5, 2, 3, 0, 4, 1, 3, 2, 5, 1, 3][i]; },     // a toy sequence with repeats
-        // the trained score: sink, previous token, an earlier copy of this token, mild recency
-        score(q, k) { return 2.4 * (k === 0) + 2.0 * (k === q - 1) + 1.8 * (k < q && F.attnpat.tok(k) === F.attnpat.tok(q)) - 0.04 * (q - k); },
-        // deformable: K = 3 sampling points per query at lags δ; at initialisation a fixed grid (1, 4, 9), trained
-        // they depend on the query (what it is reading for): short, a period back, and far
-        lags(q, beta) { const L0 = [1, 4, 9], L1 = [1 + 0.8 * (1 + Math.sin(q * 0.9)), 6 + 3 * Math.sin(q * 0.45 + 1), 12 + 6 * Math.sin(q * 0.3 + 2)]; return L0.map((l, i) => Math.min(q, l + (L1[i] - l) * beta)); },
-        weights(pat, q, beta) {
-            const A = F.attnpat, T = A.T, f = A.PATTERNS[pat][2], w = new Array(T).fill(0);
-            if (!f) { const lg = A.lags(q, beta), aw = [2.2, 1.2, 0.6].map((v) => Math.exp(beta * v)), sa = aw.reduce((a, b) => a + b, 0); lg.forEach((l, i) => { const p = q - l, k0 = Math.floor(p), fr = p - k0; w[k0] += (aw[i] / sa) * (1 - fr); if (fr > 0 && k0 + 1 <= q) w[k0 + 1] += (aw[i] / sa) * fr; }); return w; }
-            let s2 = 0; for (let k = 0; k <= q; k++) if (f(q, k)) { w[k] = Math.exp(beta * A.score(q, k)); s2 += w[k]; }
-            return w.map((v) => v / (s2 || 1));
+        // the worker: forward and backward by hand, Adam, batches of 16 fresh sequences; it posts both layers' attention on
+        // the shown sequence, the loss and the share of the repeat predicted correctly
+        worker() {
+            const T = 20, V = 16, D = 32, DH = 16, L = 2, B = 16, LR = 1e-3, b1 = 0.9, b2 = 0.98;
+            let P, G, Mo, Ve, M, disp, step = 0, run = false, timer = 0, budget = 0, rate = 120, duty = 1, acc = [0, 0, 0];
+            let s0 = 1; const r = () => { s0 = (s0 + 0x6D2B79F5) | 0; let t = Math.imul(s0 ^ (s0 >>> 15), 1 | s0); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+            const randn = () => { let u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); };
+            const mat = (n, m, s) => Float32Array.from({ length: n * m }, () => randn() * s);
+            const mm = (x, W, n, a, b) => { const y = new Float32Array(n * b); for (let i = 0; i < n; i++) for (let j = 0; j < a; j++) { const xv = x[i * a + j]; if (!xv) continue; for (let c = 0; c < b; c++) y[i * b + c] += xv * W[j * b + c]; } return y; };
+            const mmB = (x, W, dy, n, a, b, dW, dx) => { for (let i = 0; i < n; i++) for (let j = 0; j < a; j++) { let s = 0; const xv = x[i * a + j]; for (let c = 0; c < b; c++) { dW[j * b + c] += xv * dy[i * b + c]; s += dy[i * b + c] * W[j * b + c]; } if (dx) dx[i * a + j] += s; } };
+            const sample = () => { const p = [...Array(V).keys()]; for (let i = V - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } const S = 6 + Math.floor(r() * 5), x = p.slice(0, S).concat(p.slice(0, S)); while (x.length < T) x.push(Math.floor(r() * V)); x.S = S; return x; };
+            const pass = (x, train) => {
+                const hs = [new Float32Array(T * D)], cache = []; for (let t = 0; t < T; t++) for (let c = 0; c < D; c++) hs[0][t * D + c] = P.E[x[t] * D + c] + P.Pos[t * D + c];
+                for (let l = 0; l < L; l++) { const h = hs[l], q = mm(h, P['q' + l], T, D, DH), k = mm(h, P['k' + l], T, D, DH), v = mm(h, P['v' + l], T, D, DH), A = new Float32Array(T * T), sc = 1 / Math.sqrt(DH);
+                    for (let i = 0; i < T; i++) { let mx = -1e9; for (let j = 0; j <= i; j++) if (M[i * T + j]) { let s = 0; for (let c = 0; c < DH; c++) s += q[i * DH + c] * k[j * DH + c]; A[i * T + j] = s * sc; mx = Math.max(mx, A[i * T + j]); }
+                        let z = 0; for (let j = 0; j <= i; j++) if (M[i * T + j]) { A[i * T + j] = Math.exp(A[i * T + j] - mx); z += A[i * T + j]; } for (let j = 0; j <= i; j++) A[i * T + j] /= z || 1; }
+                    const o = new Float32Array(T * DH); for (let i = 0; i < T; i++) for (let j = 0; j <= i; j++) { const a = A[i * T + j]; if (a) for (let c = 0; c < DH; c++) o[i * DH + c] += a * v[j * DH + c]; }
+                    const h2 = mm(o, P['o' + l], T, DH, D); for (let i = 0; i < T * D; i++) h2[i] += h[i]; hs.push(h2); cache.push({ q, k, v, A, o }); }
+                const lg = mm(hs[L], P.U, T, D, V), t0 = x.S, t1 = 2 * x.S - 1, dlg = new Float32Array(T * V); let loss = 0, hit = 0;
+                for (let t = t0; t < t1; t++) { let mx = -1e9, am = 0; for (let c = 0; c < V; c++) { mx = Math.max(mx, lg[t * V + c]); if (lg[t * V + c] > lg[t * V + am]) am = c; } let z = 0; for (let c = 0; c < V; c++) z += Math.exp(lg[t * V + c] - mx);
+                    const y = x[t + 1]; loss -= lg[t * V + y] - mx - Math.log(z); hit += am === y; for (let c = 0; c < V; c++) dlg[t * V + c] = (Math.exp(lg[t * V + c] - mx) / z - (c === y)) / (t1 - t0); }
+                if (!train) return { cache, loss: loss / (t1 - t0), acc: hit / (t1 - t0) };
+                let dh = new Float32Array(T * D); mmB(hs[L], P.U, dlg, T, D, V, G.U, dh);
+                for (let l = L - 1; l >= 0; l--) { const { q, k, v, A, o } = cache[l], h = hs[l], dn = Float32Array.from(dh), dO = new Float32Array(T * DH); mmB(o, P['o' + l], dh, T, DH, D, G['o' + l], dO);
+                    const dv = new Float32Array(T * DH), dq = new Float32Array(T * DH), dk = new Float32Array(T * DH), sc = 1 / Math.sqrt(DH), dA = new Float32Array(T);
+                    for (let i = 0; i < T; i++) { let s2 = 0; for (let j = 0; j <= i; j++) { if (!M[i * T + j]) { dA[j] = 0; continue; } let s = 0; for (let c = 0; c < DH; c++) { s += dO[i * DH + c] * v[j * DH + c]; dv[j * DH + c] += A[i * T + j] * dO[i * DH + c]; } dA[j] = s; s2 += s * A[i * T + j]; }
+                        for (let j = 0; j <= i; j++) { const g = A[i * T + j] * (dA[j] - s2) * sc; if (g) for (let c = 0; c < DH; c++) { dq[i * DH + c] += g * k[j * DH + c]; dk[j * DH + c] += g * q[i * DH + c]; } } }
+                    mmB(h, P['q' + l], dq, T, D, DH, G['q' + l], dn); mmB(h, P['k' + l], dk, T, D, DH, G['k' + l], dn); mmB(h, P['v' + l], dv, T, D, DH, G['v' + l], dn); dh = dn; }
+                for (let t = 0; t < T; t++) for (let c = 0; c < D; c++) { G.E[x[t] * D + c] += dh[t * D + c]; G.Pos[t * D + c] += dh[t * D + c]; }
+                return { loss: loss / (t1 - t0), acc: hit / (t1 - t0) };
+            };
+            const train = () => { for (const k in G) G[k].fill(0); let ls = 0, ac = 0; for (let b = 0; b < B; b++) { const o = pass(sample(), true); ls += o.loss; ac += o.acc; } step++;
+                for (const k in P) { const p = P[k], g = G[k], m = Mo[k], v = Ve[k]; for (let i = 0; i < p.length; i++) { const gi = g[i] / B; m[i] = b1 * m[i] + (1 - b1) * gi; v[i] = b2 * v[i] + (1 - b2) * gi * gi; p[i] -= LR * (m[i] / (1 - b1 ** step)) / (Math.sqrt(v[i] / (1 - b2 ** step)) + 1e-8); } }
+                acc[0] += ls / B; acc[1] += ac / B; acc[2]++; };
+            const post = () => { const o = pass(disp, false); postMessage({ step, loss: acc[2] ? acc[0] / acc[2] : null, acc: acc[2] ? acc[1] / acc[2] : null, A: o.cache.map((c) => Array.from(c.A)) }); acc = [0, 0, 0]; };
+            // in slices: at most `rate` steps a second, resting so the worker uses no more than its duty of a core
+            const loop = () => { timer = 0; if (!run || budget <= 0) return; const t0 = Date.now(); let n = 0; while (n < Math.max(1, Math.round(rate * 0.1)) && budget > 0) { train(); budget--; n++; } post();
+                const used = Date.now() - t0; timer = setTimeout(loop, Math.max(100 - used, used * (1 - duty) / duty)); };
+            onmessage = (e) => { const m = e.data;
+                if (m.init) { s0 = m.seed | 0; M = Uint8Array.from(m.mask); disp = m.disp; disp.S = m.S; rate = m.rate; duty = m.duty; budget = m.steps; step = 0; acc = [0, 0, 0];
+                    P = { E: mat(V, D, 0.5), Pos: mat(T, D, 0.5), U: mat(D, V, 1 / Math.sqrt(D)) }; for (let l = 0; l < L; l++) { P['q' + l] = mat(D, DH, 1 / Math.sqrt(D)); P['k' + l] = mat(D, DH, 1 / Math.sqrt(D)); P['v' + l] = mat(D, DH, 1 / Math.sqrt(D)); P['o' + l] = mat(DH, D, 1 / Math.sqrt(DH)); }
+                    G = {}; Mo = {}; Ve = {}; for (const k in P) { G[k] = new Float32Array(P[k].length); Mo[k] = new Float32Array(P[k].length); Ve[k] = new Float32Array(P[k].length); } post(); }
+                if ('run' in m) run = m.run;
+                if (run && !timer) timer = setTimeout(loop, 0); };
         },
+        // the shown sequence: eight letters, the same eight again, four more
+        sequence() { const p = [...Array(16).keys()]; for (let i = 15; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } const x = p.slice(0, 8).concat(p.slice(0, 8)); while (x.length < 20) x.push(Math.floor(Math.random() * 16)); return x; },
+        start(st) {
+            F.attnpat.dispose(st); st.hist = []; st.A = null; st.step = 0; st.loss = null; st.acc = null; st.since = performance.now();
+            if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return;
+            const url = URL.createObjectURL(new Blob([`(${F.attnpat.worker.toString().replace(/^worker\(\)/, 'function ()')})()`], { type: 'text/javascript' }));
+            st.worker = new Worker(url); URL.revokeObjectURL(url);
+            st.worker.onmessage = (e) => { const m = e.data; st.A = m.A; st.step = m.step; if (m.loss != null) { st.loss = m.loss; st.acc = m.acc; st.hist.push([m.step, m.loss]); } st.request?.(); };
+            const T = F.attnpat.T, f = F.attnpat.PATTERNS[st.pat][2], mask = []; for (let q = 0; q < T; q++) for (let k = 0; k < T; k++) mask.push(f(q, k) ? 1 : 0);
+            st.worker.postMessage({ init: true, seed: 1 + st.pat * 7919, mask, disp: st.seq, S: 8, steps: F.attnpat.STEPS, rate: DEVICE.low ? 60 : F.attnpat.RATE, duty: DEVICE.duty ?? 1, run: !!st.over });
+        },
+        dispose(st) { if (st.worker) { st.worker.terminate(); st.worker = null; } },
+        away(st) { st.worker?.postMessage({ run: false }); },
+        back(st) { if (st.over) st.worker?.postMessage({ run: true }); },
         init(R) {
-            // the matrix is the main panel (T cells a half line apart, or a quarter line if that does not fit); the token row
-            // a strip of three lines under it, its arcs rising inside the strip
+            // the matrix (layer 2) is the main panel; to its right the loss over training and layer 1's matrix, small; the
+            // token row a strip of three lines under it, its arcs rising inside the strip
             const fx = R.fx ?? R.x, vy0 = R.vy0 ?? R.y, vy1 = R.vy1 ?? R.y + R.h, W = R.x + R.w - fx, T = F.attnpat.T;
             const fit = K.stack(R, 1, 3).h, pitch = fit >= T * K.LN / 2 ? K.LN / 2 : K.LN / 4, size = T * pitch;
-            const lay = K.stack(R, 1, 3, { h: size }), rm = lay.main, rt = lay.strip, tw = rt.w, x0 = rm.x, y0 = rm.y;
-            return { fx, vy0, vy1, W, tw, strip: rt, mat: { x: x0, y: y0, s: size }, pat: 0, prev: 0, since: -1, q: 15 };
+            let size2 = size, lay = K.stack(R, 1, 3, { h: size2 });
+            const room = R.x + R.w - K.LN / 2 - (lay.main.x + size2 + K.LN); if (room < 5 * K.LN) { size2 = Math.max(T * 6, size2 - (5 * K.LN - room)); lay = K.stack(R, 1, 3, { h: size2 }); }   // the matrix gives way to the side column
+            const rm = lay.main, rt = lay.strip, x0 = rm.x, y0 = rm.y, sx = x0 + size2 + K.LN, sw = R.x + R.w - K.LN / 2 - sx, side = sw >= 4 * K.LN ? { x: sx, w: sw } : null;
+            return { fx, vy0, vy1, W, strip: rt, mat: { x: x0, y: y0, s: size2 }, side, pat: 0, q: 12, seq: F.attnpat.sequence(), hist: [], over: false };
         },
         pointer(type, x, y, st) {
             const m = st.mat, T = F.attnpat.T, cell = m.s / T;
+            if (type === 'enter') { st.over = true; if (!st.worker) F.attnpat.start(st); else st.worker.postMessage({ run: true }); return; }   // pointed at: it trains
+            if (type === 'leave') { st.over = false; st.worker?.postMessage({ run: false }); return; }
             if (type === 'move' && x >= m.x && x <= m.x + m.s && y >= m.y && y <= m.y + m.s) { const q = Math.floor((y - m.y) / cell); if (q !== st.q) { st.q = q; st.wake = 0.3; } }
-            if (type === 'up') { st.prev = st.pat; st.pat = (st.pat + 1) % F.attnpat.PATTERNS.length; st.since = null; st.wake = 0.9; }
+            if (type === 'up') { st.pat = (st.pat + 1) % F.attnpat.PATTERNS.length; F.attnpat.start(st); st.wake = 0.9; }   // the next mask, trained from scratch
         },
         draw(ctx, R, t, C, st, still) {
-            if (st.since === null) st.since = t;
-            const A = F.attnpat, el = still || st.since < 0 ? 99 : t - st.since, e = K.ease(el / (4 * K.TB)), beta = K.ease((el - 2 * K.TB) / A.TRAIN), T = A.T, m = st.mat, cell = m.s / T;
-            // a weight in three steps: strong a focus point, middling a data point, weak a point at context tone
+            const A = F.attnpat, T = A.T, m = st.mat, cell = m.s / T, f = A.PATTERNS[st.pat][2], LET = 'ABCDEFGHIJKLMNOP';
+            // before any training: uniform over what the mask allows
+            const att = (l, q, k) => { if (!f(q, k)) return 0; if (st.A) return st.A[l][q * T + k]; let n = 0; for (let j = 0; j <= q; j++) n += f(q, j); return 1 / n; };
             const step = (w) => (w >= 0.25 ? [1, 1] : w >= 0.08 ? [0, 0.5] : [0, 0.25]);
-            let on = 0;
-            for (let q = 0; q < T; q++) {
-                const w1 = A.weights(st.pat, q, beta), w0 = A.weights(st.prev, q, 1);
-                for (let k = 0; k < T; k++) {
-                    const w = w0[k] + (w1[k] - w0[k]) * e, x = m.x + (k + 0.5) * cell, y = m.y + (q + 0.5) * cell;
-                    if (A.PATTERNS[st.pat][2] ? A.PATTERNS[st.pat][2](q, k) : w1[k] > 0) on++;
-                    if (w > 0.003) { const [kk, tone] = step(w); K.pt(ctx, C, x, y, kk, tone); } else K.pt(ctx, C, x, y, -1, 0.25);   // masked out: the field
-                }
-            }
-            // the selected query's row: a closed line around it
-            K.line(ctx, C, K.rect(m.x, m.y + st.q * cell, m.s, cell), -1, 1, true);
-            // the token row: points (the query in focus), and an arc to every key it reads, its width the weight's step
-            const lx0 = st.strip.x, lx1 = lx0 + st.strip.w, ly = st.strip.y + st.strip.h - K.LN / 4, X = (k) => lx0 + (k / (T - 1)) * (lx1 - lx0), w = A.weights(st.pat, st.q, beta);
-            w.forEach((v, k) => { if (v <= 0.003 || k === st.q) return; const xa = X(k), xb = X(st.q), h = Math.min(st.strip.h - K.LN / 2, (xb - xa) * 0.55 + K.LN / 4), [kk, tone] = step(v), pts = [];
-                for (let i = 0; i <= 24; i++) { const u2 = i / 24, v2 = 1 - u2; pts.push([v2 * v2 * v2 * xb + 3 * v2 * v2 * u2 * xb + 3 * v2 * u2 * u2 * xa + u2 * u2 * u2 * xa, ly - 3 * (v2 * v2 * u2 + v2 * u2 * u2) * h]); }
-                K.line(ctx, C, pts, kk - 1, tone); });
-            for (let k = 0; k < T; k++) K.pt(ctx, C, X(k), ly, k === st.q ? 1 : 0, k === st.q ? 1 : k <= st.q ? 0.5 : 0.25);
-            if (!A.PATTERNS[st.pat][2]) A.lags(st.q, beta).forEach((l) => K.pt(ctx, C, X(st.q - l), ly + K.LN / 4, 0, 1));
-            const P2 = A.PATTERNS[st.pat], full = (T * (T + 1)) / 2;
-            label(ctx, C, st, P2[2] ? `${P2[0]} · ${P2[1]} · ${Math.round((on / full) * 100)}% of causal` : `${P2[0]} · ${P2[1]} · 3 lags per query`, m.x, m.y - K.LN / 2, 'left', true);
+            const matrix = (l, x0, y0, s, small) => { const c = s / T; for (let q = 0; q < T; q++) for (let k = 0; k < T; k++) { const x = x0 + (k + 0.5) * c, y = y0 + (q + 0.5) * c; if (!f(q, k)) { if (!small) K.pt(ctx, C, x, y, -1, 0.25); continue; } const [kk, tone] = step(att(l, q, k)); K.pt(ctx, C, x, y, small ? Math.min(kk, 0) : kk, tone); } };
+            matrix(1, m.x, m.y, m.s, false);
+            K.line(ctx, C, K.rect(m.x, m.y + st.q * cell, m.s, cell), -1, 1, true);                                   // the selected query's row
+            let on = 0; for (let q = 0; q < T; q++) for (let k = 0; k <= q; k++) on += f(q, k);
+            const P2 = A.PATTERNS[st.pat];
+            label(ctx, C, st, `layer 2 · ${P2[0].replace(/ \(.*\)/, '')} · ${Math.round((on / (T * (T + 1) / 2)) * 100)}%`, m.x, m.y - K.LN / 2, 'left', true);
             label(ctx, C, st, 'keys →', m.x + m.s, m.y + m.s + K.LN / 2, 'right'); label(ctx, C, st, 'queries ↓', m.x - K.LN / 4, m.y + K.LN / 4, 'right');
-            label(ctx, C, st, beta < 1 ? `training · step ${Math.round(beta * 2000)}` : P2[2] ? `query ${st.q + 1}` : `query ${st.q + 1} · lags ${A.lags(st.q, 1).map((l) => l.toFixed(1)).join(', ')}`, lx0, ly + K.LN / 2, 'left');
-            if (!still && (e < 1 || beta < 1)) st.wake = Math.max(st.wake || 0, 0.2);
+            // the side column: the loss over training (from ln 16, chance, down), and layer 1
+            if (st.side) {
+                const sd = st.side, ph = Math.round(m.s * 0.42), px = sd.x, py = m.y, pw = sd.w, top = Math.log(16), n = Math.max(A.STEPS / 2, st.step);
+                K.line(ctx, C, [[px, py], [px, py + ph], [px + pw, py + ph]], -1, 0.25);
+                if (st.hist.length > 1) K.line(ctx, C, st.hist.map(([s, l]) => [px + (s / n) * pw, py + ph - Math.min(1, l / (top * 1.08)) * ph]), 0, 1);
+                label(ctx, C, st, st.loss == null ? 'loss' : `loss ${st.loss.toFixed(2)}`, px, py - K.LN / 2, 'left', true);
+                label(ctx, C, st, st.acc == null ? 'step 0' : `${Math.round(st.acc * 100)}% copied · step ${st.step}`, px + pw, py + ph + K.LN / 2, 'right');
+                const ms = Math.min(pw, m.s - ph - 2 * K.LN), my = m.y + m.s - ms; if (ms > T * 3) { matrix(0, px, my, ms, true); label(ctx, C, st, 'layer 1', px, my - K.LN / 2, 'left', true); }
+            }
+            // the token row: letters, the query in focus, an arc to every key it reads in layer 2
+            const lx0 = st.strip.x, lx1 = lx0 + st.strip.w, ly = st.strip.y + st.strip.h - K.LN / 4, X = (k) => lx0 + (k / (T - 1)) * (lx1 - lx0);
+            for (let k = 0; k < T; k++) { const w = att(1, st.q, k); if (w <= 0.003 || k === st.q) continue; const xa = X(k), xb = X(st.q), h = Math.min(st.strip.h - K.LN, (xb - xa) * 0.55 + K.LN / 4), [kk, tone] = step(w), pts = [];
+                for (let i = 0; i <= 24; i++) { const u2 = i / 24, v2 = 1 - u2; pts.push([v2 * v2 * v2 * xb + 3 * v2 * v2 * u2 * xb + 3 * v2 * u2 * u2 * xa + u2 * u2 * u2 * xa, ly - K.LN / 2 - 3 * (v2 * v2 * u2 + v2 * u2 * u2) * h]); }
+                K.line(ctx, C, pts, kk - 1, tone); }
+            ctx.save(); ctx.font = `${Math.round(K.LN * 0.45)}px ui-monospace, SFMono-Regular, Menlo, monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            for (let k = 0; k < T; k++) { ctx.globalAlpha = k === st.q ? 1 : k < st.q ? 0.5 : 0.25; ctx.fillStyle = k === st.q ? C.ink : C.ink2; ctx.fillText(LET[st.seq[k]], X(k), ly); }
+            ctx.restore();
+            const nxt = st.q + 1 < T ? LET[st.seq[st.q + 1]] : '';
+            label(ctx, C, st, st.over || st.step ? `query ${st.q + 1} · ${LET[st.seq[st.q]]} → next ${nxt}` : 'point here to train', lx0, ly + K.LN / 2, 'left');
+            if (!still && st.since && performance.now() - st.since < 600) st.wake = Math.max(st.wake || 0, 0.2);
         },
     };
 

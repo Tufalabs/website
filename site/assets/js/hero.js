@@ -10,7 +10,7 @@
         rlcont: { cite: 'REINFORCE · Williams 1992', title: 'Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning', href: 'https://doi.org/10.1007/BF00992696', hint: 'Hover to train · pause, then drag the start, goal, walls, pits or items · double click: new arena' },
         scaling: { cite: 'Chinchilla · Hoffmann et al. 2022', title: 'Training Compute-Optimal Large Language Models', href: 'https://arxiv.org/abs/2203.15556', hint: 'Drag the point or slide an axis' },
         rlenv: { cite: 'REINFORCE · Williams 1992', title: 'Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning', href: 'https://doi.org/10.1007/BF00992696', hint: 'Click to train, click a cell to move the goal' },
-        attnpat: { cite: 'Sparse attention · Child et al. 2019', title: 'Generating Long Sequences with Sparse Transformers', href: 'https://arxiv.org/abs/1904.10509', hint: 'Click: next pattern, watch it train · hover a row' },
+        attnpat: { cite: 'Induction heads · Olsson et al. 2022', title: 'In-context Learning and Induction Heads', href: 'https://arxiv.org/abs/2209.11895', hint: 'Point here: it trains · click: next mask, from scratch · hover a row' },
         tfm: { cite: 'Transformer · Vaswani et al. 2017', title: 'Attention Is All You Need', href: 'https://arxiv.org/abs/1706.03762', hint: 'Click for a pass, hover a token, drag to orbit' },
         chip: { cite: 'Blackwell Ultra · NVIDIA 2025', title: 'Inside NVIDIA Blackwell Ultra: The Chip Powering the AI Factory Era', href: 'https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/', hint: 'Click a part to frame it, again to go deeper · double click: the whole chip' },
         kvcache: { cite: 'PagedAttention · Kwon et al. 2023', title: 'Efficient Memory Management for Large Language Model Serving with PagedAttention', href: 'https://arxiv.org/abs/2309.06180', hint: 'Drag the corner for context and batch, click the chip to generate' },
@@ -106,7 +106,7 @@
     });
     // the hint shows once the pointer has rested on the figure for a moment, and goes when it leaves
     let hintTimer = 0;
-    hit.addEventListener('pointerenter', () => { if (name === 'rlcont') { fig.touch(); live(); } fig.pointer('enter', -1, -1, 0); });   // the RL figure trains while the pointer is on it
+    hit.addEventListener('pointerenter', () => { if (name === 'rlcont' || name === 'attnpat') { fig.touch(); live(); } fig.pointer('enter', -1, -1, 0); });   // the RL figure trains while the pointer is on it
     hit.addEventListener('pointerenter', () => { clearTimeout(hintTimer); hintTimer = setTimeout(() => band.classList.add('hero-hint'), 700); });
     hit.addEventListener('pointerleave', () => { clearTimeout(hintTimer); band.classList.remove('hero-hint'); fig.pointer('leave', -1, -1, 0); });
     // keys: while the pointer rests on the figure (or just after using it), arrows and WASD go to it
