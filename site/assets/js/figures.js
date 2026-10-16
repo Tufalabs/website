@@ -3662,116 +3662,99 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
     };
 
-    // Scaling laws by experiment (Kaplan et al.; Hoffmann et al., whose loss fit L(N, D) = E + A/N^α + B/D^β
-    // this uses). Three sliders: the model sets the parameters N, the data the training tokens D, and the
-    // compute nodes the budget (nodes × 90 days of 8 GPUs at 40% utilisation): a run that would need more than
-    // 6ND FLOPs is cut off at the budget. Sliding the model or the data launches a run at every level passed;
-    // each run's training-loss curve is drawn against compute on log–log axes, with a cosine learning-rate
-    // schedule set to its planned tokens (so a curve only meets L(N, D) at its end), noise and the odd spike.
-    // Older runs fade but stay. The lower envelope of all runs is the compute-optimal frontier, close to a
-    // straight line in log–log: a scaling law.
+    // Scaling laws, measured: the solvable model of Maloney, Roberts & Sully (2022), trained here. A task with M = 128 latent
+    // dimensions whose variances fall as a power law (λₖ ∝ k^−2), a hidden linear target and label noise; six models
+    // of N = 2 … 64 weights on nested random features of the input, each trained by online SGD (learning rate η/N, one
+    // fresh sample per step) in a background worker. Each run's exact population loss (relative to predicting zero) is
+    // plotted against its training compute C = 6ND as it trains, every run to the same budgets, so the plot fills from
+    // left to right. The lower envelope of all runs is the compute-optimal frontier; its exponent (L − E ∝ C^γ, E the
+    // label noise's irreducible loss) and which size wins at each budget are fitted from the runs, not put in. The rows
+    // set the learning rate and the label noise; a change trains everything again.
     F.scaling2 = {
-        bleed: true, tall: true, E: 1.69, A: 406.4, B: 410.7, a: 0.34, b: 0.28, C0: 17, C1: 29, L0: 1.72, L1: 9, PE: [25, 44], TE: [28, 48], NE: [0, 14], STEPS: 80, MAXRUNS: 320,
-        title: 'Scaling laws', note: 'Slide model size, data and compute nodes; every setting passed trains a run, and the lower envelope of all runs is the scaling law.',
-        L(n, d) { const S = F.scaling2; return S.E + S.A / 10 ** (S.a * n) + S.B / 10 ** (S.b * d); },
+        bleed: true, tall: true, M: 128, SIZES: [2, 4, 8, 16, 32, 64], CMIN: 1.5e3, CMAX: 6.3e6, POINTS: 24,
+        ETA: [0.01, 0.3], NOISE: [0, 0.1],
+        title: 'Scaling laws', note: 'Six models train live on one task; the lower envelope of their loss against compute is the scaling law, fitted from the runs. Drag the rows to change the learning rate or the label noise.',
+        // the experiment, run in a worker (posted one budget at a time); self-contained, so it can be its source
+        experiment(cfg, post) {
+            const { M, sizes, alpha, noise, Cmin, Cmax, points, eta, seed } = cfg;
+            let s = seed >>> 0; const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+            let spare = null; const randn = () => { if (spare != null) { const v = spare; spare = null; return v; } let u = 0; while (!u) u = rnd(); const v = rnd(), r = Math.sqrt(-2 * Math.log(u)); spare = r * Math.sin(2 * Math.PI * v); return r * Math.cos(2 * Math.PI * v); };
+            const lam = new Float64Array(M), sq = new Float64Array(M); let tot = 0; for (let k = 0; k < M; k++) { lam[k] = (k + 1) ** -(1 + alpha); tot += lam[k]; } for (let k = 0; k < M; k++) { lam[k] /= tot; sq[k] = Math.sqrt(lam[k]); }
+            const wstar = new Float64Array(M); for (let k = 0; k < M; k++) wstar[k] = randn();
+            const Nmax = Math.max(...sizes), P = new Float64Array(Nmax * M); for (let i = 0; i < P.length; i++) P[i] = randn();
+            let L0 = noise; for (let k = 0; k < M; k++) L0 += lam[k] * wstar[k] ** 2;
+            const runs = sizes.map((N) => ({ N, v: new Float64Array(N), lr: eta / N, d: 0 }));
+            const loss = (run) => { const u = new Float64Array(M); for (let j = 0; j < run.N; j++) { const vj = run.v[j], row = j * M; for (let k = 0; k < M; k++) u[k] += P[row + k] * vj; } let l = noise; for (let k = 0; k < M; k++) l += lam[k] * (u[k] - wstar[k]) ** 2; return l / L0; };
+            const x = new Float64Array(M), z = new Float64Array(Nmax);
+            for (let i = 0; i < points; i++) {
+                const c = Cmin * (Cmax / Cmin) ** (i / (points - 1));
+                for (const r of runs) {
+                    const goal = Math.floor(c / (6 * r.N)), N = r.N, v = r.v, lr = r.lr;
+                    for (; r.d < goal; r.d++) {
+                        let y = 0; for (let k = 0; k < M; k++) { x[k] = sq[k] * randn(); y += wstar[k] * x[k]; } y += Math.sqrt(noise) * randn();
+                        let pr = 0; for (let j = 0; j < N; j++) { let a = 0; const row = j * M; for (let k = 0; k < M; k++) a += P[row + k] * x[k]; z[j] = a; pr += v[j] * a; }
+                        const e = (y - pr) * lr; for (let j = 0; j < N; j++) v[j] += e * z[j];
+                    }
+                }
+                post({ c, E: noise / L0, losses: runs.map((r) => r.d ? loss(r) : 1) });
+            }
+        },
         init(R, rand) {
-            const fx = R.fx ?? R.x, vy0 = (R.vy0 ?? R.y) + 12, vy1 = (R.vy1 ?? R.y + R.h) - 22, W = R.x + R.w - fx;
-            // the plot is the main panel (4:3); the three controls a strip of three lines under it
-            const lay = K.stack(R, 4 / 3, 3), rp = lay.main, rc = lay.strip, ph = rc.h, py = rc.y;
-            const panel = { x: rc.x, w: rc.w }, plot = { x: rp.x, y: rp.y, w: rp.w, h: rp.h };
-            const st = { r: rand(41), fx, vy0, vy1, W, panel, plot, pe: 42, te: 38, ne: 9, runs: [], cur: null, seq: 0 };
-            const rowH = ph / 3; st.rows = [0, 1, 2].map((i) => ({ y: py + i * rowH, h: rowH }));
-            // the still frame is a finished sweep: model sizes 2²⁶ … 2⁴² at 2³⁸ tokens on 2⁹ nodes, so the envelope
-            // already reads as a scaling law
-            for (let pe = 26; pe <= 42; pe += 1) F.scaling2.sweep(st, true, F.scaling2.n(st, pe), F.scaling2.d(st));
+            const lay = K.stack(R, 4 / 3, 2), rp = lay.main, rc = lay.strip;
+            const st = { r: rand(41), plot: { x: rp.x, y: rp.y, w: rp.w, h: rp.h }, panel: { x: rc.x, w: rc.w }, eta: 0.05, noise: 0.01, rows: [0, 1].map((i) => ({ y: rc.y + i * rc.h / 2, h: rc.h / 2 })), data: [], E: 0 };
+            F.scaling2.train(st);
             return st;
         },
-        // sizes as powers of two: parameters 2²⁵ … 2⁴⁴ (33M … 17.6T), tokens 2²⁸ … 2⁴⁸ (268M … 281T), nodes 2⁰ … 2¹⁴,
-        // past today's largest models (~2⁴⁰ parameters, ~2⁴⁴ tokens); n and d are log₁₀ values for the fit
-        n(st, pe = st.pe) { return pe * Math.LOG10E * Math.LN2; },
-        d(st, te = st.te) { return te * Math.LOG10E * Math.LN2; },
-        nodes(st, ne = st.ne) { return 2 ** ne; },
-        budget(st, ne = st.ne) { return Math.log10(8 * 1e15 * 0.4 * 90 * 86400) + ne * Math.log10(2); },   // FLOPs in 90 days on 8 GPUs a node
-        g(st) { let u = 0, v = 0; while (!u) u = st.r(); while (!v) v = st.r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); },
-        // a run's curve, computed once: loss after C FLOPs (D = C/6N tokens so far), with a cosine schedule over
-        // the planned tokens, smoothed noise that settles as training goes on, and sometimes a loss spike
-        start(st, done, n = F.scaling2.n(st), d = F.scaling2.d(st)) {
-            const S = F.scaling2, l6 = Math.log10(6), cEnd = l6 + n + d, cap = S.budget(st), cStop = Math.min(cEnd, cap), c0 = Math.max(S.C0, l6 + n + 7.6);
-            if (cStop <= c0 + 0.05) return;
-            const pts = []; let z = 0; const spike = st.r() < 0.2 ? Math.floor(S.STEPS * (0.2 + 0.6 * st.r())) : -99;
-            for (let i = 0; i <= S.STEPS; i++) {
-                const c = c0 + (i / S.STEPS) * (cStop - c0), dt = c - l6 - n, lr = 0.5 * (1 + Math.cos(Math.PI * Math.min(1, 10 ** (dt - d))));
-                z = 0.9 * z + 0.1 * S.g(st);
-                let l = S.E + S.A / 10 ** (S.a * n) + (S.B / 10 ** (S.b * dt)) * (1 + 0.35 * lr);
-                l *= Math.exp(0.08 * z * (1 - 0.6 * (i / S.STEPS))) * (1 + (i >= spike && i < spike + 4 ? 0.12 * Math.exp(-(i - spike)) : 0));
-                pts.push([c, l]);
-            }
-            const run = { n, d, c0, cStop, cut: cEnd > cap + 1e-9, pts, prog: done ? 1 : 0, t0: null, id: st.seq++, slide: st.slide || 0 };
-            st.runs.push(run); if (st.runs.length > S.MAXRUNS) st.runs.shift(); st.cur = run;
+        train(st) {
+            const S = F.scaling2; F.scaling2.dispose(st); st.data = []; st.E = st.noise / (1 + st.noise); st.done = false;
+            const cfg = { M: S.M, sizes: S.SIZES, alpha: 1, noise: st.noise, Cmin: S.CMIN, Cmax: S.CMAX, points: S.POINTS, eta: st.eta, seed: Math.floor(st.r() * 2 ** 31) };
+            if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return;
+            const src = `const experiment = ${S.experiment.toString().replace(/^experiment/, 'function')};\nonmessage = (e) => { experiment(e.data, (m) => postMessage(m)); postMessage({ done: true }); };`;
+            const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+            st.worker = new Worker(url); URL.revokeObjectURL(url);
+            st.worker.onmessage = (e) => { if (e.data.done) st.done = true; else { st.data.push(e.data); st.E = e.data.E; } st.request?.(); };
+            st.worker.postMessage(cfg);
         },
-        // each setting passed trains RUNS seeds, a little apart in size and data (the noise between real runs)
-        RUNS: 3,
-        sweep(st, done, n, d) { for (let k = 0; k < F.scaling2.RUNS; k++) F.scaling2.start(st, done, n + (k ? 0.03 * F.scaling2.g(st) : 0), d + (k ? 0.03 * F.scaling2.g(st) : 0)); },
-        // drag along a row to set it; sliding the model or the data launches a run at every level passed; a new slide discards the last one's runs at once
+        dispose(st) { if (st.worker) { st.worker.terminate(); st.worker = null; } },
+        // drag along a row to set it; on release everything trains again
         pointer(type, x, y, st) {
-            const S = F.scaling2, pn = st.panel, at = ([lo, hi]) => lo + Math.max(0, Math.min(1, (x - pn.x) / pn.w)) * (hi - lo);
-            if (type === 'down') { const row = x < pn.x + pn.w + 10 ? st.rows.findIndex((r) => y >= r.y && y < r.y + r.h) : -1; st.drag = row >= 0 ? row : null; if (st.drag != null) { st.slide = (st.slide || 0) + 1; st.runs = []; st.cur = null; S.sweep(st, false, S.n(st), S.d(st)); } }
-            if (type === 'up') { st.drag = null; return; }
-            if (st.drag == null || (type !== 'down' && type !== 'move')) return;
-            const step = 0.5, snap = (v) => Math.round(v / step) * step;                       // half powers of two: √2 apart
-            const spawn = (from, to, make) => { const n = Math.round((to - from) / step); for (let i = 1; i <= Math.abs(n); i++) make(from + Math.sign(n) * i * step); };
-            if (st.drag === 0) { const v = snap(at(S.PE)); if (v !== st.pe) { spawn(st.pe, v, (e) => S.sweep(st, false, S.n(st, e), S.d(st))); st.pe = v; } }
-            else if (st.drag === 1) { const v = snap(at(S.TE)); if (v !== st.te) { spawn(st.te, v, (e) => S.sweep(st, false, S.n(st), S.d(st, e))); st.te = v; } }
-            else { const v = snap(at(S.NE)); if (v !== st.ne) { st.ne = v; S.sweep(st, false, S.n(st), S.d(st)); } }
-            st.wake = 4;
+            const S = F.scaling2, pn = st.panel, at = ([lo, hi], log) => { const k = Math.max(0, Math.min(1, (x - pn.x) / pn.w)); return log ? lo * (hi / lo) ** k : lo + k * (hi - lo); };
+            if (type === 'down') st.drag = st.rows.findIndex((r) => y >= r.y && y < r.y + r.h && x >= pn.x - 10 && x <= pn.x + pn.w + 10);
+            if (st.drag == null || st.drag < 0) return;
+            if (type === 'down' || type === 'move') { if (st.drag === 0) st.eta = +at(S.ETA, true).toPrecision(2); else st.noise = Math.round(at(S.NOISE) * 200) / 200; st.wake = 1; }
+            if (type === 'up' || type === 'leave') { st.drag = null; S.train(st); st.wake = 4; }
         },
         draw(ctx, R, t, C, st, still) {
-            const S = F.scaling2, pl = st.plot, X = (c) => pl.x + ((c - S.C0) / (S.C1 - S.C0)) * pl.w, Y = (l) => pl.y + ((Math.log10(S.L1) - Math.log10(l)) / (Math.log10(S.L1) - Math.log10(S.L0))) * pl.h;   // log–log
-            const P = (pts) => { const out = []; pts.forEach(([c, l]) => { if (l <= S.L1) out.push([X(c), Y(l)]); }); return out; };
-            // runs advance together; more nodes, faster
-            const cur = st.cur, speed = 0.5 + 0.22 * st.ne;
-            if (!still) st.runs.forEach((run) => { if (run.prog >= 1) return; if (run.t0 == null) run.t0 = t; run.prog = Math.min(1, (t - run.t0) * speed); });
-            const busy = st.runs.some((run) => run.prog < 1);
-            // the plot: two axes (lines, u/2), the budget a dotted vertical
+            const S = F.scaling2, pl = st.plot, lx0 = Math.log10(S.CMIN), lx1 = Math.log10(S.CMAX), lmin = Math.min(...st.data.flatMap((d) => d.losses), st.E || 1, 0.5), ly0 = Math.log10(Math.max(1e-4, lmin * 0.6)), ly1 = Math.log10(1.15);
+            const X = (c) => pl.x + ((Math.log10(c) - lx0) / (lx1 - lx0)) * pl.w, Y = (l) => pl.y + ((ly1 - Math.log10(Math.max(l, 10 ** ly0))) / (ly1 - ly0)) * pl.h;
+            const data = st.data, n = data.length;
+            // two axes (u/2 lines); the irreducible loss a dotted line
             K.line(ctx, C, [[pl.x, pl.y], [pl.x, pl.y + pl.h], [pl.x + pl.w, pl.y + pl.h]], -1, 0.5);
-            const bx = X(S.budget(st)); if (bx < pl.x + pl.w) K.dotted(ctx, C, [[bx, pl.y + pl.h], [bx, pl.y]], -1, 0.5);
-            // runs: at context tone (a new slide discards the last), the current run a u line in focus with a focus point while it trains
-            st.runs.forEach((run) => {
-                const k = Math.max(2, Math.round(run.pts.length * run.prog)), shown = P(run.pts.slice(0, k)); if (shown.length < 2) return;
-                const isCur = run === cur, tone = isCur ? 1 : 0.25;   /* a sweep is many runs: each at context tone, the envelope reads through them */
-                K.line(ctx, C, shown, isCur ? 0 : -1, tone);
-                const [x, y] = shown[shown.length - 1];
-                if (run.prog < 1) K.pt(ctx, C, x, y, isCur ? 1 : 0, 1); else K.pt(ctx, C, x, y, run.cut ? 0 : -1, tone);
-            });
-            // the frontier: the lowest loss reached at each compute, over all runs so far — the answer, a 2u line
-            const bins = 60, front = [], cMax = Math.max(...st.runs.map((run) => run.c0 + (run.cStop - run.c0) * run.prog));
-            for (let i = 0; i <= bins; i++) {
-                const c = S.C0 + (i / bins) * (S.C1 - S.C0); let best = Infinity; if (c > cMax) break;
-                st.runs.forEach((run) => { const u = ((c - run.c0) / (run.cStop - run.c0)) * S.STEPS; if (u < 0 || u > S.STEPS * run.prog) return; const j = Math.min(S.STEPS - 1, Math.floor(u)), f = u - j, l = run.pts[j][1] + (run.pts[j + 1][1] - run.pts[j][1]) * f; if (l < best) best = l; });
-                if (front.length) best = Math.min(best, front[front.length - 1][1]);
-                if (best < Infinity) front.push([c, best]);
-            }
-            if (front.length > 1) K.line(ctx, C, P(front), 1, 1);
-            let slope = null; if (front.length > 4) { const xs = front.map((p2) => p2[0]), ys = front.map((p2) => Math.log10(Math.max(1e-3, p2[1] - S.E))), mx = xs.reduce((a, b) => a + b, 0) / xs.length, my = ys.reduce((a, b) => a + b, 0) / ys.length; slope = xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) / xs.reduce((a, x) => a + (x - mx) ** 2, 0); }
-            // the controls: three strips, each a line — the track at context tone, up to the value at data tone, the value a
-            // focus point
-            const pn = st.panel, rows = st.rows;
-            [[st.pe, S.PE], [st.te, S.TE], [st.ne, S.NE]].forEach(([v, [lo, hi]], i) => {
-                const y = rows[i].y + rows[i].h / 2, xv = pn.x + ((v - lo) / (hi - lo)) * pn.w;
+            if (st.E > 0) K.dotted(ctx, C, [[pl.x, Y(st.E)], [pl.x + pl.w, Y(st.E)]], -1, 0.5);
+            // runs at data tone, each ending in a point (the run still training a focus point)
+            S.SIZES.forEach((N, i) => { const pts = data.map((d) => [X(d.c), Y(d.losses[i])]); if (pts.length > 1) K.line(ctx, C, pts, -1, 0.5); if (pts.length) K.pt(ctx, C, ...pts[pts.length - 1], st.done ? -1 : 0, st.done ? 0.5 : 1); });
+            // the frontier: the lowest loss at each budget — the answer, a 2u line in focus tone
+            const front = data.map((d) => { let b = 0; d.losses.forEach((l, i) => { if (l < d.losses[b]) b = i; }); return { c: d.c, l: d.losses[b], N: S.SIZES[b] }; });
+            if (front.length > 1) K.line(ctx, C, front.map((f) => [X(f.c), Y(f.l)]), 1, 1);
+            // fits over the frontier's later half: L − E ∝ C^γ, and the winning size N ∝ C^κ
+            const fit = (pts) => { const mx = pts.reduce((a, p) => a + p[0], 0) / pts.length, my = pts.reduce((a, p) => a + p[1], 0) / pts.length, sxx = pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0); return sxx ? pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / sxx : null; };
+            const tail = front.slice(front.length >> 1).filter((f) => f.l > st.E * 1.05), gamma = tail.length > 3 ? fit(tail.map((f) => [Math.log10(f.c), Math.log10(f.l - st.E)])) : null;
+            const kappa = front.length > 6 ? fit(front.map((f) => [Math.log10(f.c), Math.log10(f.N)])) : null;
+            // the rows: track at context tone, up to the value at data tone, the value a focus point
+            const pn = st.panel;
+            [[Math.log(st.eta / S.ETA[0]) / Math.log(S.ETA[1] / S.ETA[0])], [(st.noise - S.NOISE[0]) / (S.NOISE[1] - S.NOISE[0])]].forEach(([k], i) => {
+                const y = st.rows[i].y + st.rows[i].h / 2, xv = pn.x + k * pn.w;
                 K.line(ctx, C, [[pn.x, y], [pn.x + pn.w, y]], -1, 0.25); K.line(ctx, C, [[pn.x, y], [xv, y]], 0, 0.5); K.pt(ctx, C, xv, y, 1, 1);
             });
-            const fmt = (v) => { const e = Math.floor(v), m = 10 ** (v - e); return `${m.toFixed(1)}e${e}`; };
-            const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹', pow2 = (e) => `2${String(Math.floor(e)).split('').map((c) => SUP[+c]).join('')}${e % 1 ? '·√2' : ''}`;
-            const human = (v) => { const x = 10 ** v; return x >= 1e12 ? `${(x / 1e12).toFixed(1)}T` : x >= 1e9 ? `${(x / 1e9).toFixed(x >= 1e10 ? 0 : 1)}B` : `${Math.round(x / 1e6)}M`; };
-            const ly = (i) => rows[i].y + rows[i].h / 2 - K.LN / 2;
-            label(ctx, C, st, `params ${pow2(st.pe)} · ${human(S.n(st))}`, pn.x, ly(0), 'left', true);
-            label(ctx, C, st, `tokens ${pow2(st.te)} · ${human(S.d(st))}`, pn.x, ly(1), 'left', true);
-            label(ctx, C, st, `nodes ${pow2(st.ne)} · ${fmt(S.budget(st))} FLOPs`, pn.x, ly(2), 'left', true);
+            const ly = (i) => st.rows[i].y + st.rows[i].h / 2 - K.LN / 2, sci = (v) => { const e = Math.floor(Math.log10(v)); return `${(v / 10 ** e).toFixed(1)}e${e}`; };
+            label(ctx, C, st, `learning rate η ${st.eta} (per weight η/N)`, pn.x, ly(0), 'left', true);
+            label(ctx, C, st, `label noise σ² ${st.noise.toFixed(3)}`, pn.x, ly(1), 'left', true);
             label(ctx, C, st, 'loss', pl.x + K.LN / 4, pl.y + K.LN / 4, 'left');
-            label(ctx, C, st, 'compute', pl.x + pl.w, pl.y + pl.h - K.LN / 4, 'right');
-            if (bx < pl.x + pl.w) label(ctx, C, st, 'budget', bx - K.LN / 4, pl.y + K.LN / 4, 'right');
-            if (front.length > 1) label(ctx, C, st, slope != null && st.runs.length > 2 ? `frontier: L − E ∝ C^${slope.toFixed(2)}` : 'frontier', pl.x + pl.w, pl.y + K.LN, 'right', true);
-            if (!still && busy) st.wake = Math.max(st.wake || 0, 0.3);
+            label(ctx, C, st, 'compute C = 6ND', pl.x + pl.w, pl.y + pl.h - K.LN / 4, 'right');
+            if (st.E > 0) label(ctx, C, st, 'irreducible', pl.x + K.LN / 4, Y(st.E) - K.LN / 4, 'left');
+            if (n) S.SIZES.forEach((N, i) => label(ctx, C, st, `N ${N}`, X(data[n - 1].c) + K.LN / 4, Y(data[n - 1].losses[i]), 'left'));
+            const head = !st.done ? `training · ${n ? sci(data[n - 1].c) : '0'} of ${sci(S.CMAX)} FLOPs` : gamma != null ? `frontier: L − E ∝ C^${gamma.toFixed(2)}${kappa != null ? ` · best N ∝ C^${kappa.toFixed(2)}` : ''}` : 'frontier';
+            label(ctx, C, st, head, pl.x + pl.w, pl.y + K.LN / 4, 'right', true);
         },
     };
 
@@ -3997,7 +3980,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             W = box.width; H = box.height;
             if (opts.size) { canvas.style.width = `${W}px`; canvas.style.height = `${H}px`; }
             canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            R = regionFn(W, H, fig); const hov = state && state.hover; state = fig.init(R, rand); state.touched = touched; state.hover = hov;
+            R = regionFn(W, H, fig); const hov = state && state.hover; if (state) fig.dispose?.(state); state = fig.init(R, rand); state.touched = touched; state.hover = hov;
+            state.request = () => { if (!raf && visible && !dead) raf = requestAnimationFrame(frame); };   // a figure fed from elsewhere (a worker) asks for a frame
         };
         let dead = false;
         const frame = (now) => {
@@ -4033,7 +4017,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         resize(); start();
         return {
             // the page is left (router.js): the figure stops and lets go of everything it listens to
-            destroy() { dead = true; cancelAnimationFrame(raf); raf = 0; io.disconnect(); mo.disconnect(); removeEventListener('resize', onResize); probe.remove(); },
+            destroy() { dead = true; cancelAnimationFrame(raf); raf = 0; if (state) fig.dispose?.(state); io.disconnect(); mo.disconnect(); removeEventListener('resize', onResize); probe.remove(); },
             // the reader touched the figure: it comes alive and takes the accent
             touch() { if (touched) return; touched = true; state.touched = true; state.hold = true; t0 = performance.now(); },
             // each interaction wakes the figure for as long as it asks (state.wake), then it comes to rest
