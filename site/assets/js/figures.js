@@ -1426,7 +1426,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     // line of every unit, before its fold, traced by marching squares) and counts them, the number Montúfar et al. show
     // grows exponentially with depth. Click the right to play the layers; drag across it to scrub.
     F.fold = {
-        bleed: true, L: 4, STEPS: 700, PER: 24, LR: 0.03, SIM: 0.05,
+        bleed: true, L: 4, STEPS: 700, PER: 60, LR: 0.03, SIM: 0.05,
         title: 'Folding space', note: 'A trained ReLU network folds, stretches and rotates the plane until two tangled classes sit on either side of a line; deeper networks cut the plane into many more linear regions.',
         // a new shape each time: a family, its parameters drawn within what four layers can fold apart
         shape(r) {
@@ -1479,18 +1479,21 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             P.push(r() - 0.5, r() - 0.5, 0);
             st.P = P; st.m = new Float64Array(P.length); st.v = new Float64Array(P.length); st.it = 0;
         },
-        forward(st, p) { const P = st.P; let z = p; for (let k = 0; k < st.L; k++) { const o = k * 6; z = [Math.abs(P[o] * z[0] + P[o + 1] * z[1] + P[o + 4]), Math.abs(P[o + 2] * z[0] + P[o + 3] * z[1] + P[o + 5])]; } const o = st.L * 6; return P[o] * z[0] + P[o + 1] * z[1] + P[o + 2]; },
+        forward(st, p) { const P = st.P; let z0 = p[0], z1 = p[1]; for (let k = 0; k < st.L; k++) { const o = k * 6, h0 = P[o] * z0 + P[o + 1] * z1 + P[o + 4]; z1 = Math.abs(P[o + 2] * z0 + P[o + 3] * z1 + P[o + 5]); z0 = Math.abs(h0); } const z = [z0, z1]; const o = st.L * 6; return P[o] * z[0] + P[o + 1] * z[1] + P[o + 2]; },
         accuracy(st) { let a = 0; st.pts.forEach((p, i) => { if ((F.fold.forward(st, p) > 0) === !!st.lab[i]) a++; }); return a / st.pts.length; },
         // one full-batch Adam step on the logistic loss, backpropagating through the folds
         step(st) {
-            const L = st.L, P = st.P, n = P.length, g = new Float64Array(n), N = st.pts.length;
-            st.pts.forEach((p, i) => {
-                const ins = [], sg = []; let z = p;
-                for (let k = 0; k < L; k++) { const o = k * 6, h0 = P[o] * z[0] + P[o + 1] * z[1] + P[o + 4], h1 = P[o + 2] * z[0] + P[o + 3] * z[1] + P[o + 5]; ins.push(z); sg.push([Math.sign(h0), Math.sign(h1)]); z = [Math.abs(h0), Math.abs(h1)]; }
-                const o = L * 6, lg = P[o] * z[0] + P[o + 1] * z[1] + P[o + 2], y = st.lab[i] ? 1 : -1, dl = -y / (1 + Math.exp(y * lg)) / N;
-                g[o] += dl * z[0]; g[o + 1] += dl * z[1]; g[o + 2] += dl; let dz = [dl * P[o], dl * P[o + 1]];
-                for (let k = L - 1; k >= 0; k--) { const q = k * 6, a = ins[k], d0 = dz[0] * sg[k][0], d1 = dz[1] * sg[k][1]; g[q] += d0 * a[0]; g[q + 1] += d0 * a[1]; g[q + 2] += d1 * a[0]; g[q + 3] += d1 * a[1]; g[q + 4] += d0; g[q + 5] += d1; dz = [P[q] * d0 + P[q + 2] * d1, P[q + 1] * d0 + P[q + 3] * d1]; }
-            });
+            // the forward and backward passes in typed buffers, nothing allocated per point (the same arithmetic)
+            const L = st.L, P = st.P, n = P.length, N = st.pts.length;
+            const buf = st.buf && st.buf.L === L ? st.buf : (st.buf = { L, g: new Float64Array(n), za: new Float64Array(2 * L), sg: new Float64Array(2 * L) }), g = buf.g, za = buf.za, sg = buf.sg;
+            g.fill(0);
+            for (let i = 0; i < N; i++) {
+                const p = st.pts[i]; let z0 = p[0], z1 = p[1];
+                for (let k = 0; k < L; k++) { const o = k * 6, h0 = P[o] * z0 + P[o + 1] * z1 + P[o + 4], h1 = P[o + 2] * z0 + P[o + 3] * z1 + P[o + 5]; za[2 * k] = z0; za[2 * k + 1] = z1; sg[2 * k] = Math.sign(h0); sg[2 * k + 1] = Math.sign(h1); z0 = Math.abs(h0); z1 = Math.abs(h1); }
+                const o = L * 6, lg = P[o] * z0 + P[o + 1] * z1 + P[o + 2], y = st.lab[i] ? 1 : -1, dl = -y / (1 + Math.exp(y * lg)) / N;
+                g[o] += dl * z0; g[o + 1] += dl * z1; g[o + 2] += dl; let e0 = dl * P[o], e1 = dl * P[o + 1];
+                for (let k = L - 1; k >= 0; k--) { const q = k * 6, a0 = za[2 * k], a1 = za[2 * k + 1], d0 = e0 * sg[2 * k], d1 = e1 * sg[2 * k + 1]; g[q] += d0 * a0; g[q + 1] += d0 * a1; g[q + 2] += d1 * a0; g[q + 3] += d1 * a1; g[q + 4] += d0; g[q + 5] += d1; e0 = P[q] * d0 + P[q + 2] * d1; e1 = P[q + 1] * d0 + P[q + 3] * d1; }
+            }
             const it = ++st.it, lr = F.fold.LR;
             for (let j = 0; j < n; j++) { st.m[j] = 0.9 * st.m[j] + 0.1 * g[j]; st.v[j] = 0.999 * st.v[j] + 0.001 * g[j] * g[j]; P[j] -= (lr * st.m[j] / (1 - 0.9 ** it)) / (Math.sqrt(st.v[j] / (1 - 0.999 ** it)) + 1e-8); }
             // a pull towards similarities (a = d, b = −c): each layer stays a stretch and a rotation, so the bent plane stays two-dimensional
