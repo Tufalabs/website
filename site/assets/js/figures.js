@@ -1102,14 +1102,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const stroke = st.stroke || (st.anim ? st.keepStroke : null);
             if (stroke) { ctx.fillStyle = C.accent; ctx.globalAlpha = st.stroke ? 0.9 : 0.35; stroke.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 1.5, 0, TAU); ctx.fill(); }); }
             // time axis: dotted, with a handle at t
-            ctx.fillStyle = C.ink3; ctx.globalAlpha = 0.6;
-            for (let x = A.x0; x <= A.x1; x += 4) ctx.fillRect(x - 0.5, A.y - 0.5, 1, 1);
-            ctx.globalAlpha = 1; ctx.fillStyle = st.hoverAxis ? C.ink : live ? C.accent : C.ink2;
-            const hx = A.x0 + (A.x1 - A.x0) * T; ctx.fillRect(hx - 1, A.y - 5, 2, 10);
-            ctx.globalAlpha = 0.6; ctx.fillStyle = C.ink3; ctx.fillRect(A.x0 - 0.5, A.y - 3, 1, 6); ctx.fillRect(A.x1 - 0.5, A.y - 3, 1, 6);
-            label(ctx, C, st, 'noise', A.x0, A.y + 11, 'left');
-            label(ctx, C, st, 'data', A.x1, A.y + 11, 'right');
-            label(ctx, C, st, `t ${T.toFixed(2)}`, Math.max(A.x0 + 20, Math.min(A.x1 - 20, hx)), A.y - 12, 'center', true);
+            slider(ctx, C, st, A.x0, A.x1, A.y, T, `t ${T.toFixed(2)} · noise → data`);
             label(ctx, C, st, 'velocity field v(x, t)', st.fx + 4, st.vy0 + 2);
             if (!still && st.anim) st.wake = Math.max(st.wake || 0, 0.3);
         },
@@ -1291,6 +1284,24 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
     };
     try { K.sync(); } catch (e) { /* no document (tests) */ }
+    // the one slider, in every figure: its label half a line above the track's left end (shown on hover, as all labels),
+    // the track a line at context tone, up to the value a line at data tone, the value a focus point; ticks (points at
+    // data tone) mark discrete values. A row is one line high, the track three quarters down it
+    const slider = (ctx, C, s, x0, x1, y, k, text, ticks = 0) => {
+        const xv = x0 + Math.max(0, Math.min(1, k)) * (x1 - x0);
+        K.line(ctx, C, [[x0, y], [x1, y]], -1, 0.25); K.line(ctx, C, [[x0, y], [xv, y]], 0, 0.5);
+        for (let i = 0; i < ticks; i++) K.pt(ctx, C, x0 + (i / (ticks - 1)) * (x1 - x0), y, -1, 0.5);
+        K.pt(ctx, C, xv, y, 1, 1);
+        if (text) label(ctx, C, s, text, x0, y - K.LN / 2, 'left', true);
+    };
+    // the same slider standing up (a scale at a figure's edge): the track from bottom to top, filled from the bottom to the
+    // value; its label beside the value
+    const vslider = (ctx, C, s, x, yBottom, yTop, k, text, side = 'left') => {
+        const yv = yBottom - Math.max(0, Math.min(1, k)) * (yBottom - yTop);
+        K.line(ctx, C, [[x, yBottom], [x, yTop]], -1, 0.25); K.line(ctx, C, [[x, yBottom], [x, yv]], 0, 0.5);
+        K.pt(ctx, C, x, yv, 1, 1);
+        if (text) label(ctx, C, s, text, side === 'left' ? x - K.LN / 2 : x + K.LN / 2, yv, side === 'left' ? 'right' : 'left', true);
+    };
     const label = (ctx, C, s, text, x, y, align = 'left', strong = false) => {
         if (!s.hover) return;
         MONO = MONO || (getComputedStyle(document.documentElement).getPropertyValue('--mono').trim() || 'monospace');
@@ -1392,8 +1403,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             }
             // β: a dotted scale at the right edge with a handle
             const ax = fx + W - 2, u = (st.lb - Math.log(0.05)) / (Math.log(5) - Math.log(0.05)), hy = vy0 + u * (vy1 - vy0);
-            ctx.fillStyle = C.ink3; ctx.globalAlpha = 0.6; for (let y = vy0; y <= vy1; y += 4) ctx.fillRect(ax - 0.5, y, 1, 1);
-            ctx.globalAlpha = 1; ctx.fillStyle = live ? C.ink : C.ink2; for (let j = -2; j <= 2; j++) { ctx.beginPath(); ctx.arc(ax + j * 2, hy, 1.1, 0, TAU); ctx.fill(); }
+            vslider(ctx, C, st, ax, vy1, vy0, 1 - u, `β ${Math.exp(st.lb).toFixed(2)}`);
             // samples falling into their columns
             let falling = false;
             st.drops = st.drops.filter((d) => {
@@ -1416,18 +1426,18 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     // line of every unit, before its fold, traced by marching squares) and counts them, the number Montúfar et al. show
     // grows exponentially with depth. Click the right to play the layers; drag across it to scrub.
     F.fold = {
-        bleed: true, L: 3, STEPS: 700, PER: 24, LR: 0.03, SIM: 0.05,
+        bleed: true, L: 4, STEPS: 700, PER: 24, LR: 0.03, SIM: 0.05,
         title: 'Folding space', note: 'A trained ReLU network folds, stretches and rotates the plane until two tangled classes sit on either side of a line; deeper networks cut the plane into many more linear regions.',
-        DATA: [
-            ['ring', (x, y) => Math.hypot(x, y) < 0.6],
-            ['xor', (x, y) => x * y > 0],
-            ['checkerboard', (x, y) => (Math.floor((x + 1) * 1.5) + Math.floor((y + 1) * 1.5)) % 2 === 0],
-            ['wave', (x, y) => y > 0.45 * Math.sin(3.2 * x)],
-            ['two blobs', (x, y) => Math.hypot(x - 0.4, y - 0.3) < 0.35 || Math.hypot(x + 0.45, y + 0.35) < 0.35],
-            ['band', (x, y) => Math.abs(x + y) < 0.5],
-            ['three rings', (x, y) => Math.floor(Math.hypot(x, y) / 0.33) % 2 === 0],
-            ['spiral', (x, y) => Math.sin(Math.atan2(y, x) - 8 * Math.hypot(x, y)) > 0],
-        ],
+        // a new shape each time: a family, its parameters drawn within what four layers can fold apart
+        shape(r) {
+            const rot = r() * TAU, pick = Math.floor(r() * 6), turn = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+            if (pick === 0) { const w = 0.3 + r() * 0.06, k = 3 + Math.floor(r() * 3), amp = r() * 0.05; return { name: 'rings', f: (x, y) => { const t = Math.atan2(y, x); return Math.floor((Math.hypot(x, y) + amp * Math.cos(k * t + rot)) / w) % 2 === 0; } }; }
+            if (pick === 1) { const k = 6 + r() * 2; return { name: 'spiral', f: (x, y) => Math.sin(Math.atan2(y, x) + rot - k * Math.hypot(x, y)) > 0 }; }
+            if (pick === 2) { const a = (r() - 0.5) * 0.3; return { name: 'checkerboard', f: (x, y) => { const [u, v] = turn(x, y, a); return (Math.floor((u + 1) * 2) + Math.floor((v + 1) * 2)) % 2 === 0; } }; }
+            if (pick === 3) { const n = 4 + Math.floor(r() * 3), d = 0.15 + r() * 0.1; return { name: `star · ${n} points`, f: (x, y) => Math.hypot(x, y) < 0.5 + d * Math.cos(n * Math.atan2(y, x) + rot) }; }
+            if (pick === 4) { const n = 3 + Math.floor(r() * 3); return { name: `flower · ${n} petals`, f: (x, y) => { const q = Math.hypot(x, y); return q < 0.7 && Math.cos(n * Math.atan2(y, x) + rot) > 0.2 - q; } }; }
+            return { name: 'moons', f: (x0, y0) => { const [x, y] = turn(x0, y0, rot), a = Math.hypot(x + 0.25, y + 0.1), b = Math.hypot(x - 0.25, y - 0.1); return (a > 0.35 && a < 0.65 && y > -0.1) || (b > 0.35 && b < 0.65 && y < 0.1); } };
+        },
         LMIN: 1, LMAX: 8,
         init(R, rand) {
             const r = rand(37), fx = R.fx ?? R.x, vy0 = R.vy0 ?? R.y, vy1 = (R.vy1 ?? R.y + R.h) - 16, W = R.x + R.w - fx;
@@ -1438,18 +1448,25 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const n = Math.round(sc / (LN / 2)); st.lat = []; for (let i = -n; i <= n; i++) for (let j = -n; j <= n; j++) st.lat.push([i / n, j / n]);   // the plane: a field, ℓ/2 apart
             st.pts = Array.from({ length: 900 }, () => [r() * 2 - 1, r() * 2 - 1]);
             st.grid = []; for (let i = 0; i <= 8; i++) { const a = -1 + i / 4; for (let k = 0; k <= 48; k++) { const b = -1 + k / 24; st.grid.push([a, b], [b, a]); } }
-            st.axis = { x0: st.right[0] - side / 2, x1: st.right[0] + side / 2, y: cy + side / 2 + LN / 2 };
-            st.lrow = { x0: st.left[0] - side / 2, x1: st.left[0] + side / 2, y: cy + side / 2 + LN / 2 };   // the layers row, under the input
-            F.fold.dataset(st, 0);
-            for (let tries = 0; tries < 5; tries++) {                    // trained at rest; a start that stalls is drawn again
-                F.fold.reinit(st); for (let i = 0; i < F.fold.STEPS; i++) F.fold.step(st);
-                st.acc = F.fold.accuracy(st); if (st.acc >= 0.95) break;
-            }
-            st.train = null; st.prevLab = null;
+            st.axis = { x0: st.right[0] - side / 2, x1: st.right[0] + side / 2, y: cy + side / 2 + 0.75 * LN };   // the depth, under the output
+            st.lrow = { x0: st.left[0] - side / 2, x1: st.left[0] + side / 2, y: cy + side / 2 + 0.75 * LN };   // the layers, under the input
+            F.fold.dataset(st, F.fold.shape(r)); st.prevLab = null; st.train = null;
+            // trained before it is shown, in chunks of ~8 ms when the browser is idle (never holding up the page): the best
+            // of up to four starts, done at 90%; then it fades in
+            F.fold.reinit(st); st.acc = F.fold.accuracy(st); st.hidden = true;
+            const pre = { tries: 0, steps: 0, best: null }, chunk = () => {
+                if (st.disposed) return;
+                const t0 = performance.now(); while (performance.now() - t0 < 8 && pre.steps < 4 * F.fold.STEPS) { F.fold.step(st); pre.steps++; }
+                if (pre.steps < 4 * F.fold.STEPS) { idle(chunk); return; }
+                const a = F.fold.accuracy(st); if (!pre.best || a > pre.best.a) pre.best = { a, P: st.P.slice() };
+                if (a >= 0.9 || ++pre.tries >= 4) { st.P = pre.best.P; st.acc = pre.best.a; st.m.fill(0); st.v.fill(0); st.it++; st.hidden = false; st.shownAt = performance.now(); st.request?.(); return; }
+                F.fold.reinit(st); pre.steps = 0; idle(chunk);
+            };
+            idle(chunk);
             return st;
         },
         // a new dataset: the points change tone, all at once, over 4τ
-        dataset(st, k) { st.prevLab = st.lab ? st.lab.slice() : null; st.flipT = null; st.ds = k; const f = F.fold.DATA[k][1]; st.lab = st.pts.map(([x, y]) => (f(x, y) ? 1 : 0)); },
+        dataset(st, sh) { st.prevLab = st.lab ? st.lab.slice() : null; st.flipT = null; st.shape = sh; st.ds = (st.ds || 0) + 1; st.lab = st.pts.map(([x, y]) => (sh.f(x, y) ? 1 : 0)); },
         // weights near a stretch-and-rotate per layer, then a random readout line
         reinit(st) {
             const r = st.r, P = [];
@@ -1533,7 +1550,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const pr = st.press; st.press = null;
                 if (pr.paint === true) F.fold.retrain(st);                                                       // painted: refit
                 else if (!pr.moved && x > (st.left[0] + st.right[0]) / 2) { st.anim = { start: null }; st.wake = 6; }                       // click on the right: play the network through its layers
-                else if (!pr.moved) { F.fold.dataset(st, (st.ds + 1) % F.fold.DATA.length); st.acc = F.fold.accuracy(st); F.fold.retrain(st); }   // click on the left: the next dataset
+                else if (!pr.moved) { F.fold.dataset(st, F.fold.shape(st.r)); st.acc = F.fold.accuracy(st); F.fold.retrain(st); }   // click on the left: a new shape
             }
         },
         draw(ctx, R, t, C, st, still) {
@@ -1552,7 +1569,10 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             st.ext = still ? ext : st.ext + (ext - st.ext) * 0.2;
             const rs = sc / st.ext, P = (c, q, s2 = sc) => [c[0] + q[0] * s2, c[1] - q[1] * s2];
             // the one point: size u·2^k, tone 2^−k; under 1.4px a square on the pixel grid
-            const pt = (x, y, k, tone) => { const rr = U * 2 ** k; ctx.globalAlpha = tone; ctx.fillStyle = C.ink; if (rr < 1.4) { ctx.fillRect(x - rr, y - rr, 2 * rr, 2 * rr); return; } ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU); ctx.fill(); };
+            if (st.hidden) return;
+            const fadeIn = Math.min(1, (performance.now() - (st.shownAt || 0)) / (4 * TB * 1000)), fd = smooth(fadeIn);
+            if (fadeIn < 1) { st.wake = Math.max(st.wake || 0, 0.1); requestAnimationFrame(() => st.request?.()); }   // the fade runs on frames of its own
+            const pt = (x, y, k, tone) => { const rr = U * 2 ** k; ctx.globalAlpha = tone * fd; ctx.fillStyle = C.ink; if (rr < 1.4) { ctx.fillRect(x - rr, y - rr, 2 * rr, 2 * rr); return; } ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU); ctx.fill(); };
             const clipTo = (c) => { ctx.save(); ctx.beginPath(); ctx.rect(c[0] - side / 2, c[1] - side / 2, side, side); ctx.clip(); };
             // the classes: class 1 a data point at half tone, class 0 a field-size point at a quarter; a new dataset re-tones them over 4τ
             if (st.prevLab && st.flipT == null && !still) st.flipT = t;
@@ -1563,12 +1583,12 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             st.lat.forEach((g) => { const [x, y] = P(st.left, g); pt(x, y, -1, 0.25); });
             // the linear regions, recomputed when the weights change: their boundaries a line at u/2, context tone
             const ver = st.it + ':' + st.L + ':' + st.ds; if (st.regionsAt !== ver) { st.reg = F.fold.regions(st); st.regionsAt = ver; }
-            { ctx.globalAlpha = 0.25; ctx.strokeStyle = C.ink; ctx.lineWidth = U / 2; ctx.beginPath(); const sg = st.reg.segs; for (let e = 0; e < sg.length; e += 2) { const [xa, ya] = P(st.left, sg[e]), [xb, yb] = P(st.left, sg[e + 1]); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); } ctx.stroke(); }
+            { ctx.globalAlpha = 0.25 * fd; ctx.strokeStyle = C.ink; ctx.lineWidth = U / 2; ctx.beginPath(); const sg = st.reg.segs; for (let e = 0; e < sg.length; e += 2) { const [xa, ya] = P(st.left, sg[e]), [xb, yb] = P(st.left, sg[e + 1]); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); } ctx.stroke(); }
             st.pts.forEach((p, i) => { const [x, y] = P(st.left, p), [k, tone] = style(i); pt(x, y, k, tone); });
             {
                 const G = 40, m = side / 2 / sc, v = new Float64Array((G + 1) * (G + 1)), at = (i) => -m + (2 * m * i) / G;
                 for (let j = 0; j <= G; j++) for (let i = 0; i <= G; i++) v[j * (G + 1) + i] = F.fold.forward(st, [at(i), at(j)]);
-                ctx.globalAlpha = 1; ctx.strokeStyle = C.ink; ctx.lineWidth = U; ctx.beginPath();
+                ctx.globalAlpha = fd; ctx.strokeStyle = C.ink; ctx.lineWidth = U; ctx.beginPath();
                 for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
                     const c = [v[j * (G + 1) + i], v[j * (G + 1) + i + 1], v[(j + 1) * (G + 1) + i + 1], v[(j + 1) * (G + 1) + i]], xy = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], cut = [];
                     for (let e = 0; e < 4; e++) { const a2 = c[e], b2 = c[(e + 1) % 4]; if ((a2 > 0) !== (b2 > 0)) { const f = a2 / (a2 - b2), p0 = xy[e], p1 = xy[(e + 1) % 4]; cut.push([at(p0[0] + (p1[0] - p0[0]) * f), at(p0[1] + (p1[1] - p0[1]) * f)]); } }
@@ -1584,24 +1604,17 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const done = smooth((u - (L - 0.15)) / 0.15);
             if (done > 0) { const o = L * 6, w0 = st.P[o], w1 = st.P[o + 1], c0 = st.P[o + 2], nn = w0 * w0 + w1 * w1 || 1, bz = [(-c0 * w0) / nn, (-c0 * w1) / nn], dd = [-w1 / Math.sqrt(nn), w0 / Math.sqrt(nn)], ex = 3 * st.ext;
                 const [xa, ya] = P(st.right, [bz[0] - dd[0] * ex, bz[1] - dd[1] * ex], rs), [xb, yb] = P(st.right, [bz[0] + dd[0] * ex, bz[1] + dd[1] * ex], rs);
-                ctx.globalAlpha = done; ctx.strokeStyle = C.ink; ctx.lineWidth = U; ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke(); }
+                ctx.globalAlpha = done * fd; ctx.strokeStyle = C.ink; ctx.lineWidth = U; ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke(); }
             ctx.restore();
-            // the depth scale: dotted (points every 2u), a data point at each layer, the focus point at the current depth
+            // the depth: a slider over the layers (a tick each), the value where the plane is in the walk
             const A = st.axis;
-            for (let x = A.x0; x <= A.x1 + 0.01; x += 2 * U) pt(x, A.y, -1, 0.25);
-            for (let k = 0; k <= L; k++) pt(A.x0 + (k / L) * (A.x1 - A.x0), A.y, 0, 0.5);
-            pt(A.x0 + (u / L) * (A.x1 - A.x0), A.y, 1, 1);
+            slider(ctx, C, st, A.x0, A.x1, A.y, u / L, `depth ${u >= L ? L : u.toFixed(1)} of ${L}`, L + 1);
             // labels, on hover only
-            label(ctx, C, st, `input · ${F.fold.DATA[st.ds][0]}`, st.left[0], st.left[1] - side / 2 - 12, 'center');
+            label(ctx, C, st, `input · ${st.shape.name}`, st.left[0], st.left[1] - side / 2 - 12, 'center');
             const kk = Math.min(L - 1, Math.floor(u)), stage = st.train ? `training · ${Math.round(st.acc * 100)}%` : u >= L ? `separable · ${Math.round(st.acc * 100)}%` : (u - kk) * 2 < 1 ? `layer ${kk + 1} · stretch` : `layer ${kk + 1} · fold`;
             label(ctx, C, st, stage, st.right[0], st.right[1] - side / 2 - 12, 'center', true);
-            label(ctx, C, st, 'depth', A.x0, A.y + K.LN / 2, 'left');
-            // the layers row: a track at context tone, up to the value at data tone, the value a focus point, a tick a layer
-            { const LR = st.lrow, Lv = st.rowDrag ? st.Lpick : st.L, k = (Lv - F.fold.LMIN) / (F.fold.LMAX - F.fold.LMIN), xv = LR.x0 + k * (LR.x1 - LR.x0);
-              K.line(ctx, C, [[LR.x0, LR.y], [LR.x1, LR.y]], -1, 0.25); K.line(ctx, C, [[LR.x0, LR.y], [xv, LR.y]], 0, 0.5);
-              for (let q = F.fold.LMIN; q <= F.fold.LMAX; q++) pt(LR.x0 + ((q - F.fold.LMIN) / (F.fold.LMAX - F.fold.LMIN)) * (LR.x1 - LR.x0), LR.y, -1, 0.5);
-              pt(xv, LR.y, 1, 1);
-              label(ctx, C, st, `${Lv} layer${Lv > 1 ? 's' : ''} · ${st.reg ? st.reg.n : '–'} linear regions`, LR.x0, LR.y + K.LN / 2, 'left', true); }
+            // the layers: a slider with a tick a layer
+            { const LR = st.lrow, Lv = st.rowDrag ? st.Lpick : st.L; slider(ctx, C, st, LR.x0, LR.x1, LR.y, (Lv - F.fold.LMIN) / (F.fold.LMAX - F.fold.LMIN), `${Lv} layer${Lv > 1 ? 's' : ''} · ${st.reg ? st.reg.n : '–'} linear regions`, F.fold.LMAX - F.fold.LMIN + 1); }
             if (!still && (flipping || st.flipT == null && st.prevLab)) st.wake = Math.max(st.wake || 0, 0.3);
             if (!still && (st.train || st.anim || st.press || Math.abs(st.ext - ext) > 0.01)) st.wake = Math.max(st.wake || 0, 0.3);
         },
@@ -1680,9 +1693,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (st.stroke) { ctx.fillStyle = C.ink; ctx.globalAlpha = 0.9; st.stroke.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 1.3, 0, TAU); ctx.fill(); }); }
             // circles: a log scale at the right with a handle
             const A = st.axis, hy = A.y0 + (1 - Math.log2(st.K) / 7) * (A.y1 - A.y0);
-            ctx.fillStyle = C.ink3; ctx.globalAlpha = 0.6; for (let y = A.y0; y <= A.y1; y += 4) ctx.fillRect(A.x - 0.5, y, 1, 1);
-            ctx.globalAlpha = 1; ctx.fillStyle = C.ink; ctx.fillRect(A.x - 4, hy - 1, 8, 2);
-            label(ctx, C, st, `${st.K} circle${st.K > 1 ? 's' : ''}`, A.x - 8, hy, 'right', true);
+            vslider(ctx, C, st, A.x, A.y1, A.y0, Math.log2(st.K) / 7, `${st.K} circle${st.K > 1 ? 's' : ''}`);
             label(ctx, C, st, 'each circle: one frequency', st.fx + 4, st.vy0 + 2);
             label(ctx, C, st, 'traced path', st.cx, st.vy1 - 2, 'center');
             if (!still && (st.play || st.mode)) st.wake = Math.max(st.wake || 0, 0.3);
@@ -1756,13 +1767,11 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             dot(ax - 2, bot[0] + 1, 0.8, 0.7, C.ink3); dot(ax + 2, bot[0] + 1, 0.8, 0.7, C.ink3);
             // β: the spring stiffness, a scale at the right
             const bx = st.fx + st.W + 14, by0 = st.vy0 + 4, by1 = st.vy1 - 4, uu = (Math.log(2) - st.lb) / (Math.log(2) - Math.log(0.08)), hy = by0 + uu * (by1 - by0);
-            ctx.fillStyle = C.ink3; ctx.globalAlpha = 0.6; for (let y = by0; y <= by1; y += 4) ctx.fillRect(bx - 0.5, y, 1, 1);
-            ctx.globalAlpha = 1; ctx.fillStyle = live ? C.ink : C.ink2; ctx.fillRect(bx - 4, hy - 1, 8, 2);
+            vslider(ctx, C, st, bx, by1, by0, 1 - uu, `β ${Math.exp(st.lb).toFixed(2)}`);
             label(ctx, C, st, 'logits', st.fx + 4, top[0], 'left', true);
             label(ctx, C, st, 'ring: base model · coil: KL spring', st.fx + st.W, top[0], 'right');
             label(ctx, C, st, 'softmax ↓', ax + 6, (top[1] + 10 + bot[0]) / 2);
             label(ctx, C, st, 'probabilities', st.fx + st.W / 2, bot[0] + 2, 'center', true);
-            label(ctx, C, st, `β ${beta.toFixed(2)}`, bx - 8, hy, 'right', true);
             if (!still && st.train > 0) st.wake = Math.max(st.wake || 0, 0.3);
         },
     };
@@ -2410,9 +2419,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             for (let k = 0; k <= 120; k++) { const v = k / 120; if (v > u) break; dot(X(v), Y(F.grokking.accTrain(v)), 0.9, 0.55, C.ink2); dot(X(v), Y(F.grokking.accTest(v, st.wd)), 1.2, 0.95, C.ink); }
             // weight decay: a scale at the right edge with a handle
             const wx = ch.x1 + 6, wy = ch.y1 - st.wd * (ch.y1 - ch.y0);
-            ctx.fillStyle = C.ink3; ctx.globalAlpha = 0.6; for (let y = ch.y0; y <= ch.y1; y += 4) ctx.fillRect(wx - 0.5, y - 0.5, 1, 1);
-            ctx.globalAlpha = 1; ctx.fillStyle = C.ink; ctx.fillRect(wx - 4, wy - 1, 8, 2);
-            label(ctx, C, st, `weight decay ${st.wd.toFixed(2)}`, wx - 8, wy, 'right', true);
+            vslider(ctx, C, st, wx, ch.y1, ch.y0, st.wd, `weight decay ${st.wd.toFixed(2)}`);
             ctx.globalAlpha = 1; ctx.fillStyle = C.ink; ctx.fillRect(X(u) - 0.5, ch.y0, 1, ch.y1 - ch.y0);
             label(ctx, C, st, 'number embeddings (mod 23)', E.x, st.vy0 - 2, 'center', true);
             label(ctx, C, st, 'train', X(0.3), Y(F.grokking.accTrain(0.3)) - 9, 'center');
@@ -3920,9 +3927,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             // the rows: track at context tone, up to the value at data tone, the value a focus point
             const pn = st.panel;
             F.rlcont.ROWS.forEach(([key, name, [lo, hi], log, fmt], i) => {
-                const v = st.p[key], k = log ? Math.log(v / lo) / Math.log(hi / lo) : (v - lo) / (hi - lo), y = st.rows[i].y + st.rows[i].h * 0.75, xv = pn.x + Math.max(0, Math.min(1, k)) * pn.w;
-                K.line(ctx, C, [[pn.x, y], [pn.x + pn.w, y]], -1, 0.25); K.line(ctx, C, [[pn.x, y], [xv, y]], 0, 0.5); K.pt(ctx, C, xv, y, 1, 1);
-                label(ctx, C, st, `${name} ${fmt(v)}`, pn.x, st.rows[i].y + st.rows[i].h * 0.3, 'left', true);
+                const v = st.p[key], k = log ? Math.log(v / lo) / Math.log(hi / lo) : (v - lo) / (hi - lo);
+                slider(ctx, C, st, pn.x, pn.x + pn.w, st.rows[i].y + st.rows[i].h * 0.75, k, `${name} ${fmt(v)}`);
             });
             { const y = st.rows[4].y + st.rows[4].h * 0.55; label(ctx, C, st, train ? 'training · pause to test it' : st.batch ? 'paused · drag things to test it' : 'hover to train', pn.x, y, 'left', true); }
             const lastW = nC ? sw[nC - 1] : 0;
@@ -4069,13 +4075,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (law && st.done) K.dotted(ctx, C, [[pl.x, Y(10 ** (law.a + law.b * lx0))], [pl.x + pl.w, Y(10 ** (law.a + law.b * lx1))]].map(([x, y]) => [x, Math.max(pl.y, Math.min(pl.y + pl.h, y))]), 0, 1);
             // the rows: track at context tone, up to the value at data tone, the value a focus point
             const pn = st.panel;
-            [[Math.log(st.eta / S.ETA[0]) / Math.log(S.ETA[1] / S.ETA[0])], [(st.noise - S.NOISE[0]) / (S.NOISE[1] - S.NOISE[0])]].forEach(([k], i) => {
-                const y = st.rows[i].y + st.rows[i].h / 2, xv = pn.x + k * pn.w;
-                K.line(ctx, C, [[pn.x, y], [pn.x + pn.w, y]], -1, 0.25); K.line(ctx, C, [[pn.x, y], [xv, y]], 0, 0.5); K.pt(ctx, C, xv, y, 1, 1);
-            });
+            slider(ctx, C, st, pn.x, pn.x + pn.w, st.rows[0].y + st.rows[0].h * 0.75, Math.log(st.eta / S.ETA[0]) / Math.log(S.ETA[1] / S.ETA[0]), `learning rate ${st.eta}`);
+            slider(ctx, C, st, pn.x, pn.x + pn.w, st.rows[1].y + st.rows[1].h * 0.75, (st.noise - S.NOISE[0]) / (S.NOISE[1] - S.NOISE[0]), `label noise ${st.noise.toFixed(3)}`);
             const ly = (i) => st.rows[i].y + st.rows[i].h / 2 - K.LN / 2, sci = (v) => { const e = Math.floor(Math.log10(v)); return `${(v / 10 ** e).toFixed(1)}e${e}`; };
-            label(ctx, C, st, `learning rate ${st.eta}`, pn.x, ly(0), 'left', true);
-            label(ctx, C, st, `label noise ${st.noise.toFixed(3)}`, pn.x, ly(1), 'left', true);
             label(ctx, C, st, 'loss above the floor', pl.x, pl.y - K.LN / 2, 'left');
             label(ctx, C, st, 'compute', pl.x + pl.w, pl.y + pl.h + K.LN / 2, 'right');
             if (n) { S.SIZES.forEach((N, i) => label(ctx, C, st, `${N}`, X(data[n - 1].c) + K.LN / 4, Y(ex(data[n - 1].losses[i])), 'left')); label(ctx, C, st, 'weights', pl.x + pl.w + K.LN / 4, pl.y + K.LN / 4, 'left'); }
