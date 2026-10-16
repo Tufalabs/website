@@ -1267,7 +1267,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             return { h, main: { x, y, w, h }, strip: stripLines ? { x, y: y + h + L, w, h: sh } : null };
         },
     };
-    try { K.sync(); addEventListener('tufa-rules', () => { K.sync(); dispatchEvent(new Event('resize')); }); } catch (e) { /* no document (tests) */ }
+    try { K.sync(); } catch (e) { /* no document (tests) */ }
     const label = (ctx, C, s, text, x, y, align = 'left', strong = false) => {
         if (!s.hover) return;
         MONO = MONO || (getComputedStyle(document.documentElement).getPropertyValue('--mono').trim() || 'monospace');
@@ -4011,7 +4011,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         const start = () => { if (dead) return; colors(); cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); };
         const onResize = () => { if (dead) return; resize(); start(); };
         const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) start(); }); io.observe(canvas);
-        const mo = new MutationObserver(start); mo.observe(root, { attributes: true, attributeFilter: ['data-palette', 'data-theme', 'class'] });
+        const mo = new MutationObserver(start); mo.observe(root, { attributes: true, attributeFilter: ['data-theme', 'class'] });
         addEventListener('resize', onResize);
         document.fonts?.ready.then(onResize);
         resize(); start();

@@ -8,10 +8,10 @@
     pages?.view();   // this page: its parts run now
     if (!pages || !window.Swup || root.classList.contains('off-js')) return;
 
-    // where the site starts (the logo's link: / on its own host, /<slug>/ inside another, /system/ in the preview)
+    // where the site starts (the logo's link: / on its own host, /pr-preview/pr-<n>/ in a preview)
     const home = new URL(document.querySelector('.logo-container')?.getAttribute('href') || '/', location.href).pathname;
     const inSite = (url) => { const p = new URL(url, location.href).pathname; return p.startsWith(home) ? p.slice(home.length) : null; };
-    const FULL = /^(privacy|system)(\/|$)/;   // relative to home
+    const FULL = /^privacy(\/|$)/;   // relative to home
     const swup = new Swup({
         containers: ['#content'],
         animationSelector: false,   // no leaving animation to wait for: the old page clears at once (is-leaving)

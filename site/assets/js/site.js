@@ -326,8 +326,6 @@ window.tufaPage = (() => {
         return { cx: (L + R) / 2, rx: (R - L) / 2, cy: (U + D) / 2, ry: Math.max(0.001, (D - U) / 2), box: true };
     };
     window.TufaCreature?.mount(svg, { ground, dashCap: 1.5, homeNear: true, persist: 'tufa-creature' });
-    // pages come and go under the header (router.js): the identity page's marks join, and leave with it
-    (window.__tufaPages ||= []).push(() => window.TufaCreature?.track('.id-headmark svg, .id-pair .id-mark-big:not(.id-parts) svg'));
 })();
 
 // sidenotes beside their line: each at the height of the reference that cites it, pushed down only as far as the note

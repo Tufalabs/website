@@ -4,7 +4,7 @@
 (window.__tufaPages ||= []).push(() => {
     if (!window.TufaFigures) return;
     if (document.documentElement.matches('.off-js, .off-figure')) return;   // bisect switches (?off=js, ?off=figure)
-    const FIGURE = { home: 'descent', research: 'fold', news: 'scaling2', jobs: 'rlcont', team: 'chip', mlst: 'attnpat', rules: 'lattice' };
+    const FIGURE = { home: 'descent', research: 'fold', news: 'scaling2', jobs: 'rlcont', team: 'chip', mlst: 'attnpat' };
     const PAPER = {
         scaling2: { cite: 'Scaling laws · Hoffmann et al. 2022', title: 'Training Compute-Optimal Large Language Models', href: 'https://arxiv.org/abs/2203.15556', hint: 'Drag the rows: each step you pass is a training run' },
         rlcont: { cite: 'REINFORCE · Williams 1992', title: 'Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning', href: 'https://doi.org/10.1007/BF00992696', hint: 'Click to train · drag the goal, walls, pits · double click: new arena' },
@@ -42,9 +42,6 @@
     };
     const page = (() => {
         if (document.querySelector('.notfound-page')) return 'notfound';   // a figure no other page uses, a different one each time
-        if (document.querySelector('.identity-page')) return 'identity';   // its head shows the mark, not a figure
-        if (document.querySelector('.rules-page')) return 'rules';
-        if (document.querySelector('.figures-page')) return null;
         const active = document.querySelector('.site-nav a.active')?.textContent.trim().toLowerCase();
         return { home: 'home', research: 'research', news: 'news', 'open positions': 'jobs', team: 'team', mlst: 'mlst' }[active];
     })();

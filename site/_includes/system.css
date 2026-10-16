@@ -5,14 +5,42 @@
     min-height: var(--head); border-bottom: 1px solid var(--ink);
 }
 .logo-container { display: flex; align-items: center; gap: var(--s0); text-decoration: none; color: var(--ink); }
-.logo-image { width: calc(var(--line) * 1.6); height: calc(var(--line) * 1.6); transition: transform 0.1s ease; }
+.logo-image { width: calc(var(--line) * 1.6); height: calc(var(--line) * 1.6); transition: transform var(--dur-1) var(--ease); }
 .logo-text { font: 600 var(--t1) / var(--line) var(--display); }
 .site-nav ul { display: flex; flex-wrap: wrap; gap: 0 calc(var(--line) * 1.25); list-style: none; margin: 0; padding: 0; }
 .site-nav li { margin: 0; }
 .site-nav a { font-size: var(--t-half); text-transform: uppercase; text-decoration: none; color: var(--ink-2); display: block; padding: var(--s-1) 0 calc(var(--s-1) - 1px); border-bottom: 1px solid transparent; }
-.site-nav a:hover { color: var(--ink); border-bottom-color: var(--hair); }
-.site-nav a.active { color: var(--ink); border-bottom-color: var(--mark); }
-.site-nav a:active { color: var(--ink); border-bottom-color: var(--accent); }
+.site-nav a:hover, .site-nav a:active { color: var(--ink); }
+/* where we are is a point (2u, the ink) beside the active label, level with its text: drawn in CSS from the first paint,
+   and moved over from the last page's item by site.js (.nav-mark), which then stands in for it */
+.site-nav a.active { position: relative; color: var(--ink); border-bottom-width: 2px; padding-bottom: calc(var(--s-1) - 2px); }
+.site-nav a.active::after {
+    content: ''; position: absolute; right: calc(100% + var(--line) / 4); top: 50%;
+    width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin: calc(var(--u) * -2) calc(var(--u) * -2) 0 0;
+    border-radius: 50%; background: var(--ink);
+}
+.has-nav-mark .site-nav a.active::after { display: none; }
+/* the moving point blends (difference, so white is the operand, not a colour): passing behind other labels it inverts
+   their letters */
+.nav-mark {
+    position: absolute; left: calc(var(--u) * -2); top: 0; width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin-top: calc(var(--u) * -2);
+    border-radius: 50%; background: #fff; mix-blend-mode: difference; z-index: 2; pointer-events: none; transform-origin: center;
+}
+@media (min-width: 901px) { .js-nav .site-nav a.active { transition: none; } }
+@media (max-width: 900px) { .nav-mark { display: none; } }
+/* the dark switch: a ring (a closed line, u wide, radius 4u), filled on hover, in a line-square target; until site.js
+   adds it, its slot (the square and the gap) is held, so the labels never move */
+.theme-item { display: flex; align-items: center; }
+.theme-toggle { position: relative; width: var(--line); height: var(--line); padding: 0; border: 0; background: none; cursor: pointer; align-self: center; }
+.theme-toggle::before {
+    content: ''; position: absolute; left: 50%; top: 50%; box-sizing: border-box;
+    width: calc(var(--u) * 8); height: calc(var(--u) * 8); margin: calc(var(--u) * -4) 0 0 calc(var(--u) * -4);
+    border: var(--u) solid var(--ink); border-radius: 50%; background: transparent; transition: background-color var(--dur-1) var(--ease);
+}
+.theme-toggle:hover::before { background: var(--ink); }
+.theme-toggle:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+.js-nav .site-nav ul:not(:has(.theme-item))::after { content: ""; width: var(--line); height: var(--line); }
+@media (max-width: 900px) { .theme-item { padding: var(--s0) 0; } .js-nav .site-nav ul:not(:has(.theme-item))::after { display: none; } }
 main.container { padding-block: 0; }
 .site-footer { margin-top: var(--s4); color: var(--ink-3); text-transform: uppercase; }
 .site-footer .container > p { padding: 0 0 var(--s3); margin: 0; word-spacing: var(--s-1); }
@@ -28,7 +56,7 @@ main.container { padding-block: 0; }
 .page-lede { color: var(--ink-2); font-size: var(--t1); line-height: var(--lh-text); }
 .post-header .post-meta { color: var(--ink-3); }
 .post-header .post-meta span[aria-hidden] { margin: 0 var(--s-1); }
-.post-byline-note { color: var(--ink-3); font-size: 0.875rem; margin-top: var(--s-1); }
+.post-byline-note { color: var(--ink-3); margin-top: var(--s-1); }
 /* the home statement occupies the title slot */
 .home-content > p:empty { display: none; }
 .home-content > p:nth-of-type(2) {
@@ -37,10 +65,12 @@ main.container { padding-block: 0; }
     padding: var(--s4) 0 var(--s1); margin: 0;
 }
 /* section navigation (sections.js)
- * The label column splits into an index strip (one line wide) and the title slot beside it.
- * The current title sticks under the header; the index lines sit to its left. */
-.has-rail { position: relative; --rail: var(--s0); --rail-gap: var(--s0); --pitch: calc(var(--line) / 6); }
-/* index lines 4px apart */
+ * The label column splits into an index strip (one line wide) and the title slot beside it. The current title sticks
+ * under the header; the index sits to its left: one point per section, a quarter line apart, centred in the strip (so
+ * the focus point is not clipped). Every point is a data point at ½; the current one a focus point (twice the size) at
+ * full ink, level with the pinned title. Hovering the index, the pinned title steps aside, the hovered point becomes the
+ * focus point and its title shows level with it, and the current point steps back to a data point meanwhile. */
+.has-rail { position: relative; --rail: var(--s0); --rail-gap: var(--s0); --pitch: calc(var(--line) / 4); }
 .has-rail > h2 {
     position: sticky; top: calc(var(--head) + var(--s1)); align-self: start; z-index: 2;
     padding-left: calc(var(--rail) + var(--rail-gap));
@@ -49,31 +79,36 @@ main.container { padding-block: 0; }
 }
 .has-rail > h2.is-pinned { color: var(--mark-text); }
 .has-rail > h2.is-past { visibility: hidden; }
-.has-rail:has(.rail:hover, .rail a:focus-visible) > h2.is-pinned { opacity: 0; }
-.has-rail > .rail-wrap { grid-column: 1 / 4 !important; }
+/* only the pinned title steps aside; titles further down stay (over the build animation's fill, hence important) */
+.has-rail:has(.rail:hover, .rail a:focus-visible) > h2.is-pinned { opacity: 0 !important; }
 /* abspos in the grid: spans the label columns */
+.has-rail > .rail-wrap { grid-column: 1 / 4 !important; }
 .rail-wrap { position: absolute; left: 0; bottom: 0; width: 100%; z-index: 40; pointer-events: none; }
-.rail { position: sticky; top: calc(var(--head) + var(--s1)); width: var(--rail); padding-top: calc(var(--line) / 2 - var(--pitch) / 2); pointer-events: auto; visibility: hidden; opacity: 0; }
+.rail {
+    position: sticky; top: calc(var(--head) + var(--s1)); width: var(--rail); padding-top: calc(var(--line) / 2 - var(--pitch) / 2);
+    pointer-events: auto; visibility: hidden; opacity: 0;
+    clip-path: inset(calc(-1 * var(--s1)) -100vw -100vh 0);   /* the index slides under the header line rather than over it */
+}
 .rail-on .rail { visibility: visible; opacity: 1; }
 .rail ol { list-style: none; padding: 0; margin: calc(var(--shift, 0) * -1 * var(--pitch)) 0 0; }
-/* the index slides under the header line rather than over it */
-.rail { clip-path: inset(calc(-1 * var(--s1)) -100vw -100vh 0); }
-/* entries are a sixth of a line apart and never move under the pointer. Each entry is a solid
-   hit block; the hovered entry's title always appears in the title slot, where the pinned title sits. */
-.rail-item { margin: 0; }
 /* the passed points slide up under the header line and fade as they near it: the band above the current point is one
-   line (four points at the quarter-line pitch), so each step towards the line takes a quarter of their tone */
-.rail-item { opacity: clamp(0, calc(1 - (var(--shift, 0) - var(--i, 0)) / 4), 1); }
-/* the entry under the pointer (or the keyboard) is read in full: its title and its dot at full strength, however far up it is */
+   line (four points), so each step towards the line takes a quarter of their tone; the entry under the pointer (or the
+   keyboard) is read in full however far up it is. Entries never move under the pointer: each is a solid hit block */
+.rail-item { margin: 0; opacity: clamp(0, calc(1 - (var(--shift, 0) - var(--i, 0)) / 4), 1); }
 .rail-item:hover, .rail-item:has(a:focus-visible) { opacity: 1; }
-:root:not(.no-motion) .rail-item { transition: opacity var(--dur-2) var(--ease); }
-.rail a { display: block; height: var(--pitch); width: calc(var(--rail) + var(--s0)); padding-top: calc(var(--pitch) / 2 - 0.5px); text-decoration: none; }
-.rail-tick { display: block; width: var(--rail); height: 1px; background: var(--ink-3); }
-.rail-item.is-past .rail-tick { background: var(--ink); }
-.rail-item.is-current a { padding-top: calc(var(--pitch) / 2 - 1px); }
-.rail-item.is-current .rail-tick { background: var(--mark); height: 2px; }
-.rail-item a:hover .rail-tick { background: var(--accent) !important; }
-.rail-item a:hover .rail-tick, .rail-item a:focus-visible .rail-tick { background: var(--ink); }
+.rail a { display: block; height: var(--pitch); width: calc(var(--rail) + var(--s0)); padding-top: calc(var(--pitch) / 2 - var(--u)); text-decoration: none; }
+.rail-item.is-current a { padding-top: calc(var(--pitch) / 2 - var(--u) * 2); }
+.rail-tick {
+    display: block; width: calc(var(--u) * 2); height: calc(var(--u) * 2); margin-left: calc(var(--rail) / 2 - var(--u));
+    border-radius: 50%; background: var(--ink); opacity: .5;
+}
+.rail-item.is-current .rail-tick, .rail-item a:hover .rail-tick, .rail-item a:focus-visible .rail-tick {
+    width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin-left: calc(var(--rail) / 2 - var(--u) * 2); opacity: 1;
+}
+.rail-item a:hover .rail-tick, .rail-item a:focus-visible .rail-tick { margin-top: calc(var(--u) * -1); }
+.rail:has(a:hover, a:focus-visible) .rail-item.is-current a:not(:hover):not(:focus-visible) .rail-tick {
+    width: calc(var(--u) * 2); height: calc(var(--u) * 2); margin-left: calc(var(--rail) / 2 - var(--u)); margin-top: var(--u); opacity: .5;
+}
 .rail-text {
     position: absolute; left: calc(var(--rail) + var(--rail-gap)); top: 0;
     width: max-content; max-width: calc(3 * var(--col) + 2 * var(--gap) - var(--rail) - var(--rail-gap));
@@ -88,19 +123,19 @@ main.container { padding-block: 0; }
 html, body { overflow-x: clip; }
 .has-rail > .section-line {
     position: absolute; z-index: 2; grid-column: 1 / -1 !important; left: 0; width: 100%; height: 1px;
-    background: var(--hair); pointer-events: none;
+    background: var(--rule); pointer-events: none;
 }
+/* the index appears (a fade) and retracts in τ; its points fade in with it */
 :root:not(.no-motion) {
-        .rail-tick { transition: background-color var(--dur-1) var(--ease), scale 100ms var(--ease); }
-        .rail ol { transition: margin-top var(--dur-2) var(--ease); }
-        /* the index draws in line by line, and retracts at once */
-        .rail { transition: opacity 100ms var(--ease), visibility 0s linear 100ms; }
-        .rail-on .rail { transition: opacity 80ms var(--ease), visibility 0s; }
-        .rail-tick { scale: 0 1; transform-origin: left center; }
-        .rail-on .rail-tick { scale: 1 1; transition: background-color var(--dur-1) var(--ease), scale 160ms var(--ease) calc(var(--i, 0) * 14ms); }
-        .rail-text { transition: opacity 80ms var(--ease), clip-path var(--dur-1) var(--ease); }
-        .has-rail > h2 { transition: color var(--dur-1) var(--ease), opacity var(--dur-1) var(--ease); }
-    }
+    .rail { transition: opacity var(--dur-1) var(--ease), visibility 0s linear var(--dur-1); }
+    .rail-on .rail { transition: opacity var(--dur-1) var(--ease), visibility 0s; }
+    .rail ol { transition: margin-top var(--dur-2) var(--ease); }
+    .rail-item { transition: opacity var(--dur-2) var(--ease); }
+    .rail-tick { transition: opacity var(--dur-1) var(--ease); }
+    .has-rail:not(.rail-on) .rail-tick { opacity: 0; }
+    .rail-text { transition: opacity var(--dur-1) var(--ease), clip-path var(--dur-1) var(--ease); }
+    .has-rail > h2 { transition: color var(--dur-1) var(--ease), opacity var(--dur-1) var(--ease); }
+}
 @media (max-width: 900px) { .rail-wrap { display: none; } .has-rail > h2 { padding-left: 0; position: static; grid-row: auto !important; } }
 /* ── home ─────────────────────────────────────────────────────────────── */
 .home-content > .compute-table-wrap { grid-column: 4 / 13; }
@@ -120,7 +155,7 @@ html, body { overflow-x: clip; }
 .team-member-info h2 { font: 600 var(--t1) / var(--lh-text) var(--display); }
 .role { margin: 0 0 var(--s0); color: var(--ink-2); text-transform: uppercase; }
 .team-member-bio p { margin: 0 0 var(--s0); }
-.research-interests { color: var(--ink-3); font-size: 0.875rem; }
+.research-interests { color: var(--ink-3); }
 .research-interests p { margin: 0; }
 .page > .page-content > #public-team-notice { grid-column: 4 / 10; color: var(--ink-3); margin-top: 0; }
 /* ── mlst ─────────────────────────────────────────────────────────────── */
@@ -129,7 +164,7 @@ html, body { overflow-x: clip; }
 .links-list img { width: var(--line); height: var(--line); flex-shrink: 0; filter: grayscale(1); }
 .links-list div { display: flex; flex-direction: column; }
 .links-list strong { font-weight: 500; }
-.links-list a { font-family: var(--mono); font-size: var(--t-1); line-height: 1.125rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.links-list a { font-family: var(--mono); font-size: var(--t-1); line-height: calc(var(--line) * .75); color: var(--ink-2); overflow-wrap: anywhere; }
 /* long URLs break instead of running off a phone screen */
 .video-embed { aspect-ratio: 16 / 9; width: 100%; margin-top: var(--s1); }
 .video-embed iframe { width: 100%; height: 100%; border: 0; }
@@ -176,7 +211,6 @@ html, body { overflow-x: clip; }
     body.post--sidenotes input.margin-toggle:checked + .sidenote { display: block; }
     .post-image-grid { grid-template-columns: 1fr; }
 }
-.rules-page .page-content { background: none; }
 /* ── one opening for every page: statement, then the line, then sections ─
  * Page titles repeat the active nav item, so they are hidden visually (kept for screen readers).
  * The statement is the page's first words: the home statement, a page's lede, or its first paragraph. */
@@ -221,10 +255,10 @@ html, body { overflow-x: clip; }
     .js-nav .nav-toggle { display: flex; align-items: center; padding-block: 0; }
     .js-nav.nav-open .site-nav { display: block; }
     .js-nav.nav-closing .site-nav { display: block; overflow: hidden; }   /* folding up (site.js) */
-    .site-nav ul { flex-direction: column; gap: 0; padding-bottom: var(--s0); }
+    .site-nav ul { flex-direction: column; gap: 0; padding-bottom: var(--s0); padding-left: var(--s0); }
     .site-nav a { font-size: var(--t0); padding: var(--s0) 0; border-bottom: 0; color: var(--ink-2); }
     .site-nav a:hover { border-bottom: 0; color: var(--ink); }
-    .site-nav a.active { color: var(--ink); text-decoration: underline; text-underline-offset: 0.3em; }
+    .site-nav a.active { padding-bottom: var(--s0); border-bottom: 0; }
     .site-nav a, .nav-toggle { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     :root:not(.js-nav) .nav-toggle { display: none; }   /* no script: the links show as they are, the button has nothing to do */
     .page > .page-content > p.is-long:first-child, .page-lede.is-long { grid-column: 1 / -1; font-size: var(--t0); }
@@ -241,11 +275,16 @@ html, body { overflow-x: clip; }
 /* the figure rests as a still frame; the hit area over columns 10–12 wakes it. The caption names the
    paper in the mono label voice, its hint fading once the figure is live */
 .hero-hit { position: absolute; top: 0; z-index: 0; cursor: pointer; touch-action: none; }
+/* the citation sits a quarter line above the head's rule, flush right with column 12, and never reaches the rule: the
+   hint stays one line (cut with an ellipsis) and appears only once the pointer has rested on the figure a moment; the
+   opened reference may wrap, growing upward and leftward, set on the page ground over the figure */
 .hero-caption {
-    position: absolute; bottom: 0; z-index: 1; margin: 0; display: flex; align-items: baseline; gap: var(--s0);
-    font: 400 var(--t-1) / var(--line) var(--mono); letter-spacing: 0.01em; color: var(--ink-3);
+    position: absolute; bottom: calc(var(--line) / 4); z-index: 1; margin: 0; display: flex; align-items: flex-end; justify-content: flex-end; gap: var(--s0);
+    font: 400 var(--t-1) / var(--line) var(--mono); letter-spacing: 0.01em; color: var(--ink-3); text-align: right;
     white-space: nowrap; pointer-events: none;
 }
+.hero-caption .cite-mark { order: 2; }
+.hero-caption .cite-full, .hero-caption .cite-hint { order: 1; }
 .cite-mark { pointer-events: auto; font: inherit; color: var(--ink-2); background: none; border: 0; padding: 0; cursor: pointer; }
 .cite-mark:hover, .hero-caption.is-open .cite-mark { color: var(--ink); }
 .cite-full { display: none; pointer-events: auto; overflow: hidden; text-overflow: ellipsis; }
@@ -253,11 +292,10 @@ html, body { overflow-x: clip; }
 .cite-full a:hover { color: var(--ink); border-bottom-color: currentColor; }
 .hero-caption.is-open .cite-full { display: inline; }
 .hero-caption.is-open .cite-hint { display: none; }
-.cite-hint { transition: opacity var(--dur-2) var(--ease); white-space: normal; min-width: 0; line-height: 18px; }
+.cite-hint { opacity: 0; transition: opacity var(--dur-2) var(--ease); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: calc(var(--line) * .75); }
+.hero-hint .cite-hint { opacity: 1; }
 /* the figure's reference, at the foot of the page */
 @media (max-width: 900px) { .hero-canvas, .hero-hit, .hero-caption { display: none; } :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: 0; } }
-/* figures gallery (preview) */
-.figures-page .page-content { background: none; }
 /* page heads breathe: five lines above the statement, two below; every page's band is the same 17 lines
    (the longest statement, Open Positions, fills about that), so the content always starts at one height */
 .page-header, .post-header { padding-top: var(--s5); padding-bottom: var(--s2); }
@@ -269,30 +307,47 @@ html, body { overflow-x: clip; }
     .home-content > p:nth-of-type(2), .page:not(:has(.page-lede)) > .page-content > p:first-child { padding: var(--s2) 0 var(--s1); }
     :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: 0; }
 }
-/* compute spec sheet (site.js): one row per system; the label column names it, values sit in cells */
+/* compute spec sheet (site.js): one row per system; the label column names it, values sit in cells. The table stays for
+   screen readers, off screen (block, since a table ignores height and would still extend the page). Lines as row and
+   column helpers: a hairline between rows, a half-tone line under the system names, a hairline at the start of each
+   system's column. The rows carry no padding, the cells do (stretched to the row), so each column's line runs from rule
+   to rule; the head row's names sit on the tint, a ground of their own, in the values' own type, and the row under the
+   pointer takes the tint faintly and the ink in its label */
 .compute-table.is-sheeted { display: block; position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-/* kept for screen readers; block, since a table ignores height and would still extend the page */
+.home-content > .compute-table-wrap { grid-column: 4 / 13; }
 .spec-sheet { display: grid; }
 .spec-row {
-    display: grid; grid-template-columns: minmax(0, 0.9fr) repeat(var(--systems, 2), minmax(0, 1.2fr)); column-gap: var(--s1);
-    align-items: baseline; padding: var(--s0) 0; border-top: 1px solid var(--hair);
+    display: grid; grid-template-columns: minmax(0, 0.9fr) repeat(var(--systems, 2), minmax(0, 1.2fr)); column-gap: 0;
+    align-items: stretch; padding: 0; border-top: 1px solid var(--hair);
 }
+.spec-names { border-top: 0; border-bottom: 1px solid color-mix(in oklch, var(--ink) 50%, var(--bg)); }
+.spec-names + .spec-row { border-top: 0; }
+.spec-row > * { padding-block: var(--s0); }
+.spec-row > .spec-k { padding-inline: var(--s0) var(--s1); }
+.spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 1px solid var(--hair); padding-inline: var(--s0); }
+.spec-names > * { background: var(--tint); padding-right: var(--s0); }
+.spec-row:not(.spec-names):hover > * { background: color-mix(in oklch, var(--tint) 50%, var(--bg)); }
+.spec-row:hover .spec-k { color: var(--ink); }
 .spec-k { font: 400 var(--t-1) / var(--line) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); }
 .spec-cell { display: grid; min-width: 0; font-variant-numeric: tabular-nums; }
 .spec-line { display: block; line-height: var(--line); }
 .spec-line b { font: 600 var(--t0) / var(--line) var(--display); color: var(--ink); white-space: nowrap; }
-/* the head row names the systems in the values' own type: the tint behind them is what marks it as the heading */
-.spec-line i { font: 400 var(--t-1) / var(--line) var(--mono); font-style: normal; color: var(--ink-2); margin-left: 6px; }
-.spec-n { font: 400 var(--t-1) / 18px var(--mono); color: var(--ink-3); }
-.spec-line sup { font: 400 0.625rem / 0 var(--mono); margin-left: 3px; vertical-align: 0.7em; }
+.spec-line i { font: 400 var(--t-1) / var(--line) var(--mono); font-style: normal; color: var(--ink-2); margin-left: calc(var(--line) / 4); }
+.spec-n { font: 400 var(--t-1) / calc(var(--line) * .75) var(--mono); color: var(--ink-3); }
+.spec-line sup { font: 400 var(--t-1) / 0 var(--mono); margin-left: calc(var(--u) * 2); vertical-align: 0.7em; }
 .spec-line sup a { color: var(--ink-3); text-decoration: none; }
 .spec-line sup a:hover { color: var(--accent-text); }
-.home-content > .compute-table-wrap { grid-column: 4 / 13; }
+/* phones: each measure's label sits above its pair of values, the first system at the page's edge; the line between the
+   systems runs on through the label (kept to the left column). The head row's label ("System") says what the names
+   already do: off screen, so the tinted names start where the line does */
 @media (max-width: 900px) {
-    /* phones: each measure's label sits above its pair of values */
-    .spec-row { grid-template-columns: repeat(var(--systems, 2), minmax(0, 1fr)); column-gap: var(--s1); }
-    .spec-k { grid-column: 1 / -1; line-height: 18px; }
-    .spec-n { font-size: 0.6875rem; }
+    .spec-row { grid-template-columns: repeat(var(--systems, 2), minmax(0, 1fr)); }
+    .spec-k { grid-column: 1 / -1; line-height: calc(var(--line) * .75); }
+    .spec-row > .spec-k { position: relative; padding-bottom: 0; padding-right: calc(50% + var(--s0)); }
+    .spec-row > .spec-k::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--hair); }
+    .spec-names > .spec-k { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; padding: 0; }
+    .spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 0; }
+    .spec-row > .spec-cell + .spec-cell { border-left: 1px solid var(--hair); }
 }
 /* short pages still fill the screen: the footer sits at the bottom */
 body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
@@ -304,177 +359,39 @@ body > main { flex: 1 0 auto; width: 100%; }
     .page-header:has(.page-lede) > .page-lede.page-lede { grid-column: 1 / 8; }
 }
 .site-header .header-content { border-bottom-width: 2px; }
-.has-rail > .section-line, .page > .page-content::before, .post-content::before,
+.page > .page-content::before, .post-content::before,
 .page:not(:has(.page-lede)) > .page-content > p:first-child::after { background: var(--rule); }
 .home-content, .page > .page-content, .post-content, .post-item, .team-member {
     background-image: linear-gradient(var(--rule), var(--rule));
 }
-.rules-page .page-content, .figures-page .page-content { background-image: none; }
-/* these pages draw no margin rule */
-.site-nav a.active { border-bottom-width: 2px; padding-bottom: calc(var(--s-1) - 2px); }
-.rail-item.is-current .rail-tick { height: 3px; }
 a:hover { text-decoration-thickness: 2px; }
 ::selection { background: var(--ink); color: var(--bg); }
-/* compute table: alternating faint rows instead of rules */
-.spec-row { border-top: 0; padding: var(--s0) var(--s0); }
-/* figure hints appear only after the pointer has rested on the figure a moment (hero.js) */
-.cite-hint { opacity: 0; }
-.hero-hint .cite-hint { opacity: 1; }
 /* the title first: while the page's images and fonts are still arriving (head script: until load, at most 1.5s), only the
  * title and statement build; everything else waits at its first frame, then builds once the page is all there */
 .is-holding main *, .is-holding .site-footer, .is-holding .site-footer * { animation-play-state: paused !important; }
 .is-holding main :is(.page-title, .post-title, .band-kicker, .band-brand, .page-lede, .post-back, .page > .page-content > p:first-child, .home-content > p:nth-of-type(2)), .is-holding main :is(.page-title, .post-title, .band-kicker, .band-brand, .page-lede, .post-back, .page > .page-content > p:first-child, .home-content > p:nth-of-type(2)) * { animation-play-state: running !important; }
-/* the active nav mark: one bar that slides from the previous page's item to this one (site.js) */
-.nav-mark { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--ink); pointer-events: none; transform-origin: left center; }
-@media (min-width: 901px) { .js-nav .site-nav a.active { border-bottom-color: transparent; transition: none; } }
-/* the bar stands in for it from first paint */
-@media (max-width: 900px) { .nav-mark { display: none; } }
-/* the opened reference wraps instead of being cut, set on the page ground over the figure */
-.hero-caption.is-open { white-space: normal; align-items: baseline; background: var(--bg); line-height: 18px; padding-top: 4px; }
+.hero-caption.is-open { white-space: normal; align-items: baseline; background: var(--bg); line-height: calc(var(--line) * .75); padding-top: calc(var(--line) / 4); }
 .hero-caption.is-open .cite-full { overflow: visible; text-overflow: clip; }
 /* ── the page head: the page name as the headline, the statement under it as a lede (hero.js adds the
  * name as .band-kicker; the home page keeps its statement as the headline) */
-.band-kicker { display: block; font: 600 var(--t4) / 1.05 var(--display); color: var(--ink); margin-bottom: var(--s1); }
+.band-kicker, .band-brand { display: block; font: 600 var(--t4) / 1.05 var(--display); color: var(--ink); margin-bottom: var(--s1); }
 :is(.page-header:has(.page-lede) > .page-lede, .page:not(:has(.page-lede)) > .page-content > p:first-child):has(.band-kicker) { font-size: var(--t1); line-height: var(--lh-text); color: var(--ink-2); }
 .home-content > p:nth-of-type(2) .band-kicker { display: none; }
 .home-content > p:nth-of-type(2):nth-of-type(2) { font-size: var(--t3); color: var(--ink); line-height: 1.15; }
-@media (max-width: 900px) { .band-kicker { font-size: var(--t3); } .home-content > p:nth-of-type(2):nth-of-type(2) { font-size: var(--t2); } }
+@media (max-width: 900px) { .band-kicker, .band-brand { font-size: var(--t3); } .home-content > p:nth-of-type(2):nth-of-type(2) { font-size: var(--t2); } }
 :root[data-theme="dark"] :is(.post-content img, .links-list img) { mix-blend-mode: normal; }
 /* the drawing's ink turns light, its white ground disappears */
 :root[data-theme="dark"] .logo-image { filter: invert(1); mix-blend-mode: screen; }
-.theme-item { display: flex; align-items: center; }
-/* the switch: a small sphere in the opposite colour — ink on the light ground, near-white on the dark */
-.theme-toggle {
-    width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; align-self: center;
-    background: radial-gradient(circle at 34% 30%, color-mix(in oklch, var(--ink) 55%, var(--bg)) 0, var(--ink) 62%);
-    box-shadow: 0 0 0 1px color-mix(in oklch, var(--ink) 30%, transparent);
-    transition: transform var(--dur-1) var(--ease);
-}
-.theme-toggle:hover { transform: scale(1.25); }
-.theme-toggle:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
-@media (max-width: 900px) { .theme-item { padding: var(--s0) 0; } }
 /* articles: the way back to their section, above the title (post layout) */
 .post-back { grid-column: 1 / -1; justify-self: start; white-space: nowrap; display: inline-block; margin-bottom: var(--s1); font: 400 var(--t-half) / var(--line) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); text-decoration: none; }
 .post-back:hover { color: var(--ink); }
-/* the index, made of points (the same primitive as the figures): one per section on a quarter-line pitch;
-   later sections at context tone, passed ones at data tone, the current one a focus point */
-.has-rail { --pitch: calc(var(--line) / 4); }
-.rail a { padding-top: calc(var(--pitch) / 2 - 1.2px); }
-.rail-tick, .rail-item.is-past .rail-tick, .rail-item.is-current .rail-tick { width: 2.4px; height: 2.4px; border-radius: 50%; background: var(--ink); opacity: .25; }
-.rail-item.is-past .rail-tick { opacity: .5; }
-.rail-item.is-current a { padding-top: calc(var(--pitch) / 2 - 2.4px); }
-.rail-item.is-current .rail-tick { width: 4.8px; height: 4.8px; margin-left: -1.2px; opacity: 1; }
-.rail-item a:hover .rail-tick, .rail-item a:focus-visible .rail-tick { opacity: 1; }
-:root:not(.no-motion) .rail-tick { scale: 0; transform-origin: center; transition: opacity var(--dur-1) var(--ease), scale var(--dur-2) var(--ease); }
-:root:not(.no-motion) .rail-on .rail-tick { scale: 1; transition: opacity var(--dur-1) var(--ease), scale var(--dur-2) var(--ease) calc(var(--i, 0) * 15ms); }
 /* article titles take the head's headline step (t3), so text uses t-1 · t0 · t1 · t3 · t4 only */
 .post-title { font-size: var(--t3); line-height: 1.1; }
 @media (max-width: 900px) { .post-title { font-size: var(--t2); } }
-/* navigation: where we are is a point (2u, the ink) centred under the active item — drawn in CSS from the first
-   paint, and moved over from the last page's item by site.js. No underline. */
-.site-nav a, .site-nav a.active, .site-nav a:active, .site-nav a:hover { border-bottom-color: transparent !important; }
-.site-nav a.active { position: relative; }
-.site-nav a.active::after { content: ''; position: absolute; left: 50%; bottom: -2.4px; width: 4.8px; height: 4.8px; margin-left: -2.4px; border-radius: 50%; background: var(--ink); }
-.has-nav-mark .site-nav a.active::after { display: none; }
-.nav-mark { left: -2.4px; width: 4.8px !important; height: 4.8px; margin-top: -2.4px; border-radius: 50%; background: var(--ink); transform-origin: center; bottom: auto; }
-@media (max-width: 900px) {
-    .site-nav a.active { text-decoration: none; }
-    .site-nav a.active::after { left: -12px; bottom: auto; top: 50%; margin: -2.4px 0 0; }
-}
-/* the dark switch: a plain point in the ink, like every other point; its target is a line square */
-.theme-toggle { width: 24px !important; height: 24px !important; background: none !important; box-shadow: none !important; border-radius: 0 !important; position: relative; transform: none !important; }
-.theme-toggle::before { content: ''; position: absolute; left: 50%; top: 50%; width: 4.8px; height: 4.8px; margin: -2.4px 0 0 -2.4px; border-radius: 50%; background: var(--ink); transition: opacity var(--dur-1) var(--ease); }
-.theme-toggle:hover::before { opacity: .5; }
-/* the index: one point per section, half a line apart; passed at ½, later at ¼, the current a focus point in line with
-   the pinned title; points arrive in reading order, τ/4 apart */
-.has-rail { --pitch: calc(var(--line) / 2); }
-.rail a { padding-top: calc(var(--pitch) / 2 - 1.2px); width: calc(var(--rail) + var(--s0)); }
-.rail-item.is-current a { padding-top: calc(var(--pitch) / 2 - 2.4px); }
-:root:not(.no-motion) .rail-on .rail-tick { transition: opacity var(--dur-1) var(--ease), scale var(--dur-2) var(--ease) calc(var(--i, 0) * 30ms); }
-/* the index, simpler: every section a data point at ½, the current one a focus point at full ink */
-.rail-tick, .rail-item.is-past .rail-tick { opacity: .5; }
-.rail-item.is-current .rail-tick { opacity: 1; }
-/* the index points appear (a fade) in reading order, rather than growing */
-:root:not(.no-motion) .rail-tick { scale: 1 !important; }
-:root:not(.no-motion) .has-rail:not(.rail-on) .rail-tick { opacity: 0; }
-/* the index, settled: points centred in the strip (so the focus point is not clipped), a quarter line apart */
-.has-rail { --pitch: calc(var(--line) / 4); }
-.rail-tick, .rail-item.is-past .rail-tick { margin-left: calc(var(--rail) / 2 - 1.2px); }
-.rail-item.is-current .rail-tick { margin-left: calc(var(--rail) / 2 - 2.4px); }
-.rail a { padding-top: calc(var(--pitch) / 2 - 1.2px); }
-.rail-item.is-current a { padding-top: calc(var(--pitch) / 2 - 2.4px); height: var(--pitch); }
-.has-rail > h2 { transition: none; }
-/* hovering the index: the pinned title steps aside (always), the hovered point becomes the focus point and its title
-   shows level with it; the current point steps back to a data point meanwhile */
-.has-rail:has(.rail a:hover, .rail a:focus-visible) > h2.is-pinned { opacity: 0 !important; }
-/* only the pinned title steps aside; titles further down stay */
-.rail-item a:hover .rail-tick, .rail-item a:focus-visible .rail-tick { width: 4.8px; height: 4.8px; margin-left: calc(var(--rail) / 2 - 2.4px); margin-top: -1.2px; opacity: 1; }
-.rail:has(a:hover, a:focus-visible) .rail-item.is-current a:not(:hover):not(:focus-visible) .rail-tick { width: 2.4px; height: 2.4px; margin-left: calc(var(--rail) / 2 - 1.2px); margin-top: 1.2px; opacity: .5; }
-/* the dark switch is a ring (a closed line, u wide, radius 4u), so the only point in the navigation is where you are;
-   it fills on hover */
-.theme-toggle::before { width: 9.6px; height: 9.6px; margin: -4.8px 0 0 -4.8px; background: transparent; border: 1.2px solid var(--ink); box-sizing: border-box; transition: background-color var(--dur-1) var(--ease); }
-.theme-toggle:hover::before { opacity: 1; background: var(--ink); }
-/* points on the page, in u: the index, the navigation point, the dark ring, list bullets */
-.rail-tick, .rail-item.is-past .rail-tick { width: calc(var(--u) * 2); height: calc(var(--u) * 2); margin-left: calc(var(--rail) / 2 - var(--u)); }
-.rail-item.is-current .rail-tick { width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin-left: calc(var(--rail) / 2 - var(--u) * 2); }
-.rail a { padding-top: calc(var(--pitch) / 2 - var(--u)); }
-.rail-item.is-current a { padding-top: calc(var(--pitch) / 2 - var(--u) * 2); }
-.rail-item a:hover .rail-tick, .rail-item a:focus-visible .rail-tick { width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin-left: calc(var(--rail) / 2 - var(--u) * 2); margin-top: calc(var(--u) * -1); }
-.rail:has(a:hover, a:focus-visible) .rail-item.is-current a:not(:hover):not(:focus-visible) .rail-tick { width: calc(var(--u) * 2); height: calc(var(--u) * 2); margin-left: calc(var(--rail) / 2 - var(--u)); margin-top: var(--u); }
-.site-nav a.active::after { width: calc(var(--u) * 4); height: calc(var(--u) * 4); margin-left: calc(var(--u) * -2); bottom: calc(var(--u) * -2); }
-.nav-mark { left: calc(var(--u) * -2); width: calc(var(--u) * 4) !important; height: calc(var(--u) * 4); margin-top: calc(var(--u) * -2); }
-.theme-toggle::before { width: calc(var(--u) * 8); height: calc(var(--u) * 8); margin: calc(var(--u) * -4) 0 0 calc(var(--u) * -4); border-width: var(--u); }
-/* the compute sheet: lines as row and column helpers — a hairline between rows, a half-tone line under the system
-   names, a hairline at the start of each system's column; the row under the pointer takes the ink in its label */
-.spec-row { border-top: 1px solid var(--hair) !important; padding: var(--s0) 0; }
-.spec-names { border-top: 0 !important; border-bottom: 1px solid color-mix(in oklch, var(--ink) 50%, var(--bg)); }
-.spec-names + .spec-row { border-top: 0 !important; }
-.spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 1px solid var(--hair); padding-left: var(--s0); }
-.spec-row:hover .spec-k { color: var(--ink); }
-.spec-row { transition: none; }
-/* on phones the label goes above its row: the first system starts at the page's edge, and the line stays between the two */
-@media (max-width: 900px) { .spec-row > .spec-cell, .spec-names > :not(:first-child) { border-left: 0; padding-left: 0; }
-  .spec-row > .spec-cell + .spec-cell { border-left: 1px solid var(--hair); padding-left: var(--s0); } }
-/* continuous lines: the rows carry no padding, the cells do (stretched to the row), so each column's line runs from rule
-   to rule; the head row's names sit on the tint, a ground of their own, and the row under the pointer takes it faintly */
-.spec-row { padding: 0 !important; align-items: stretch; column-gap: 0 !important; }
-.spec-row > .spec-k { padding-right: var(--s1); } .spec-row > .spec-cell { padding-right: var(--s0); }
-.spec-row > * { padding-block: var(--s0); }
-.spec-names > * { background: var(--tint); padding-right: var(--s0); }
-.spec-row > .spec-k { padding-left: var(--s0); }   /* every label inset like the names, so the head row and a hovered row sit on the tint with room */
-.spec-row:not(.spec-names):hover > * { background: color-mix(in oklch, var(--tint) 50%, var(--bg)); }   /* the whole row, its label included */
-@media (max-width: 900px) {
-  /* the line between the systems runs on through the labels above each pair (kept to the left column) */
-  .spec-row > .spec-k { padding-bottom: 0; position: relative; padding-right: calc(50% + var(--s0)); }
-  .spec-row > .spec-k::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--hair); }
-  /* the head row's label ("System") says what the names already do: off screen (kept for screen readers), so the tinted
-     names start where the line does */
-  .spec-names > .spec-k { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; padding: 0; }
-  .spec-row > .spec-cell { padding-left: var(--s0); }
-}
-/* the citation: at the foot of the head, flush right with column 12; the hint and the opened reference run leftwards
-   from it */
-.hero-caption { justify-content: flex-end; text-align: right; }
-.hero-caption .cite-mark { order: 2; }
-.hero-caption .cite-full, .hero-caption .cite-hint { order: 1; }
-.hero-caption.is-open { justify-content: flex-end; }
-/* the navigation point sits beside the active label, level with its text; it blends (difference) so when it glides
-   to a new page and passes behind other labels, their letters invert */
-.site-nav a.active::after { left: auto; right: calc(100% + var(--line) / 4); bottom: auto; top: 50%; margin: calc(var(--u) * -2) calc(var(--u) * -2) 0 0; }
-.site-nav ul { mix-blend-mode: normal; }
-.nav-mark { top: 0; bottom: auto !important; background: #fff !important; mix-blend-mode: difference; z-index: 2; }
-/* the home head: Tufa Labs (t4, written), then the statement (t3); the site header is unchanged */
-.band-brand { display: block; font: 600 var(--t4) / 1.05 var(--display); color: var(--ink); margin-bottom: var(--s-1); }
-.band-kicker { font-size: var(--t3) !important; line-height: 1.1 !important; margin-bottom: var(--s1) !important; }
-@media (max-width: 900px) { .band-brand { font-size: var(--t3); } .band-kicker { font-size: var(--t2) !important; } }
-:root:not(.no-motion) .band-brand.is-split .bw { display: inline-block; animation: build-word calc(var(--tau) * 4) var(--ease) backwards; }
+:root:not(.no-motion) :is(.band-brand, .band-kicker).is-split .bw { display: inline-block; animation: build-word calc(var(--tau) * 4) var(--ease) backwards; }
 /* every head is the same height (see the measured note in the rules) */
 :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: calc(var(--line) * 17); }
 @media (max-width: 900px) { :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { min-height: 0; } }
-/* only the home page carries the lab's name; elsewhere the page name is the headline again (t4, written) */
-.band-kicker { font-size: var(--t4) !important; line-height: 1.05 !important; }
-@media (max-width: 900px) { .band-kicker { font-size: var(--t3) !important; } }
-:root:not(.no-motion) .band-kicker.is-split .bw { display: inline-block; animation: build-word calc(var(--tau) * 4) var(--ease) backwards; }
 /* the header shows only the mark */
 .logo-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* only the mark in the header; the name stays for screen readers */
@@ -483,8 +400,7 @@ a:hover { text-decoration-thickness: 2px; }
 .logo-container { position: relative; }
 .logo-container::before { content: ""; position: absolute; left: var(--hit-l, 0); top: var(--hit-t, 0); width: var(--hit-w, 100%); height: var(--hit-h, 100%); }
 /* under the lab's name, the home statement takes the statement style of every other page (t1, secondary ink) */
-.home-content > p:nth-of-type(2):has(.band-brand) { font-size: var(--t1) !important; line-height: var(--lh-text) !important; color: var(--ink-2) !important; }
-.home-content > p:nth-of-type(2) .band-brand { margin-bottom: var(--s1); }
+.home-content > p:nth-of-type(2):has(.band-brand) { font-size: var(--t1); line-height: var(--lh-text); color: var(--ink-2); }
 /* the theme switch: the new theme revealed through a disc growing from the ring, its edge soft over half its radius */
 .theme-flip .site-header { view-transition-name: none; }
 .theme-flip::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
@@ -503,62 +419,21 @@ a:hover { text-decoration-thickness: 2px; }
 :root:not(.no-motion) .home-content > p:nth-of-type(2)::after { animation: build-fade calc(var(--tau) * 4) var(--ease) calc(var(--tau) * 2) backwards; }
 /* the privacy policy, adopted from its widget into the page: the date as metadata, sub-topics as h3, the widget's
    own styles gone */
-.privacy-updated { grid-column: 4 / 10; margin: 0 0 var(--s1); font: 400 var(--t-1) / 18px var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); }
+.privacy-updated { grid-column: 4 / 10; margin: 0 0 var(--s1); font: 400 var(--t-1) / calc(var(--line) * .75) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); }
 .page-content > h3 { grid-column: 4 / 10; font: 600 var(--t0) / var(--line) var(--display); margin: var(--s1) 0 0; }
 privacybee-widget:empty, privacybee-widget.is-adopted { display: none; }
 .privacy-tag { font: 400 var(--t-1) / var(--line) var(--mono); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-3); margin-left: var(--s-1); }
-/* the citation sits a quarter line above the head's rule and never reaches it: the hint stays one line (cut with an
-   ellipsis); the opened reference may wrap, growing upward */
-.hero-caption { bottom: calc(var(--line) / 4) !important; align-items: flex-end; }
-.cite-hint { white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.hero-caption.is-open { white-space: normal; }
 /* every head is exactly seventeen lines (its bottom padding takes up any slack from a long statement) */
 @media (min-width: 901px) { :is(.home-content > p:nth-of-type(2), .page-header:has(.page-lede), .page:not(:has(.page-lede)) > .page-content > p:first-child) { height: calc(var(--line) * 17); box-sizing: border-box; } }
-/* the phone menu: the active item keeps the same padding as the rest (the desktop underline step must not leak in,
-   or its point sits above the text), and the list is indented like the logo so the point lies inside the margin */
-@media (max-width: 900px) {
-    .site-nav a.active { padding-bottom: var(--s0); border-bottom: 0; }
-    .site-nav ul { padding-left: var(--s0); }
-}
 /* focus: blur means not in focus yet, or no longer. Leaving a page, the page goes out of focus while the next one
    loads (nothing waits for it); images come into focus as they load */
 :root:not(.no-motion) main img.is-loading { filter: blur(calc(var(--u) * 4)); opacity: 0; }
 :root:not(.no-motion) main img { transition: filter calc(var(--tau) * 4) var(--ease), opacity calc(var(--tau) * 4) var(--ease); }
-.id-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s1) var(--gap); margin: 0 0 var(--s1); }
-.id-mark-big { border-top: 1px solid var(--hair); padding: var(--s1) 0; }
-.id-mark-big svg { display: block; width: 100%; max-width: calc(var(--line) * 12); height: auto; margin: 0 auto; overflow: visible; }
-@media (max-width: 900px) {
-    .id-pair { grid-template-columns: minmax(0, 1fr); }
-}
-/* the identity page's head: the mark in the figure columns, where other pages have their figure */
-.identity-page .page-header { position: relative; }
-.id-headmark { position: absolute; right: calc(var(--line) * 1); top: calc(var(--line) * 3); width: calc(var(--line) * 11); color: var(--ink); }
-.id-headmark svg { display: block; width: 100%; height: auto; }
-:root:not(.no-motion) .id-headmark { animation: build-rise calc(var(--tau) * 4) var(--ease) backwards; }
-@media (max-width: 900px) { .id-headmark { display: none; } }
-.id-mark-big svg { max-width: calc(var(--line) * 10) !important; }
-/* the theme switch is added by script; until it is, its slot (24 px and the gap) is held, so the labels never move */
-.js-nav .site-nav ul:not(:has(.theme-item))::after { content: ""; width: 24px; height: 24px; }
-@media (max-width: 900px) { .js-nav .site-nav ul:not(:has(.theme-item))::after { display: none; } }
 /* phones: focus effects are fades only (blurring many blocks, or the whole page, is costly on a phone's GPU) */
 @media (max-width: 900px) {
     @keyframes build-rise { from { opacity: 0; } }
     :root:not(.no-motion) main img.is-loading { filter: none; }
 }
-/* the mark's parts: each shown alone over a faint copy of the whole, in the order they are drawn */
-.id-parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s0); }
-.id-parts > span { display: grid; gap: calc(var(--line) / 4); }
-.id-parts i { display: block; position: relative; }
-.id-parts i svg { width: 100% !important; max-width: none !important; display: block; }
-.id-parts b { font: 400 var(--t-1) / 18px var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink-3); font-weight: 400; }
-.id-parts span[data-part="over"] i img { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .3; }
-:root[data-theme="dark"] .id-parts span[data-part="over"] i img { filter: invert(1); }
-.id-parts span[data-part="over"] svg * { fill: none !important; stroke: var(--ink) !important; stroke-width: 1px !important; vector-effect: non-scaling-stroke; opacity: 1 !important; }
-/* the mark's layers (production artwork): each shown alone over a faint copy */
-.id-parts span:is([data-part="body"], [data-part="ring"], [data-part="white"], [data-part="pupil"]) svg :is(.m-body, .m-ring, .m-white, .m-pupil) { opacity: .1; }
-.id-parts span[data-part="white"] svg .m-white { opacity: 1; }
-.id-parts span[data-part="body"] svg .m-body, .id-parts span[data-part="ring"] svg .m-ring, .id-parts span[data-part="pupil"] svg .m-pupil { opacity: 1; }
-.id-parts span[data-part="white"] svg .m-white { stroke: var(--ink); stroke-width: 6; }
 /* the header mark: inline artwork (was a PNG inverted for dark); its colour is the ink, the eyes follow the theme */
 svg.logo-image { display: block; color: var(--ink); filter: none !important; mix-blend-mode: normal !important; overflow: visible; }
 .off-figure .hero-canvas, .off-figure .hero-hit, .off-figure .hero-caption { display: none !important; }
