@@ -96,7 +96,7 @@
     const live = () => band.classList.add('hero-live');
     hit.addEventListener('pointerdown', (e) => {
         fig.touch(); live(); clearTimeout(hintTimer); band.classList.add('hero-hint');   // using the figure shows how to use it
-        hit.setPointerCapture?.(e.pointerId);
+        try { hit.setPointerCapture?.(e.pointerId); } catch (err) { /* the pointer already gone (a cancelled touch) */ }
         fig.pointer('down', ...local(e), 1);
     });
     hit.addEventListener('pointermove', (e) => {
@@ -128,6 +128,6 @@
         hit.addEventListener('wheel', (e) => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); fig.touch(); live(); fig.pointer('wheel', ...local(e), e.deltaY * (e.deltaMode ? 16 : 1)); }, { passive: false });
         ['gesturestart', 'gesturechange'].forEach((ev) => hit.addEventListener(ev, (e) => e.preventDefault()));   // Safari's own pinch
     }
-    hit.addEventListener('pointerup', (e) => { hit.releasePointerCapture?.(e.pointerId); if (fig.touched) fig.pointer('up', ...local(e), 0); });
+    hit.addEventListener('pointerup', (e) => { try { hit.releasePointerCapture?.(e.pointerId); } catch (err) { /* not captured */ } if (fig.touched) fig.pointer('up', ...local(e), 0); });
     return () => { fig.destroy(); clearTimeout(hintTimer); removeEventListener('keydown', onKey); };   // the page is left
 });

@@ -47,7 +47,11 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     // in slices with rests on smaller machines (all of a core from 8 cores, 70% from 4, else half); a low-end device
     // (2 cores or fewer, or 2 GB of memory or less) skips optional work
     const DEVICE = (() => { const nav = typeof navigator === 'undefined' ? {} : navigator, cores = nav.hardwareConcurrency || 2, mem = nav.deviceMemory || 8;
-        return { workers: Math.max(1, Math.min(4, Math.floor(cores / 2))), duty: cores >= 8 ? 1 : cores >= 4 ? 0.7 : 0.5, low: cores <= 2 || mem <= 2 }; })();
+        // speed: a fixed loop of float arithmetic, the best of six runs (the first ones run before the code is optimised),
+        // about 0.25 ms on a recent laptop; k its time relative to that
+        let k = 1; try { const a = new Float32Array(256); let best = 1e9, s = 0; for (let n = 0; n < 6; n++) { const t0 = performance.now(); for (let r = 0; r < 400; r++) for (let i = 0; i < 256; i++) { a[i] = a[i] * 0.99 + i; s += a[i]; } best = Math.min(best, performance.now() - t0); } k = s < 0 ? 1 : Math.max(0.5, best / 0.25); } catch (e) { k = 1; }
+        const slow = k > 3, crawl = k > 8;
+        return { k, workers: Math.max(1, Math.min(slow ? 2 : 4, Math.floor(cores / 2))), duty: crawl ? 0.35 : slow ? 0.5 : cores >= 8 ? 1 : cores >= 4 ? 0.7 : 0.5, low: cores <= 2 || mem <= 2 || crawl }; })();
     // work that can wait starts when the browser is idle (never competing with the page loading)
     const idle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
 
@@ -1307,7 +1311,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         MONO = MONO || (getComputedStyle(document.documentElement).getPropertyValue('--mono').trim() || 'monospace');
         ctx.font = `10px ${MONO}`; ctx.textAlign = align; ctx.textBaseline = 'middle';
         ctx.globalAlpha = 1; ctx.fillStyle = C.bg || '#fff';
-        const w = ctx.measureText(text).width, x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+        const w = ctx.measureText(text).width, rmax = (ctx.canvas.clientWidth || ctx.canvas.width / (ctx.getTransform().a || 1)) - 4;
+        let x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x; if (x0 + w > rmax) { x0 = rmax - w; x = x0; ctx.textAlign = 'left'; }   // kept inside the canvas
         // never on another label: move down a quarter line at a time (up to three times), else leave it out
         const placed = s.__labels || (s.__labels = []), hit = (yy) => placed.some((b) => x0 - 2 < b[2] && x0 + w + 2 > b[0] && yy - 6 < b[3] && yy + 6 > b[1]);
         let tries = 0; while (hit(y) && tries < 3) { y += 12; tries++; } if (hit(y)) { ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; return; }
@@ -3244,7 +3249,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                     const Wc = Math.min(v.w * 0.8, v.h * 0.8 / 0.6) * (z / 5000), Hc = Wc * 0.6, P = (u, w) => [OX + (u - 0.5) * Wc, OY + (w - 0.5) * Hc], kind = st.cell || 'fa';
                     const ln = (pts, tone = 0.5, lw = K.U / 2) => { ctx.globalAlpha = tone * fC; ctx.strokeStyle = C.ink; ctx.lineWidth = lw; ctx.setLineDash([]); ctx.beginPath(); pts.forEach(([u, w], k) => { const [X, Y] = P(u, w); if (k) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }); ctx.stroke(); };
                     const jn = (u, w) => { const [X, Y] = P(u, w); dot(X, Y, 2.4, fC, C.ink); };
-                    const txt = (str, u, w, al = 'left') => { const [X, Y] = P(u, w); ctx.globalAlpha = fC; ctx.fillStyle = C.ink2; ctx.font = `${Math.round(Math.max(9, Math.min(12, Hc * 0.05)))}px ui-monospace, SFMono-Regular, Menlo, monospace`; ctx.textAlign = al; ctx.textBaseline = 'middle'; ctx.fillText(str, X, Y); ctx.textAlign = 'left'; };
+                    const txt = (str, u, w, al = 'left') => { const [X, Y] = P(u, w); ctx.globalAlpha = fC; ctx.fillStyle = C.ink2; ctx.font = `10px ${MONO || 'monospace'}`; ctx.textAlign = al; ctx.textBaseline = 'middle'; ctx.fillText(str, X, Y); ctx.textAlign = 'left'; };
                     const port = (str, u, w, name, al = 'right') => { txt(str, u, w - 0.04, al === 'right' ? 'left' : 'right');   /* its name above the wire's end, inside the cell */ const [X, Y] = P(u, w); if (fC > 0.5) regS(X - 6, Y - 6, X + 6, Y + 6, name, false); };
                     if (kind === 'and') {
                         const fet = (u, w, pm, name) => { const h = Hc * 0.07, [X, Y] = P(u, w); ctx.globalAlpha = fC; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U; ctx.strokeRect(X - h * 0.3, Y - h, h * 0.6, 2 * h); ctx.beginPath(); ctx.moveTo(X - h * 0.6, Y - h * 0.8); ctx.lineTo(X - h * 0.6, Y + h * 0.8); ctx.stroke();
@@ -3744,7 +3749,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return;
             const url = URL.createObjectURL(new Blob([`(${F.attnpat.worker.toString().replace(/^worker\(\)/, 'function ()')})()`], { type: 'text/javascript' }));
             st.worker = new Worker(url); URL.revokeObjectURL(url);
-            st.worker.onmessage = (e) => { const m = e.data; st.A = m.A; st.step = m.step; if (m.loss != null) { st.loss = m.loss; st.acc = m.acc; st.hist.push([m.step, m.loss]); } st.request?.(); };
+            st.worker.onmessage = (e) => { const m = e.data; st.A = m.A; st.step = m.step; if (m.loss != null) { st.loss = m.loss; st.acc = m.acc; st.hist.push([m.step, m.loss]); } if (m.step >= F.attnpat.STEPS) F.attnpat.dispose(st); st.request?.(); };   // the run complete: no worker kept
             const T = F.attnpat.T, f = F.attnpat.PATTERNS[st.pat][2], mask = []; for (let q = 0; q < T; q++) for (let k = 0; k < T; k++) mask.push(f(q, k) ? 1 : 0);
             st.worker.postMessage({ init: true, wasm: F.attnpat.WASM, seed: 1 + st.pat * 7919, mask, disp: st.seq, S: 8, steps: F.attnpat.STEPS, rate: DEVICE.low ? 100 : F.attnpat.RATE, duty: DEVICE.duty ?? 1, run: !!st.over });
         },
@@ -3758,12 +3763,14 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const fit = K.stack(R, 1, 3).h, pitch = fit >= T * K.LN / 2 ? K.LN / 2 : K.LN / 4, size = T * pitch;
             let size2 = size, lay = K.stack(R, 1, 3, { h: size2 });
             const room = R.x + R.w - K.LN / 2 - (lay.main.x + size2 + K.LN); if (room < 5 * K.LN) { size2 = Math.max(T * 6, size2 - (5 * K.LN - room)); lay = K.stack(R, 1, 3, { h: size2 }); }   // the matrix gives way to the side column
-            const rm = lay.main, rt = lay.strip, x0 = rm.x, y0 = rm.y, sx = x0 + size2 + K.LN, sw = R.x + R.w - K.LN / 2 - sx, side = sw >= 4 * K.LN ? { x: sx, w: sw } : null;
-            return { fx, vy0, vy1, W, strip: rt, mat: { x: x0, y: y0, s: size2 }, side, pat: 0, q: 12, seq: F.attnpat.sequence(), hist: [], over: false };
+            const fits = R.x + R.w - K.LN / 2 - (lay.main.x + size2 + K.LN) >= 4 * K.LN, sw = fits ? Math.min(7 * K.LN, R.x + R.w - K.LN / 2 - (lay.main.x + size2 + K.LN)) : 0;
+            const shift = fits ? K.q(fx + (W - (size2 + K.LN + sw)) / 2) - lay.main.x : 0;   // the group (matrix and side column) centred in the columns
+            const rm = lay.main, rt = { ...lay.strip, x: lay.strip.x + shift }, x0 = rm.x + shift, y0 = rm.y, side = fits ? { x: x0 + size2 + K.LN, w: sw } : null;
+            return { fx, vy0, vy1, W, strip: rt, mat: { x: x0, y: y0, s: size2 }, side, pat: 0, q: 12, seq: F.attnpat.sequence(), hist: [], step: 0, over: false };
         },
         pointer(type, x, y, st) {
             const m = st.mat, T = F.attnpat.T, cell = m.s / T;
-            if (type === 'enter') { st.over = true; if (!st.worker) F.attnpat.start(st); else st.worker.postMessage({ run: true }); return; }   // pointed at: it trains
+            if (type === 'enter') { st.over = true; if (st.worker) st.worker.postMessage({ run: true }); else if (st.step < F.attnpat.STEPS) F.attnpat.start(st); return; }   // pointed at: it trains
             if (type === 'leave') { st.over = false; st.worker?.postMessage({ run: false }); return; }
             if (type === 'move' && x >= m.x && x <= m.x + m.s && y >= m.y && y <= m.y + m.s) { const q = Math.floor((y - m.y) / cell); if (q !== st.q) { st.q = q; st.wake = 0.3; } }
             if (type === 'up') { st.pat = (st.pat + 1) % F.attnpat.PATTERNS.length; F.attnpat.start(st); st.wake = 0.9; }   // the next mask, trained from scratch
@@ -3794,11 +3801,11 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             for (let k = 0; k < T; k++) { const w = att(1, st.q, k); if (w <= 0.003 || k === st.q) continue; const xa = X(k), xb = X(st.q), h = Math.min(st.strip.h - K.LN, (xb - xa) * 0.55 + K.LN / 4), [kk, tone] = step(w), pts = [];
                 for (let i = 0; i <= 24; i++) { const u2 = i / 24, v2 = 1 - u2; pts.push([v2 * v2 * v2 * xb + 3 * v2 * v2 * u2 * xb + 3 * v2 * u2 * u2 * xa + u2 * u2 * u2 * xa, ly - K.LN / 2 - 3 * (v2 * v2 * u2 + v2 * u2 * u2) * h]); }
                 K.line(ctx, C, pts, kk - 1, tone); }
-            ctx.save(); ctx.font = `${Math.round(K.LN * 0.45)}px ui-monospace, SFMono-Regular, Menlo, monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.save(); ctx.font = `10px ${MONO || 'monospace'}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             for (let k = 0; k < T; k++) { ctx.globalAlpha = k === st.q ? 1 : k < st.q ? 0.5 : 0.25; ctx.fillStyle = k === st.q ? C.ink : C.ink2; ctx.fillText(LET[st.seq[k]], X(k), ly); }
             ctx.restore();
             const nxt = st.q + 1 < T ? LET[st.seq[st.q + 1]] : '';
-            label(ctx, C, st, st.over || st.step ? `query ${st.q + 1} · ${LET[st.seq[st.q]]} → next ${nxt}` : 'point here to train', lx0, ly + K.LN / 2, 'left');
+            label(ctx, C, st, (st.over || st.step ? `query ${st.q + 1} · ${LET[st.seq[st.q]]} → next ${nxt}` : 'point here to train') + (!st.side && st.loss != null ? ` · loss ${st.loss.toFixed(2)}, ${Math.round(st.acc * 100)}% copied` : ''), lx0, ly + K.LN / 2, 'left');
             if (!still && st.since && performance.now() - st.since < 600) st.wake = Math.max(st.wake || 0, 0.2);
         },
     };
@@ -4281,7 +4288,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const w = new Worker(url);
                 w.onmessage = (e) => {
                     const m = e.data;
-                    if (m.done) { if (++finished === K) st.done = true; st.request?.(); return; }
+                    if (m.done) { if (++finished === K) { st.done = true; F.scaling2.dispose(st); } st.request?.(); return; }   // all in: no worker kept
                     const row = rows[m.i] || (rows[m.i] = { c: m.c, losses: new Array(S.SIZES.length).fill(1) }); m.mine.forEach((j, q) => (row.losses[j] = m.losses[q])); st.E = m.E;
                     if (++got[m.i] === K) { while (st.data.length < S.POINTS && got[st.data.length] === K) st.data.push(rows[st.data.length]); st.request?.(); }
                 };
@@ -4559,6 +4566,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         const colors = () => { C = { ink: resolve('var(--ink)'), ink2: resolve('var(--ink-2)'), ink3: resolve('var(--ink-3)'), hair: resolve('var(--hair)'), accent: resolve('var(--accent)'), bg: resolve('var(--bg)') }; };
         const resize = () => {
             const box = opts.size ? opts.size() : canvas.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+            if (state && box.width === W && box.height === H && canvas.width === Math.round(W * dpr)) return;   // nothing changed: the figure (and its training) stays
             W = box.width; H = box.height;
             if (opts.size) { canvas.style.width = `${W}px`; canvas.style.height = `${H}px`; }
             canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -4620,5 +4628,5 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         };
     }
 
-    window.TufaFigures = { F, mount };
+    window.TufaFigures = { F, mount, DEVICE };
 })();
