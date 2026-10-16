@@ -3852,11 +3852,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             // its contents wait, unseen, for the arena it will show (the opening, after the head start), then fade in
             const show = () => { st.hidden = false; st.shownAt = performance.now(); st.request?.(); };
             st.hidden = !DEVICE.low; st.show = show; if (DEVICE.low) st.shownAt = performance.now();
-            if (!DEVICE.low) idle(() => {
-                if (st.disposed || st.mode !== 'play' || st.batch) { show(); return; }
-                const base = st.p.alpha; st.p.alpha = F.rlcont.PRE_ALPHA; const spawned = F.rlcont.spawn(st, 1e6); st.p.alpha = base;
-                if (spawned) { st.mode = 'train'; st.pre = true; st.preT = setTimeout(() => { if (st.pre) { st.pre = false; st.afterPre = true; F.rlcont.mode(st, 'play'); } }, F.rlcont.PRE * 1000); } else show();
-            });
+            if (!DEVICE.low) setTimeout(() => F.rlcont.prestart(st), 0);   // at once: the work is in a worker, the page's thread only starts it
             return st;
         },
         // the opening still: of up to five fresh arenas at the level reached, the one whose episode brings the most agents to
@@ -3883,7 +3879,10 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return false;
             const RL = F.rlcont, skip = ['init', 'draw', 'pointer', 'ROWS', 'spawn', 'dispose', 'mode', 'away', 'back', 'opening', 'rollout', 'record'];
             const parts = Object.entries(RL).filter(([k]) => !skip.includes(k)).map(([k, v]) => (typeof v === 'function' ? v.toString() : `${k}: ${JSON.stringify(v)}`));
-            const src = `const TAU = Math.PI * 2, DUTY = ${DEVICE.duty}, F = { rlcont: { ${parts.join(',\n')} } }, RL = F.rlcont; let st = null, budget = 0, timer = 0, sent = 0;
+            // the methods name TAU and F from this file's scope, which a minifier renames: they are rebuilt in a scope of their
+            // own where both exist under the names they carry here (read off a function that mentions both)
+            const [nT, nF] = (() => [TAU, F]).toString().replace(/\s/g, '').match(/\[([\w$]+),([\w$]+)\]/).slice(1);
+            const src = `const DUTY = ${DEVICE.duty}, F = (() => { const ${nT} = Math.PI * 2; let ${nF}; const o = { rlcont: { ${parts.join(',\n')} } }; ${nF} = o; return o; })(), RL = F.rlcont; let st = null, budget = 0, timer = 0, sent = 0;
                 const loop = () => { timer = 0; if (!st || budget <= 0) return; const t0 = Date.now();
                     while (budget > 0 && Date.now() - t0 < 40) { RL.generate(st); const b = st.batch; while (st.batch === b) RL.step(st); budget--;
                         postMessage({ batch: st.batch, level: st.level, ret: st.curve[st.curve.length - 1], won: st.won, net: Date.now() - sent > 100 ? (sent = Date.now(), { W1: Array.from(st.net.W1), W2: Array.from(st.net.W2) }) : null }); }
@@ -3902,10 +3901,11 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const m = e.data; st.lastMsg = performance.now();
                 if (m.final) { const f = m.final; Object.assign(st.net, { W1: Float64Array.from(f.W1), W2: Float64Array.from(f.W2), m: f.m.map((a) => Float64Array.from(a)), v: f.v.map((a) => Float64Array.from(a)), t: f.t }); st.batch = f.batch; st.level = f.level; F.rlcont.dispose(st); st.handing?.(); return; }
                 st.batch = m.batch; st.level = m.level; F.rlcont.record(st, m.ret, m.won);
+                if (st.over && st.mode === 'train' && !st.pre && st.budgetEnd - m.batch < 1000) { st.budgetEnd += 4000; st.worker.postMessage({ more: 4000 }); }   // pointed at: it keeps training
                 if (m.net) { st.net.W1 = Float64Array.from(m.net.W1); st.net.W2 = Float64Array.from(m.net.W2); }
                 st.request?.();
             };
-            const n = st.net; st.worker.postMessage({ init: true, seed: Math.floor(st.r() * 2 ** 31), batch: st.batch, level: st.level || 0, p: st.p, net: { W1: Array.from(n.W1), W2: Array.from(n.W2), m: n.m.map((a) => Array.from(a)), v: n.v.map((a) => Array.from(a)), t: n.t }, more: budget });
+            st.budgetEnd = st.batch + budget; const n = st.net; st.worker.postMessage({ init: true, seed: Math.floor(st.r() * 2 ** 31), batch: st.batch, level: st.level || 0, p: st.p, net: { W1: Array.from(n.W1), W2: Array.from(n.W2), m: n.m.map((a) => Array.from(a)), v: n.v.map((a) => Array.from(a)), t: n.t }, more: budget });
             return true;
         },
         // the run's history: buckets of `span` batches (mean return, share at goal); past 400 buckets neighbours merge and the
@@ -3915,10 +3915,20 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (b && b.n < span) { b.r += (ret - b.r) / (b.n + 1); b.w += (won - b.w) / (b.n + 1); b.n++; } else H.push({ r: ret, w: won, n: 1 });
             if (H.length > 400) { const M = []; for (let i = 0; i < H.length; i += 2) { const a = H[i], c = H[i + 1]; if (!c) { M.push(a); continue; } const n = a.n + c.n; M.push({ r: (a.r * a.n + c.r * c.n) / n, w: (a.w * a.n + c.w * c.n) / n, n }); } st.hist = M; st.span = span * 2; }
         },
+        // the head start; out of sight it waits (no worker while unseen) and runs when the figure is seen
+        prestart(st, resume = false) {
+            if (st.disposed) return;
+            if (st.away) { st.preCut = true; return; }
+            if (st.mode !== 'play' || (st.batch && !resume)) { st.show(); return; }   // the reader took over already
+            const base = st.p.alpha; st.p.alpha = F.rlcont.PRE_ALPHA; const spawned = F.rlcont.spawn(st, 1e6); st.p.alpha = base;
+            if (spawned) { st.mode = 'train'; st.pre = true; st.preT = setTimeout(() => { if (st.pre) { st.pre = false; st.afterPre = true; F.rlcont.mode(st, 'play'); } }, F.rlcont.PRE * 1000); } else st.show();
+        },
         dispose(st) { clearTimeout(st.preT); if (st.worker) { st.worker.terminate(); st.worker = null; } },
         // out of sight: training stops at once (no worker left), the episode in flight runs out when it is seen again
-        away(st) { clearTimeout(st.preT); st.pre = false; st.afterPre = false; if (st.hidden) { st.hidden = false; st.shownAt = 0; } if (st.worker) { st.worker.terminate(); st.worker = null; } if (st.mode === 'train') { st.mode = 'play'; st.finishing = true; } },
-        back() {},
+        // a head start cut short waits, still unshown, and starts over when the figure is seen again (before, it showed the
+        // untrained policy for good: a page opened in a background tab never got its head start)
+        away(st) { st.away = true; clearTimeout(st.preT); if (st.pre) st.preCut = true; st.pre = false; st.afterPre = false; if (st.hidden && !st.preCut && st.batch) { st.hidden = false; st.shownAt = 0; } if (st.worker) { st.worker.terminate(); st.worker = null; } if (st.mode === 'train') { st.mode = 'play'; st.finishing = true; } },
+        back(st) { st.away = false; if (st.preCut) { st.preCut = false; F.rlcont.prestart(st, true); } else if (st.over && st.mode === 'play') F.rlcont.mode(st, 'train'); st.request?.(); },   // it goes on from where it was cut
         // a click on the arena: start training (in the worker, across arenas) or stop it and try the trained policy here
         mode(st, to, keep = false) {
             if (to === st.mode) return;
@@ -4099,8 +4109,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         pointer(type, x, y, st) {
             const A = st.arena, ux = (x - A.x) / A.s, uy = (y - A.y) / A.s, inA = ux > 0 && ux < 1 && uy > 0 && uy < F.rlcont.HT, pn = st.panel, play = st.mode === 'play';
             st.played = performance.now();   // handled: the agents keep moving for a while
-            if (type === 'leave') { if (st.mode === 'train') F.rlcont.mode(st, 'play', true); else st.finishing = true; return; }   // out of the figure: training stops, the episode runs out
-            if (type === 'enter') { st.finishing = false; if (st.pre) { st.pre = false; clearTimeout(st.preT); st.worker?.postMessage({ more: 4000, p: st.p }); } if (st.hidden) st.show?.(); F.rlcont.mode(st, 'train'); st.wake = 6; return; }   // on it: training (again)
+            if (type === 'leave') { st.over = false; if (st.mode === 'train') F.rlcont.mode(st, 'play', true); else st.finishing = true; return; }   // out of the figure: training stops, the episode runs out
+            if (type === 'enter') { st.over = true; st.finishing = false; if (st.pre) { st.pre = false; clearTimeout(st.preT); st.worker?.postMessage({ more: 4000, p: st.p }); } if (st.hidden) st.show?.(); F.rlcont.mode(st, 'train'); st.wake = 6; return; }   // on it: training (again)
             if (type === 'down') st.finishing = false;
             const onBtn = Math.hypot(x - st.btn.x, y - st.btn.y) < st.btn.r + 4;
             if (type === 'down' && onBtn) { F.rlcont.mode(st, play ? 'train' : 'play'); st.wake = 6; st.row = -1; st.grab = null; st.downAt = null; return; }
