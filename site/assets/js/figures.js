@@ -3676,10 +3676,12 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     F.scaling2 = {
         bleed: true, tall: true, M: 512, SIZES: [2, 4, 8, 16, 32, 64, 128], CMIN: 1.5e3, CMAX: 1.26e7, POINTS: 48,
         ETA: [0.01, 0.3], NOISE: [0, 0.1],
+        // the training loop compiled from tools/scaling.wat (SIMD; 1.4–3.3× the JavaScript loop below, which stays as the fallback)
+        WASM: 'AGFzbQEAAAABGARgAXwBfGABfwBgAAF8YAd/f39/f3x/AAIJAQFtA2xvZwAAAwUEAQICAwUDAQAEBhcDfwFBAQt8AUQAAAAAAAAAAAt/AUEACwcWAwNtZW0CAARzZWVkAAEFdHJhaW4ABAqDBQQKACAAJABBACQCC0wBAX8jAEH1863pBmokACMAIQAgACAAQQ92cyAAQQFybCEAIAAgACAAIABBB3ZzIABBPXJsanMhACAAIABBDnZzuEQAAAAAAADwQaMLjwEBBHwjAgRAQQAkAiMBDwsDQBACRAAAAAAAAABAokQAAAAAAADwP6EhABACRAAAAAAAAABAokQAAAAAAADwP6EhASAAIACiIAEgAaKgIQIgAkQAAAAAAADwP2YgAkQAAAAAAAAAAGFyDQALRAAAAAAAAADAIAIQAKIgAqOfIQMgASADoiQBQQEkAiAAIAOiC5cDAwV/AXsCfCABQQFrIQsCQANAIAcgBk8NAUEAIQgCQANAIAggAU8NASAEIAhBA3RqEAM5AwAgCEEBaiEIDAALC0EAIQgCQANAIAggAU8NASAAIAggAWxBA3RqIQr9DAAAAAAAAAAAAAAAAAAAAAAhDEEAIQkCQANAIAlBAWogCEoNASAMIAogCUEDdGr9AAQAIAQgCUEDdGr9AAQA/fIB/fABIQwgCUECaiEJDAALCyAM/SEAIAz9IQGgIQ0gCSAITARAIA0gCiAJQQN0aisDACAEIAlBA3RqKwMAoqAhDQsgAyAIQQN0aiANOQMAIAhBAWohCAwACwtEAAAAAAAAAAAhDUEAIQgCQANAIAggC08NASANIAIgCEEDdGorAwAgAyAIQQN0aisDAKKgIQ0gCEEBaiEIDAALCyAFIAMgC0EDdGorAwAgDaGiIQ5BACEIAkADQCAIIAtPDQEgAiAIQQN0aiACIAhBA3RqKwMAIA4gAyAIQQN0aisDAKKgOQMAIAhBAWohCAwACwsgB0EBaiEHDAALCws=',
         title: 'Scaling laws', note: 'Seven models train live on one task; the lower envelope of their loss against compute is the scaling law, fitted from the runs. Drag the rows to change the learning rate or the label noise.',
         // the experiment, run in a worker (posted one budget at a time); self-contained, so it can be its source
         experiment(cfg, post) {
-            const { M, sizes, alpha, noise, Cmin, Cmax, points, eta, seed } = cfg;
+            const { M, sizes, alpha, noise, Cmin, Cmax, points, eta, seed, wasm } = cfg;
             let s = seed >>> 0; const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
             let spare = null; const randn = () => { if (spare != null) { const v = spare; spare = null; return v; } let u = 0; while (!u) u = rnd(); const v = rnd(), r = Math.sqrt(-2 * Math.log(u)); spare = r * Math.sin(2 * Math.PI * v); return r * Math.cos(2 * Math.PI * v); };
             const lam = new Float64Array(M), sq = new Float64Array(M); let tot = 0; for (let k = 0; k < M; k++) { lam[k] = (k + 1) ** -(1 + alpha); tot += lam[k]; } for (let k = 0; k < M; k++) { lam[k] /= tot; sq[k] = Math.sqrt(lam[k]); }
@@ -3699,11 +3701,24 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 for (let a = 0; a < n; a++) for (let b = 0; b <= a; b++) { let q = A[a * n + b]; for (let k = 0; k < b; k++) q -= A[a * n + k] * A[b * n + k]; A[a * n + b] = a === b ? Math.sqrt(Math.max(q, 1e-12)) : q / A[b * n + b]; }
                 r.chol = A;
             });
+            // the training loop in WebAssembly where it can run: every run's factor and weights in its memory, the weights
+            // read back in place for the loss
+            let W = null, zp = 0, gp = 0;
+            try {
+                if (wasm && typeof WebAssembly !== 'undefined') {
+                    const bin = atob(wasm), bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                    W = new WebAssembly.Instance(new WebAssembly.Module(bytes), { m: { log: Math.log } }).exports; W.seed(seed | 0);
+                    let off = 0; runs.forEach((r) => { r.Lp = off; off += (r.N + 1) ** 2 * 8; r.vp = off; off += (r.N + 1) * 8; }); zp = off; off += (Nmax + 1) * 8; gp = off; off += (Nmax + 1) * 8;
+                    const need = Math.ceil(off / 65536) - W.mem.buffer.byteLength / 65536; if (need > 0) W.mem.grow(need);
+                    runs.forEach((r) => { new Float64Array(W.mem.buffer, r.Lp, (r.N + 1) ** 2).set(r.chol); r.v = new Float64Array(W.mem.buffer, r.vp, r.N); r.v.fill(0); });
+                }
+            } catch (e) { W = null; runs.forEach((r) => { r.v = new Float64Array(r.N); }); }
             const g = new Float64Array(Nmax + 1), z = new Float64Array(Nmax + 1);
             for (let i = 0; i < points; i++) {
                 const c = Cmin * (Cmax / Cmin) ** (i / (points - 1));
                 for (const r of runs) {
                     const goal = Math.floor(c / (6 * r.N)), N = r.N, n = N + 1, Lc = r.chol, v = r.v, lr = r.lr;
+                    if (W) { if (goal > r.d) { W.train(r.Lp, n, r.vp, zp, gp, lr, goal - r.d); r.d = goal; } continue; }
                     for (; r.d < goal; r.d++) {
                         for (let a = 0; a < n; a++) g[a] = randn();
                         for (let a = 0; a < n; a++) { let q = 0; const row = a * n; for (let b = 0; b <= a; b++) q += Lc[row + b] * g[b]; z[a] = q; }
@@ -3722,7 +3737,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
         train(st) {
             const S = F.scaling2; F.scaling2.dispose(st); st.data = []; st.E = st.noise / (1 + st.noise); st.done = false;
-            const cfg = { M: S.M, sizes: S.SIZES, alpha: 1, noise: st.noise, Cmin: S.CMIN, Cmax: S.CMAX, points: S.POINTS, eta: st.eta, seed: Math.floor(st.r() * 2 ** 31) };
+            const cfg = { M: S.M, sizes: S.SIZES, alpha: 1, noise: st.noise, Cmin: S.CMIN, Cmax: S.CMAX, points: S.POINTS, eta: st.eta, seed: Math.floor(st.r() * 2 ** 31), wasm: S.WASM };
             if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return;
             const src = `const experiment = ${S.experiment.toString().replace(/^experiment/, 'function')};\nonmessage = (e) => { experiment(e.data, (m) => postMessage(m)); postMessage({ done: true }); };`;
             const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
