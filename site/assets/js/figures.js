@@ -250,6 +250,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             return st;
         },
         P(st, u, v) { return [st.M.x + u * st.M.w, st.M.y + v * st.M.w]; },
+        // a gap to the minimum as printed: two decimals, or a power of ten once it is that small
+        gap(d) { return d >= 0.01 ? d.toFixed(2) : d.toExponential(1); },
         // the loss, its gradient, its minimum (refined from the grid by gradient steps), and its contours as a field of points
         surface(st) {
             const W = st.wells, M = st.M, H = st.H;
@@ -327,6 +329,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 for (const k in st.runs) st.runs[k].path.forEach((th) => { const [px, py] = F.descent.P(st, ...th), d2 = (px - x) ** 2 + (py - y) ** 2; if (d2 < bd2) { bd2 = d2; best = { k, x: px, y: py }; } });
                 if ((best && best.k) !== (st.hoverPath && st.hoverPath.k)) st.wake = 0.3; st.hoverPath = best;
             }
+            // elsewhere on the surface: the loss at the point under the pointer
+            const probe = type === 'move' && inM && !st.drag && !st.hoverPath && !st.hoverWell && dStart > 10 ? [u, v] : null;
+            if (probe || st.probe) st.wake = Math.max(st.wake || 0, 0.3); st.probe = probe;
             if (st.drag) { F.descent.run(st); st.wake = 0.5; }
         },
         HELP: { gd: 'η 0.012', momentum: 'η 0.006 · μ 0.9', rmsprop: 'η 0.006 · ρ 0.9', adam: 'η 0.006 · β 0.9, 0.999', muon: 'η 0.012 · μ 0.95, Nesterov', gn: 'trust region, dogleg · Δ from 0.02' },
@@ -352,7 +357,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             K.line(ctx, C, K.circle(sx, sy, 4 * K.U), 0, 1, true);
             // labels, on hover only
             if (hp) { const run = st.runs[hp]; label(ctx, C, st, `${F.descent.NAMES.find((e) => e[0] === hp)[1]} · ${F.descent.HELP[hp]}`, st.hoverPath.x + 12, st.hoverPath.y - 12, 'left', true);
-                label(ctx, C, st, `loss above the minimum ${(run.loss[Math.min(k, N)] - st.fmin).toExponential(1)}`, st.hoverPath.x + 12, st.hoverPath.y, 'left'); }
+                label(ctx, C, st, `loss above the minimum ${F.descent.gap(run.loss[Math.min(k, N)] - st.fmin)}`, st.hoverPath.x + 12, st.hoverPath.y, 'left'); }
+            if (st.probe && st.hover) { const [pu, pv] = st.probe, [px, py] = F.descent.P(st, pu, pv), fp = st.f(pu, pv); K.pt(ctx, C, px, py, 0, 1);
+                label(ctx, C, st, `loss ${fp.toFixed(3)} · above the minimum ${F.descent.gap(fp - st.fmin)}`, px + 12, py - 12, 'left', true); }
             label(ctx, C, st, 'start', sx, sy - 12, 'center');
             if (running && k < N) label(ctx, C, st, `step ${k}/${N}`, M.x + M.w, M.y + M.h - K.LN / 4, 'right', true);
             if (st.hover) { const w = st.wells.reduce((a, b) => (b.a > a.a ? b : a)); label(ctx, C, st, 'valley', ...F.descent.P(st, w.x, w.y + 12 / M.w), 'center'); label(ctx, C, st, 'loss surface', M.x + 12, M.y + 6); }
