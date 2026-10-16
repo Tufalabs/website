@@ -4142,10 +4142,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const ended = st.finishing && !train && st.agents.every((ag) => ag.done), go = live && !ended;
             if (go) { const k = Math.min(12, Math.floor((t - st.last) / TICK)); for (let i = 0; i < k; i++) { if (st.agents.every((ag) => ag.done)) { if (st.finishing && !train) break; if (train) F.rlcont.generate(st); F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); } F.rlcont.step(st, false); } if (k > 0) st.last = t; } else st.last = t;
             const u = go ? Math.min(1, (t - st.last) / TICK) : 1;
-            // the arena and its obstacles in outline: the arena, each wall a closed line (u/2, context tone), each pit a ring
+            // the obstacles in outline (the arena itself unframed, its edges walls all the same): each wall a closed line (u/2, context tone), each pit a ring
             // (u/2); the goal two rings (u, focus), the start a dotted ring, the items small discs
             const HT = F.rlcont.HT;
-            K.line(ctx, C, K.rect(A.x, A.y, A.s, A.s * HT), -1, 0.5, true);
             const fadeIn = st.hidden ? 0 : Math.min(1, (performance.now() - (st.shownAt || 0)) / (4 * K.TB * 1000));
             // the fade runs on frames of its own: an untouched figure is otherwise drawn only when asked
             K.fade = K.ease(fadeIn); if (fadeIn < 1 && !st.hidden) { st.wake = Math.max(st.wake || 0, 0.1); requestAnimationFrame(() => st.request?.()); }
