@@ -3663,32 +3663,33 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     };
 
     // Scaling laws, measured: the solvable model of Maloney, Roberts & Sully (2022), trained here. A task with M = 1024
-    // latent dimensions whose variances fall as a power law (λₖ ∝ k^−2), a hidden linear target and label noise; eight
-    // models of N = 2 … 256 weights on nested random features of the input, each trained by online SGD (learning rate η/N, one
-    // fresh sample per step) in a background worker. Each run's exact population loss (relative to predicting zero) is
-    // plotted as it trains, as its excess over the irreducible loss E (the label noise's) against its training compute
-    // C = 6ND on log–log axes, where a power law is a straight line; every run goes to the same budgets, so the plot
-    // fills from left to right. The lower envelope of all runs is the compute-optimal frontier, with a focus point where
-    // a bigger model takes it over; the scaling law is the straight line fitted through it from the second hand-over on
-    // (L − E ∝ C^γ), drawn dotted across the whole range, and the winning size's growth (N ∝ C^κ) is fitted too: both
-    // come from the runs, not put in. The rows
-    // set the learning rate and the label noise; a change trains everything again.
+    // latent dimensions whose variances fall as a power law (λₖ ∝ k^−2), a hidden linear target and label noise; seven
+    // models of N = 2 … 128 weights on nested random features of the input, each trained by online SGD (learning rate η/N,
+    // one fresh sample per step) in background workers (the sizes shared out over up to four). Each run's exact population
+    // loss (relative to predicting zero) is plotted as it trains, as its excess over the irreducible loss E (the label
+    // noise's) against its training compute C = 6ND on log–log axes, where a power law is a straight line; every run goes
+    // to the same budgets, so the plot fills from left to right. The lower envelope of all runs is the compute-optimal
+    // frontier, with a focus point where a bigger model takes it over; the scaling law is the straight line fitted through
+    // it from the second hand-over on (L − E ∝ C^γ), drawn dotted across the whole range, and the winning size's growth (N
+    // ∝ C^κ) is fitted too: both come from the runs, not put in. The rows set the learning rate and the label noise; a
+    // change trains everything again.
     F.scaling2 = {
-        bleed: true, tall: true, M: 1024, SIZES: [2, 4, 8, 16, 32, 64, 128, 256], CMIN: 1.5e3, CMAX: 5e7, POINTS: 64,
+        bleed: true, tall: true, M: 1024, SIZES: [2, 4, 8, 16, 32, 64, 128], CMIN: 1.5e3, CMAX: 2.5e7, POINTS: 64,
         ETA: [0.01, 0.3], NOISE: [0, 0.1],
-        // the training loop compiled from tools/scaling.wat (SIMD; 1.4–3.3× the JavaScript loop below, which stays as the fallback)
-        WASM: 'AGFzbQEAAAABGARgAXwBfGABfwBgAAF8YAd/f39/f3x/AAIJAQFtA2xvZwAAAwUEAQICAwUDAQAEBhcDfwFBAQt8AUQAAAAAAAAAAAt/AUEACwcWAwNtZW0CAARzZWVkAAEFdHJhaW4ABAqDBQQKACAAJABBACQCC0wBAX8jAEH1863pBmokACMAIQAgACAAQQ92cyAAQQFybCEAIAAgACAAIABBB3ZzIABBPXJsanMhACAAIABBDnZzuEQAAAAAAADwQaMLjwEBBHwjAgRAQQAkAiMBDwsDQBACRAAAAAAAAABAokQAAAAAAADwP6EhABACRAAAAAAAAABAokQAAAAAAADwP6EhASAAIACiIAEgAaKgIQIgAkQAAAAAAADwP2YgAkQAAAAAAAAAAGFyDQALRAAAAAAAAADAIAIQAKIgAqOfIQMgASADoiQBQQEkAiAAIAOiC5cDAwV/AXsCfCABQQFrIQsCQANAIAcgBk8NAUEAIQgCQANAIAggAU8NASAEIAhBA3RqEAM5AwAgCEEBaiEIDAALC0EAIQgCQANAIAggAU8NASAAIAggAWxBA3RqIQr9DAAAAAAAAAAAAAAAAAAAAAAhDEEAIQkCQANAIAlBAWogCEoNASAMIAogCUEDdGr9AAQAIAQgCUEDdGr9AAQA/fIB/fABIQwgCUECaiEJDAALCyAM/SEAIAz9IQGgIQ0gCSAITARAIA0gCiAJQQN0aisDACAEIAlBA3RqKwMAoqAhDQsgAyAIQQN0aiANOQMAIAhBAWohCAwACwtEAAAAAAAAAAAhDUEAIQgCQANAIAggC08NASANIAIgCEEDdGorAwAgAyAIQQN0aisDAKKgIQ0gCEEBaiEIDAALCyAFIAMgC0EDdGorAwAgDaGiIQ5BACEIAkADQCAIIAtPDQEgAiAIQQN0aiACIAhBA3RqKwMAIA4gAyAIQQN0aisDAKKgOQMAIAhBAWohCAwACwsgB0EBaiEHDAALCws=',
-        title: 'Scaling laws', note: 'Eight models train live on one task; the lower envelope of their loss against compute is the scaling law, fitted from the runs. Drag the rows to change the learning rate or the label noise.',
+        // the training loop compiled from tools/scaling.wat (single precision, four SIMD lanes; the JavaScript loop below stays as the fallback)
+        WASM: 'AGFzbQEAAAABGARgAXwBfGABfwBgAAF8YAd/f39/f3x/AAIJAQFtA2xvZwAAAwUEAQICAwUDAQAEBhcDfwFBAQt8AUQAAAAAAAAAAAt/AUEACwcWAwNtZW0CAARzZWVkAAEFdHJhaW4ABAqnBQQKACAAJABBACQCC0wBAX8jAEH1863pBmokACMAIQAgACAAQQ92cyAAQQFybCEAIAAgACAAIABBB3ZzIABBPXJsanMhACAAIABBDnZzuEQAAAAAAADwQaMLjwEBBHwjAgRAQQAkAiMBDwsDQBACRAAAAAAAAABAokQAAAAAAADwP6EhABACRAAAAAAAAABAokQAAAAAAADwP6EhASAAIACiIAEgAaKgIQIgAkQAAAAAAADwP2YgAkQAAAAAAAAAAGFyDQALRAAAAAAAAADAIAIQAKIgAqOfIQMgASADoiQBQQEkAiAAIAOiC7sDAwV/AXsCfCABQQFrIQsCQANAIAcgBk8NAUEAIQgCQANAIAggAU8NASAEIAhBAnRqEAO2OAIAIAhBAWohCAwACwtBACEIAkADQCAIIAFPDQEgACAIIAFsQQJ0aiEK/QwAAAAAAAAAAAAAAAAAAAAAIQxBACEJAkADQCAJQQNqIAhKDQEgDCAKIAlBAnRq/QAEACAEIAlBAnRq/QAEAP3mAf3kASEMIAlBBGohCQwACwsgDP0fALsgDP0fAbugIAz9HwK7IAz9HwO7oKAhDQJAA0AgCSAISg0BIA0gCiAJQQJ0aioCACAEIAlBAnRqKgIAlLugIQ0gCUEBaiEJDAALCyADIAhBAnRqIA22OAIAIAhBAWohCAwACwtEAAAAAAAAAAAhDUEAIQgCQANAIAggC08NASANIAIgCEECdGoqAgAgAyAIQQJ0aioCAJS7oCENIAhBAWohCAwACwsgBSADIAtBAnRqKgIAuyANoaIhDkEAIQgCQANAIAggC08NASACIAhBAnRqIAIgCEECdGoqAgAgDrYgAyAIQQJ0aioCAJSSOAIAIAhBAWohCAwACwsgB0EBaiEHDAALCws=',
+        title: 'Scaling laws', note: 'Seven models train live on one task; the lower envelope of their loss against compute is the scaling law, fitted from the runs. Drag the rows to change the learning rate or the label noise.',
         // the experiment, run in a worker (posted one budget at a time); self-contained, so it can be its source
         experiment(cfg, post) {
-            const { M, sizes, alpha, noise, Cmin, Cmax, points, eta, seed, wasm } = cfg;
+            const { M, sizes, alpha, noise, Cmin, Cmax, points, eta, seed, wasm } = cfg, mine = cfg.mine || sizes.map((_, i) => i);
             let s = seed >>> 0; const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
             let spare = null; const randn = () => { if (spare != null) { const v = spare; spare = null; return v; } let u = 0; while (!u) u = rnd(); const v = rnd(), r = Math.sqrt(-2 * Math.log(u)); spare = r * Math.sin(2 * Math.PI * v); return r * Math.cos(2 * Math.PI * v); };
             const lam = new Float64Array(M), sq = new Float64Array(M); let tot = 0; for (let k = 0; k < M; k++) { lam[k] = (k + 1) ** -(1 + alpha); tot += lam[k]; } for (let k = 0; k < M; k++) { lam[k] /= tot; sq[k] = Math.sqrt(lam[k]); }
             const wstar = new Float64Array(M); for (let k = 0; k < M; k++) wstar[k] = randn();
             const Nmax = Math.max(...sizes), P = new Float64Array(Nmax * M); for (let i = 0; i < P.length; i++) P[i] = randn();
             let L0 = noise; for (let k = 0; k < M; k++) L0 += lam[k] * wstar[k] ** 2;
-            const runs = sizes.map((N) => ({ N, v: new Float64Array(N), lr: eta / N, d: 0 }));
+            const runs = mine.map((i) => ({ N: sizes[i], v: new Float64Array(sizes[i]), lr: eta / sizes[i], d: 0 }));
+            s = (cfg.stream ?? seed) >>> 0; spare = null;   // this worker's own samples, after the shared task
             const loss = (run) => { const u = new Float64Array(M); for (let j = 0; j < run.N; j++) { const vj = run.v[j], row = j * M; for (let k = 0; k < M; k++) u[k] += P[row + k] * vj; } let l = noise; for (let k = 0; k < M; k++) l += lam[k] * (u[k] - wstar[k]) ** 2; return l / L0; };
             // a model sees only its features z = P_N x and the target y, jointly Gaussian with a known covariance, so a
             // sample is drawn directly through that covariance's Cholesky factor: the same data, (N+1)²/2 operations a
@@ -3707,10 +3708,11 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             try {
                 if (wasm && typeof WebAssembly !== 'undefined') {
                     const bin = atob(wasm), bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-                    W = new WebAssembly.Instance(new WebAssembly.Module(bytes), { m: { log: Math.log } }).exports; W.seed(seed | 0);
-                    let off = 0; runs.forEach((r) => { r.Lp = off; off += (r.N + 1) ** 2 * 8; r.vp = off; off += (r.N + 1) * 8; }); zp = off; off += (Nmax + 1) * 8; gp = off; off += (Nmax + 1) * 8;
+                    W = new WebAssembly.Instance(new WebAssembly.Module(bytes), { m: { log: Math.log } }).exports; W.seed((cfg.stream ?? seed) | 0);
+                    const q16 = (b) => Math.ceil(b / 16) * 16;   // single precision; rows start where SIMD likes them
+                    let off = 0; runs.forEach((r) => { r.Lp = off; off = q16(off + (r.N + 1) ** 2 * 4); r.vp = off; off = q16(off + (r.N + 1) * 4); }); zp = off; off = q16(off + (Nmax + 1) * 4); gp = off; off = q16(off + (Nmax + 1) * 4);
                     const need = Math.ceil(off / 65536) - W.mem.buffer.byteLength / 65536; if (need > 0) W.mem.grow(need);
-                    runs.forEach((r) => { new Float64Array(W.mem.buffer, r.Lp, (r.N + 1) ** 2).set(r.chol); r.v = new Float64Array(W.mem.buffer, r.vp, r.N); r.v.fill(0); });
+                    runs.forEach((r) => { new Float32Array(W.mem.buffer, r.Lp, (r.N + 1) ** 2).set(r.chol); r.v = new Float32Array(W.mem.buffer, r.vp, r.N); r.v.fill(0); });
                 }
             } catch (e) { W = null; runs.forEach((r) => { r.v = new Float64Array(r.N); }); }
             const g = new Float64Array(Nmax + 1), z = new Float64Array(Nmax + 1);
@@ -3726,7 +3728,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                         const e = (z[N] - pr) * lr; for (let j = 0; j < N; j++) v[j] += e * z[j];
                     }
                 }
-                post({ c, E: noise / L0, losses: runs.map((r) => r.d ? loss(r) : 1) });
+                post({ i, c, E: noise / L0, mine, losses: runs.map((r) => r.d ? loss(r) : 1) });
             }
         },
         init(R, rand) {
@@ -3735,17 +3737,31 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             F.scaling2.train(st);
             return st;
         },
+        // the sizes shared out over up to four workers (one core left for the page), the largest first to the least loaded
+        // (a run's work grows about as N); each rebuilds the task from the seed, draws its own samples, and posts each budget;
+        // a budget is drawn once every worker has reported it
         train(st) {
             const S = F.scaling2; F.scaling2.dispose(st); st.data = []; st.E = st.noise / (1 + st.noise); st.done = false;
-            const cfg = { M: S.M, sizes: S.SIZES, alpha: 1, noise: st.noise, Cmin: S.CMIN, Cmax: S.CMAX, points: S.POINTS, eta: st.eta, seed: Math.floor(st.r() * 2 ** 31), wasm: S.WASM };
             if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return;
+            const seed = Math.floor(st.r() * 2 ** 31), K = Math.max(1, Math.min(4, S.SIZES.length, (navigator.hardwareConcurrency || 2) - 1));
+            const parts = Array.from({ length: K }, () => ({ mine: [], load: 0 }));
+            S.SIZES.map((N, i) => [N, i]).sort((x, y) => y[0] - x[0]).forEach(([N, i]) => { const pt = parts.reduce((m, q) => (q.load < m.load ? q : m)); pt.mine.push(i); pt.load += N; });
             const src = `const experiment = ${S.experiment.toString().replace(/^experiment/, 'function')};\nonmessage = (e) => { experiment(e.data, (m) => postMessage(m)); postMessage({ done: true }); };`;
-            const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
-            st.worker = new Worker(url); URL.revokeObjectURL(url);
-            st.worker.onmessage = (e) => { if (e.data.done) st.done = true; else { st.data.push(e.data); st.E = e.data.E; } st.request?.(); };
-            st.worker.postMessage(cfg);
+            const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' })), rows = [], got = new Array(S.POINTS).fill(0); let finished = 0;
+            st.workers = parts.map((pt, k) => {
+                const w = new Worker(url);
+                w.onmessage = (e) => {
+                    const m = e.data;
+                    if (m.done) { if (++finished === K) st.done = true; st.request?.(); return; }
+                    const row = rows[m.i] || (rows[m.i] = { c: m.c, losses: new Array(S.SIZES.length).fill(1) }); m.mine.forEach((j, q) => (row.losses[j] = m.losses[q])); st.E = m.E;
+                    if (++got[m.i] === K) { while (st.data.length < S.POINTS && got[st.data.length] === K) st.data.push(rows[st.data.length]); st.request?.(); }
+                };
+                w.postMessage({ M: S.M, sizes: S.SIZES, alpha: 1, noise: st.noise, Cmin: S.CMIN, Cmax: S.CMAX, points: S.POINTS, eta: st.eta, seed, stream: seed + 7919 * (k + 1), mine: pt.mine, wasm: S.WASM });
+                return w;
+            });
+            URL.revokeObjectURL(url);
         },
-        dispose(st) { if (st.worker) { st.worker.terminate(); st.worker = null; } },
+        dispose(st) { (st.workers || []).forEach((w) => w.terminate()); st.workers = null; },
         // drag along a row to set it; on release everything trains again
         pointer(type, x, y, st) {
             const S = F.scaling2, pn = st.panel, at = ([lo, hi], log) => { const k = Math.max(0, Math.min(1, (x - pn.x) / pn.w)); return log ? lo * (hi / lo) ** k : lo + k * (hi - lo); };

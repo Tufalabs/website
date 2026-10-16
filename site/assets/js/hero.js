@@ -6,7 +6,7 @@
     if (document.documentElement.matches('.off-js, .off-figure')) return;   // bisect switches (?off=js, ?off=figure)
     const FIGURE = { home: 'descent', research: 'fold', news: 'scaling2', jobs: 'rlcont', team: 'chip', mlst: 'attnpat' };
     const PAPER = {
-        scaling2: { cite: 'Scaling laws · Maloney et al. 2022', title: 'A Solvable Model of Neural Scaling Laws', href: 'https://arxiv.org/abs/2210.16859', hint: 'Eight models train live; the dotted line is the law fitted to them; drag a row to change the learning rate or the label noise' },
+        scaling2: { cite: 'Scaling laws · Maloney et al. 2022', title: 'A Solvable Model of Neural Scaling Laws', href: 'https://arxiv.org/abs/2210.16859', hint: 'Seven models train live; the dotted line is the law fitted to them; drag a row to change the learning rate or the label noise' },
         rlcont: { cite: 'REINFORCE · Williams 1992', title: 'Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning', href: 'https://doi.org/10.1007/BF00992696', hint: 'Click to train · drag the goal, walls, pits · double click: new arena' },
         scaling: { cite: 'Chinchilla · Hoffmann et al. 2022', title: 'Training Compute-Optimal Large Language Models', href: 'https://arxiv.org/abs/2203.15556', hint: 'Drag the point or slide an axis' },
         rlenv: { cite: 'REINFORCE · Williams 1992', title: 'Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning', href: 'https://doi.org/10.1007/BF00992696', hint: 'Click to train, click a cell to move the goal' },
