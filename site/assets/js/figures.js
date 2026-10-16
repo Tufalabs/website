@@ -3504,7 +3504,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
     // new arena at the level. Leaving the figure stops training. The rows set the learning rate, exploration, discount and
     // batch size (σ also while trying it).
     F.rlcont = {
-        bleed: true, tall: true, AGENTS: 24, SIGMA: 0.5, ALPHA: 0.003, SPREAD: 0.08, ITEMS: 5, ITEM: 0.3, ITEM_R: 0.02, GOAL_R: 0.045, RAYS: 8, RANGE: 0.2, GAMMA: 0.97, MAXT: 130, SPEED: 0.026, SHAPE: 2, TICK: 0.005, COLLIDE: 0.02, WALLGAP: 0.03, FX: 22, FY: 18, RBF: 0.036, GX: 60, GY: 51, HT: 1,
+        bleed: true, tall: true, AGENTS: 24, SIGMA: 0.5, ALPHA: 0.003, SPREAD: 0.08, ITEMS: 5, ITEM: 0.3, ITEM_R: 0.02, GOAL_R: 0.045, RAYS: 8, RANGE: 0.2, GAMMA: 0.97, MAXT: 130, SPEED: 0.026, SHAPE: 2, TICK: 0.005, COLLIDE: 0.005, WALLGAP: 0.02, FX: 22, FY: 18, RBF: 0.036, GX: 60, GY: 51, HT: 1,
         title: 'RL in continuous space', note: '24 agents with ray-cast vision share one Gaussian policy over velocities, trained by batched REINFORCE with a time-dependent baseline and potential-based shaping.',
         init(R, rand) {
             const fx = R.fx ?? R.x, vy0 = (R.vy0 ?? R.y) + 10, vy1 = (R.vy1 ?? R.y + R.h) - 22, W = R.x + R.w - fx, L = K.LN;
@@ -3559,23 +3559,34 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
         // the level's arena: walls (bars of random orientation), pits and the goal, kept only if a route clear of the pits
         // leads from every start to the goal, as a detour within the level's range (searched on the grid). Each level adds a
-        // wall, every second one a pit, and asks for a longer detour; a level crowded past what 200 layouts can satisfy
+        // wall, every second one a pit, and asks for a longer detour; a level crowded past what 400 layouts can satisfy
         // gives its arena from the level below
-        LEVELS: 10,
-        level(l) { return { walls: [2 + l, 3 + l], pits: 1 + (l >> 1), detour: [1 + 0.06 * l, 1.3 + 0.1 * l] }; },
+        LEVELS: 16,
+        level(l) { return { walls: [2 + l, 3 + l], pits: 1 + (l >> 1), detour: [1 + 0.03 * l, 1.4 + 0.12 * l] }; },
         generate(st) {
             const r = st.r, { GX } = F.rlcont, HT = F.rlcont.HT;
             for (let l = st.level || 0; l >= 0; l--) {
                 const L = F.rlcont.level(l);
-                for (let tries = 0; tries < 200; tries++) {
+                for (let tries = 0; tries < 400; tries++) {
                     st.walls = []; st.pits = [];
                     const nw = L.walls[0] + Math.floor(r() * (L.walls[1] - L.walls[0] + 1));
                     st.start = [0.1 + r() * 0.8, 0.1 + r() * (HT - 0.2)];
                     do { st.goal = [0.08 + r() * 0.84, 0.08 + r() * (HT - 0.16)]; } while (Math.hypot(st.goal[0] - st.start[0], st.goal[1] - st.start[1]) < 0.55);
-                    for (let k = 0; k < nw; k++) { const vert = r() < 0.5, x = 0.05 + r() * 0.9, y = r() * HT, L2 = 0.14 + r() * 0.18, t2 = 0.035; st.walls.push(vert ? [x - t2 / 2, Math.max(0, y - L2 / 2), x + t2 / 2, Math.min(HT, y + L2 / 2)] : [Math.max(0, x - L2 / 2), y - t2 / 2, Math.min(1, x + L2 / 2), y + t2 / 2]); }
-                    for (let k = 0; k < L.pits; k++) st.pits.push([0.08 + r() * 0.84, 0.08 + r() * (HT - 0.16)]);
+                    // one thing at a time, each drawn again until it fits: walls clear of the start's disc and the goal, pits clear
+                    // of the walls, the start and the goal
                     const nearWall = (x, y, m) => st.walls.some(([x0, y0, x1, y1]) => x > x0 - m && x < x1 + m && y > y0 - m && y < y1 + m);
-                    if (F.rlcont.blocked(st, ...st.goal) || nearWall(...st.start, F.rlcont.SPREAD + 0.02) || st.pits.some(([px, py]) => nearWall(px, py, 0.06)) || st.pits.some(([px, py]) => Math.hypot(px - st.goal[0], py - st.goal[1]) < 0.14 || Math.hypot(px - st.start[0], py - st.start[1]) < 0.16)) continue;
+                    for (let k = 0, q = 0; k < nw && q < 200; q++) {
+                        const vert = r() < 0.5, x = 0.05 + r() * 0.9, y = r() * HT, L2 = 0.14 + r() * 0.18, t2 = 0.035;
+                        const w = vert ? [x - t2 / 2, Math.max(0, y - L2 / 2), x + t2 / 2, Math.min(HT, y + L2 / 2)] : [Math.max(0, x - L2 / 2), y - t2 / 2, Math.min(1, x + L2 / 2), y + t2 / 2];
+                        const hits = (px, py, m) => px > w[0] - m && px < w[2] + m && py > w[1] - m && py < w[3] + m;
+                        if (hits(...st.start, F.rlcont.SPREAD + 0.02) || hits(...st.goal, F.rlcont.GOAL_R + 0.02)) continue;
+                        st.walls.push(w); k++;
+                    }
+                    for (let k = 0, q = 0; k < L.pits && q < 200; q++) {
+                        const pp = [0.08 + r() * 0.84, 0.08 + r() * (HT - 0.16)];
+                        if (nearWall(...pp, 0.06) || Math.hypot(pp[0] - st.goal[0], pp[1] - st.goal[1]) < 0.14 || Math.hypot(pp[0] - st.start[0], pp[1] - st.start[1]) < 0.16 || st.pits.some(([px, py]) => Math.hypot(px - pp[0], py - pp[1]) < 0.12)) continue;
+                        st.pits.push(pp); k++;
+                    }
                     const d = F.rlcont.bfs(st, 0.1), at = (x, y) => d[Math.floor((y / HT) * F.rlcont.GY) * GX + Math.floor(x * GX)];
                     const straight = Math.hypot(st.goal[0] - st.start[0], st.goal[1] - st.start[1]), safe = at(st.start[0], st.start[1]);
                     if (!isFinite(safe) || safe < straight * L.detour[0] || safe > straight * L.detour[1]) continue;              // a real detour, not a maze
@@ -3597,7 +3608,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             // falling off a cliff beside them (Dijkstra on the grid)
             const g = F.rlcont.WALLGAP, near = (x, y) => st.walls.some(([x0, y0, x1, y1]) => x > x0 - g && x < x1 + g && y > y0 - g && y < y1 + g);
             const free = new Uint8Array(GX * GY), cost = new Float64Array(GX * GY);
-            for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) { const x = (i + 0.5) / GX, y = ((j + 0.5) / GY) * F.rlcont.HT, k = j * GX + i; free[k] = !F.rlcont.blocked(st, x, y) && !st.pits.some(([px, py]) => Math.hypot(x - px, y - py) < margin); cost[k] = near(x, y) ? 2.5 : 1; }
+            for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) { const x = (i + 0.5) / GX, y = ((j + 0.5) / GY) * F.rlcont.HT, k = j * GX + i; free[k] = !F.rlcont.blocked(st, x, y) && !st.pits.some(([px, py]) => Math.hypot(x - px, y - py) < margin); cost[k] = near(x, y) ? 1.3 : 1; }
             const dist = new Float64Array(GX * GY).fill(Infinity), gi = Math.min(GX - 1, Math.floor(st.goal[0] * GX)), gj = Math.min(GY - 1, Math.floor((st.goal[1] / F.rlcont.HT) * GY)), done = new Uint8Array(GX * GY);
             dist[gj * GX + gi] = 0; const heap = [[0, gj * GX + gi]];
             const push = (e) => { heap.push(e); let c = heap.length - 1; while (c > 0) { const p = (c - 1) >> 1; if (heap[p][0] <= heap[c][0]) break; [heap[p], heap[c]] = [heap[c], heap[p]]; c = p; } };
@@ -3719,7 +3730,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const A = st.arena, ux = (x - A.x) / A.s, uy = (y - A.y) / A.s, inA = ux > 0 && ux < 1 && uy > 0 && uy < F.rlcont.HT, pn = st.panel, play = st.mode === 'play';
             st.played = performance.now();   // handled: the agents keep moving for a while
             if (type === 'leave') { if (st.mode === 'train') F.rlcont.mode(st, 'play', true); else st.finishing = true; return; }   // out of the figure: training stops, the episode runs out
-            if (type === 'enter' || type === 'down') st.finishing = false;
+            if (type === 'enter') { st.finishing = false; F.rlcont.mode(st, 'train'); st.wake = 6; return; }   // on it: training (again)
+            if (type === 'down') st.finishing = false;
             const onBtn = Math.hypot(x - st.btn.x, y - st.btn.y) < st.btn.r + 4;
             if (type === 'down' && onBtn) { F.rlcont.mode(st, play ? 'train' : 'play'); st.wake = 6; st.row = -1; st.grab = null; st.downAt = null; return; }
             if (type === 'down') {

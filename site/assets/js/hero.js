@@ -106,7 +106,7 @@
     });
     // the hint shows once the pointer has rested on the figure for a moment, and goes when it leaves
     let hintTimer = 0;
-    hit.addEventListener('pointerenter', () => fig.pointer('enter', -1, -1, 0));
+    hit.addEventListener('pointerenter', () => { if (name === 'rlcont') { fig.touch(); live(); } fig.pointer('enter', -1, -1, 0); });   // the RL figure trains while the pointer is on it
     hit.addEventListener('pointerenter', () => { clearTimeout(hintTimer); hintTimer = setTimeout(() => band.classList.add('hero-hint'), 700); });
     hit.addEventListener('pointerleave', () => { clearTimeout(hintTimer); band.classList.remove('hero-hint'); fig.pointer('leave', -1, -1, 0); });
     // keys: while the pointer rests on the figure (or just after using it), arrows and WASD go to it
