@@ -3486,29 +3486,33 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         },
     };
 
-    // Continuous control by policy gradient (REINFORCE, Williams), batched, across random arenas of rising level. Each has walls,
-    // pits and a goal disc, and a route clear of the pits from every start; every batch is a new one, so the agents learn to
-    // navigate, not one layout, and the level (more walls and pits, longer detours) rises as they succeed. An agent senses only in its own frame (towards the goal): 12 rays reporting how close a wall and a pit are
-    // (exact intersections), the distance to the goal and its last move; it never sees where it is. A small network
-    // (28 → 32 tanh → 2, from zero: a random walk) gives the mean of its move in that frame; the move is Gaussian around
-    // it (σ). When the batch has finished, one update: REINFORCE through the network, Σ (G_t − b_t)/s · ∂μ/∂θ ·
-    // (a_t − μ_t)/σ² over the batch (b_t the batch's mean return at step t, s the advantages' spread), by Adam. Rewards:
-    // −0.01 a step, a collision −0.02, the goal +1, a pit −1, plus potential-based shaping γΦ(s′) − Φ(s) with Φ the
-    // distance to the goal around the obstacles (Ng et al.; it keeps the optimal policy; the agents never observe it).
-    // A click on the arena starts training (in a worker, at full speed; the arena shows the current policy in a fresh
-    // arena each episode); another click stops it and hands the trained policy back, frozen, to try on the arena in front
-    // of you: drag the goal, a wall or a pit and its agents run again; a double click gives a new arena at the level. The
-    // rows set the learning rate, exploration, discount and batch size (σ also while trying it).
+    // Continuous control by policy gradient (REINFORCE, Williams), batched, across random arenas of rising level. Each has
+    // a start and a goal anywhere (at least 0.55 apart), walls, pits and five reward items, and a route clear of the pits
+    // from every start; every batch is a new one, so the agents learn to navigate, not one layout, and the level (more
+    // walls and pits, longer detours) rises as they succeed. An agent senses only in its own frame (towards the goal): 12
+    // rays reporting how close a wall, a pit and an item it has not yet collected are (exact intersections), the distance
+    // to the goal, its last move, and a short memory: how far it got over its last 8 and 32 steps (which keeps it from
+    // dithering in a pocket; a position encoding was tried and did not help). It never sees where it is. A small network
+    // (44 → 32 tanh → 2, from zero: a random walk) gives the mean of its move in that frame; the move is Gaussian around
+    // it (σ). When the batch has finished, one update: REINFORCE through the network, Σ (G_t − b_t)/s · ∂μ/∂θ · (a_t −
+    // μ_t)/σ² over the batch (b_t the batch's mean return at step t, s the advantages' spread), by Adam. Rewards: −0.01 a
+    // step, a collision −0.02, an item +0.3 (each once an episode), the goal +1, a pit −1, plus potential-based shaping
+    // γΦ(s′) − Φ(s) with Φ the distance to the goal around the obstacles (Ng et al.; it keeps the optimal policy; the
+    // agents never observe it). The play button starts training (in a worker, at full speed; the arena shows the current
+    // policy in a fresh arena each episode); pause stops it and hands the trained policy back, frozen, to try on the arena
+    // in front of you: drag the start, the goal, a wall, a pit or an item and its agents run again; a double click gives a
+    // new arena at the level. Leaving the figure stops training. The rows set the learning rate, exploration, discount and
+    // batch size (σ also while trying it).
     F.rlcont = {
-        bleed: true, tall: true, AGENTS: 24, SIGMA: 0.5, ALPHA: 0.003, SPREAD: 0.25, RAYS: 8, RANGE: 0.2, GAMMA: 0.97, MAXT: 130, SPEED: 0.026, SHAPE: 2, TICK: 0.005, COLLIDE: 0.02, WALLGAP: 0.03, FX: 22, FY: 18, RBF: 0.036, GX: 60, GY: 51, HT: 1,
+        bleed: true, tall: true, AGENTS: 24, SIGMA: 0.5, ALPHA: 0.003, SPREAD: 0.08, ITEMS: 5, ITEM: 0.3, ITEM_R: 0.04, RAYS: 8, RANGE: 0.2, GAMMA: 0.97, MAXT: 130, SPEED: 0.026, SHAPE: 2, TICK: 0.005, COLLIDE: 0.02, WALLGAP: 0.03, FX: 22, FY: 18, RBF: 0.036, GX: 60, GY: 51, HT: 1,
         title: 'RL in continuous space', note: '24 agents with ray-cast vision share one Gaussian policy over velocities, trained by batched REINFORCE with a time-dependent baseline and potential-based shaping.',
         init(R, rand) {
             const fx = R.fx ?? R.x, vy0 = (R.vy0 ?? R.y) + 10, vy1 = (R.vy1 ?? R.y + R.h) - 22, W = R.x + R.w - fx, L = K.LN;
             // the arena a square in whole lines; beside it, a line apart, the learning curve over the rows (one line each)
             const a = L * Math.max(6, Math.min(12, Math.floor(Math.min(vy1 - vy0, (W - L) * 0.55) / L))), x0 = K.q(fx + (W - (a + L + Math.min(W - a - L, 9 * L))) / 2), y0 = K.q(vy0 + (vy1 - vy0 - a) / 2);
             const side = { x: x0 + a + L, w: Math.min(W - a - L, 9 * L) }, rowsH = 5 * L;
-            const arena = { x: x0, y: y0, s: a }, plot = { x: side.x, y: y0 + L / 2, w: side.w, h: a - rowsH - 1.5 * L };
-            const st = { r: rand(97), fx, vy0, vy1, W, arena, plot, panel: side, rows: [0, 1, 2, 3, 4].map((i) => ({ y: y0 + a - rowsH + i * L, h: L })), mode: 'play',
+            const arena = { x: x0, y: y0, s: a }, plot = { x: side.x, y: y0 + L / 2, w: side.w, h: a - rowsH - 1.5 * L }, btn = { x: side.x + L / 4, y: y0, r: L / 2 };
+            const st = { r: rand(97), fx, vy0, vy1, W, arena, plot, btn, panel: side, rows: [0, 1, 2, 3, 4].map((i) => ({ y: y0 + a - rowsH + i * L, h: L })), mode: 'play',
                 goal: [0.9, F.rlcont.HT / 2], start: [0.07, F.rlcont.HT / 2], walls: [], pits: [], Wm: [], agents: [], batch: 0, curve: [], wins: [], todo: 0, last: 0,
                 p: { alpha: F.rlcont.ALPHA, sigma: F.rlcont.SIGMA, gamma: F.rlcont.GAMMA, agents: F.rlcont.AGENTS } };
             F.rlcont.generate(st);
@@ -3546,7 +3550,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const n = st.net; st.worker.postMessage({ init: true, seed: Math.floor(st.r() * 2 ** 31), batch: st.batch, level: st.level || 0, p: st.p, net: { W1: Array.from(n.W1), W2: Array.from(n.W2), m: n.m.map((a) => Array.from(a)), v: n.v.map((a) => Array.from(a)), t: n.t }, more: 4000 });
             return true;
         },
-        dispose(st) { clearTimeout(st.clickT); if (st.worker) { st.worker.terminate(); st.worker = null; } },
+        dispose(st) { if (st.worker) { st.worker.terminate(); st.worker = null; } },
         // a click on the arena: start training (in the worker, across arenas) or stop it and try the trained policy here
         mode(st, to, keep = false) {
             if (to === st.mode) return;
@@ -3566,14 +3570,19 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 for (let tries = 0; tries < 200; tries++) {
                     st.walls = []; st.pits = [];
                     const nw = L.walls[0] + Math.floor(r() * (L.walls[1] - L.walls[0] + 1));
-                    for (let k = 0; k < nw; k++) { const vert = r() < 0.6, x = 0.2 + r() * 0.6, y = r() * HT, L2 = 0.14 + r() * 0.18, t2 = 0.035; st.walls.push(vert ? [x - t2 / 2, Math.max(0, y - L2 / 2), x + t2 / 2, Math.min(HT, y + L2 / 2)] : [Math.max(0.15, x - L2 / 2), y - t2 / 2, Math.min(0.95, x + L2 / 2), y + t2 / 2]); }
-                    for (let k = 0; k < L.pits; k++) st.pits.push([0.2 + r() * 0.65, 0.05 + r() * (HT - 0.1)]);
-                    st.goal = [0.82 + r() * 0.12, 0.08 + r() * (HT - 0.16)];
-                    if (F.rlcont.blocked(st, ...st.goal) || st.pits.some(([px, py]) => Math.hypot(px - st.goal[0], py - st.goal[1]) < 0.14 || Math.hypot(px - st.start[0], py - st.start[1]) < 0.14)) continue;
+                    st.start = [0.1 + r() * 0.8, 0.1 + r() * (HT - 0.2)];
+                    do { st.goal = [0.08 + r() * 0.84, 0.08 + r() * (HT - 0.16)]; } while (Math.hypot(st.goal[0] - st.start[0], st.goal[1] - st.start[1]) < 0.55);
+                    for (let k = 0; k < nw; k++) { const vert = r() < 0.5, x = 0.05 + r() * 0.9, y = r() * HT, L2 = 0.14 + r() * 0.18, t2 = 0.035; st.walls.push(vert ? [x - t2 / 2, Math.max(0, y - L2 / 2), x + t2 / 2, Math.min(HT, y + L2 / 2)] : [Math.max(0, x - L2 / 2), y - t2 / 2, Math.min(1, x + L2 / 2), y + t2 / 2]); }
+                    for (let k = 0; k < L.pits; k++) st.pits.push([0.08 + r() * 0.84, 0.08 + r() * (HT - 0.16)]);
+                    const nearWall = (x, y, m) => st.walls.some(([x0, y0, x1, y1]) => x > x0 - m && x < x1 + m && y > y0 - m && y < y1 + m);
+                    if (F.rlcont.blocked(st, ...st.goal) || nearWall(...st.start, F.rlcont.SPREAD + 0.02) || st.pits.some(([px, py]) => Math.hypot(px - st.goal[0], py - st.goal[1]) < 0.14 || Math.hypot(px - st.start[0], py - st.start[1]) < 0.16)) continue;
                     const d = F.rlcont.bfs(st, 0.1), at = (x, y) => d[Math.floor((y / HT) * F.rlcont.GY) * GX + Math.floor(x * GX)];
                     const straight = Math.hypot(st.goal[0] - st.start[0], st.goal[1] - st.start[1]), safe = at(st.start[0], st.start[1]);
                     if (!isFinite(safe) || safe < straight * L.detour[0] || safe > straight * L.detour[1]) continue;              // a real detour, not a maze
-                    if (![-1, -0.5, 0.5, 1].every((q) => { const y = st.start[1] + q * F.rlcont.SPREAD; return F.rlcont.blocked(st, st.start[0], y) || isFinite(at(st.start[0], y)); })) continue;   // every start has a way
+                    if (![0, 1, 2, 3, 4, 5].every((q) => { const x = st.start[0] + F.rlcont.SPREAD * Math.cos(q * TAU / 6), y = st.start[1] + F.rlcont.SPREAD * Math.sin(q * TAU / 6); return isFinite(at(x, y)); })) continue;   // every start has a way
+                    // reward items: where a route reaches, clear of the pits, the goal and each other
+                    st.items = [];
+                    for (let k = 0, q = 0; k < F.rlcont.ITEMS && q < 300; q++) { const x = 0.05 + r() * 0.9, y = 0.05 + r() * (HT - 0.1); if (!isFinite(at(x, y)) || st.pits.some(([px, py]) => Math.hypot(x - px, y - py) < 0.1) || Math.hypot(x - st.goal[0], y - st.goal[1]) < 0.12 || st.items.some(([ix, iy]) => Math.hypot(x - ix, y - iy) < 0.12)) continue; st.items.push([x, y]); k++; }
                     st.arenaLevel = l; l = -1; break;
                 }
             }
@@ -3609,7 +3618,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
         // what the agent senses, in its own frame (e₁ towards the goal, e₂ to its left): 12 rays at fixed angles from e₁,
         // each the proximity (1 − distance/range) of a wall and of a pit; the distance to the goal; its last move in this
         // frame; and a constant. It never sees where it is
-        OBS: 12 * 2 + 4, HID: 32,
+        OBS: 12 * 3 + 4 + 4, HID: 32,
         frame(st, x, y) { const gx = st.goal[0] - x, gy = st.goal[1] - y, d = Math.hypot(gx, gy) || 1e-9; return [gx / d, gy / d, d]; },
         obs(st, ag) {
             const { RANGE } = F.rlcont, K2 = 12, [ex, ey, d] = F.rlcont.frame(st, ag.x, ag.y), o = new Float64Array(F.rlcont.OBS);
@@ -3619,10 +3628,15 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const ix = 1 / (cx || 1e-12), iy = 1 / (cy || 1e-12);
                 let dw = Math.min(cx > 0 ? (1 - ag.x) * ix : -ag.x * ix, cy > 0 ? (F.rlcont.HT - ag.y) * iy : -ag.y * iy), dp = Infinity;
                 for (const [x0, y0, x1, y1] of st.walls) { const ta = (x0 - ag.x) * ix, tb = (x1 - ag.x) * ix, tc = (y0 - ag.y) * iy, td = (y1 - ag.y) * iy, t0 = Math.max(Math.min(ta, tb), Math.min(tc, td)), t1 = Math.min(Math.max(ta, tb), Math.max(tc, td)); if (t1 >= Math.max(t0, 0) && t0 < dw) dw = Math.max(t0, 0); }
-                for (const [qx, qy] of st.pits) { const fx = ag.x - qx, fy = ag.y - qy, b = fx * cx + fy * cy, q = fx * fx + fy * fy - 0.0025, disc = b * b - q; if (disc >= 0) { const sq2 = Math.sqrt(disc), t2 = -b + sq2; if (t2 >= 0) { const t = Math.max(-b - sq2, 0); if (t < dp) dp = t; } } }   // a disc behind the agent (both crossings behind) is not seen
-                o[k] = dw < RANGE ? 1 - dw / RANGE : 0; o[K2 + k] = dp < RANGE ? 1 - dp / RANGE : 0;
+                const disc = (qx, qy, rr) => { const fx = ag.x - qx, fy = ag.y - qy, b = fx * cx + fy * cy, q = fx * fx + fy * fy - rr * rr, dd = b * b - q; if (dd < 0) return Infinity; const sq2 = Math.sqrt(dd); return -b + sq2 < 0 ? Infinity : Math.max(-b - sq2, 0); };   // a disc behind the agent (both crossings behind) is not seen
+                for (const [qx, qy] of st.pits) dp = Math.min(dp, disc(qx, qy, 0.05));
+                let di = Infinity; (st.items || []).forEach(([qx, qy], i) => { if (!(ag.got & (1 << i))) di = Math.min(di, disc(qx, qy, F.rlcont.ITEM_R)); });
+                o[k] = dw < RANGE ? 1 - dw / RANGE : 0; o[K2 + k] = dp < RANGE ? 1 - dp / RANGE : 0; o[2 * K2 + k] = di < 2 * RANGE ? 1 - di / (2 * RANGE) : 0;
             }
-            o[2 * K2] = Math.min(1.5, d); o[2 * K2 + 1] = ag.vf ? ag.vf[0] : 0; o[2 * K2 + 2] = ag.vf ? ag.vf[1] : 0; o[2 * K2 + 3] = 1;
+            o[3 * K2] = Math.min(1.5, d); o[3 * K2 + 1] = ag.vf ? ag.vf[0] : 0; o[3 * K2 + 2] = ag.vf ? ag.vf[1] : 0; o[3 * K2 + 3] = 1;
+            // a short memory: how far it got over its last 8 and 32 steps, in its frame (stuck in a pocket, both stay small)
+            const b0 = 3 * K2 + 4, h = ag.hist || [];
+            [[8, 5], [32, 2]].forEach(([n, sc], i) => { const old = h.length ? h[Math.max(0, h.length - n)] : [ag.x, ag.y], mx = (ag.x - old[0]) * sc, my = (ag.y - old[1]) * sc; o[b0 + 2 * i] = mx * ex + my * ey; o[b0 + 2 * i + 1] = -mx * ey + my * ex; });
             return { o, ex, ey };
         },
         // the policy's mean move (in the agent's frame): μ = W₂ tanh(W₁ o) + b₂, starting from zero (a random walk)
@@ -3637,7 +3651,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             let m0 = W2[2 * HID], m1 = W2[2 * HID + 1]; for (let j = 0; j < HID; j++) { m0 += W2[j] * h[j]; m1 += W2[HID + j] * h[j]; }
             return { h, m: [m0, m1] };
         },
-        newBatch(st, n) { st.agents = Array.from({ length: n || (st.p ? st.p.agents : F.rlcont.AGENTS) }, () => { let x, y, k = 0; do { x = st.start[0] + (st.r() - 0.5) * 0.04; y = st.start[1] + (st.r() - 0.5) * 2 * F.rlcont.SPREAD; k++; } while (k < 20 && (F.rlcont.blocked(st, x, y) || st.pits.some(([px, py]) => Math.hypot(x - px, y - py) < 0.08))); return { x, y, px: x, py: y, traj: [], done: false }; }); },
+        newBatch(st, n) { st.agents = Array.from({ length: n || (st.p ? st.p.agents : F.rlcont.AGENTS) }, () => { let x, y, k = 0; do { const an = st.r() * TAU, rr = F.rlcont.SPREAD * Math.sqrt(st.r()); x = st.start[0] + rr * Math.cos(an); y = st.start[1] + rr * Math.sin(an); k++; } while (k < 20 && (F.rlcont.blocked(st, x, y) || st.pits.some(([px, py]) => Math.hypot(x - px, y - py) < 0.08))); return { x, y, px: x, py: y, traj: [], done: false, got: 0, hist: [] }; }); },
         // does the segment touch a wall or leave the arena? exact (Liang–Barsky against each wall), so no corner is skipped
         crosses(st, x0, y0, x1, y1) {
             if (F.rlcont.blocked(st, x1, y1)) return true;
@@ -3651,7 +3665,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 if (ag.done) return;
                 const { o, ex, ey } = F.rlcont.obs(st, ag), { h, m } = F.rlcont.forward(st, o), a = [m[0] + SIGMA * F.rlcont.g(st), m[1] + SIGMA * F.rlcont.g(st)];
                 const n = Math.hypot(a[0], a[1]), k = n > 1.5 ? 1.5 / n : 1, wx = (a[0] * ex - a[1] * ey) * k, wy = (a[0] * ey + a[1] * ex) * k, nx = ag.x + wx * SPEED, ny = ag.y + wy * SPEED;
-                ag.vf = [a[0] * k, a[1] * k];
+                ag.vf = [a[0] * k, a[1] * k]; (ag.hist = ag.hist || []).push([ag.x, ag.y]); if (ag.hist.length > 32) ag.hist.shift();
                 // collisions slide along walls: keep whichever part of the move is free
                 // collisions along the whole step (steps are longer than walls are thick): slide along a wall, or stop
                 const clear = (x0, y0, x1, y1) => !F.rlcont.crosses(st, x0, y0, x1, y1);
@@ -3660,6 +3674,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 // potential-based shaping (Ng et al.): γΦ(s′) − Φ(s) with Φ = −distance to the goal; it leaves the optimal policy unchanged
                 const Phi = (x, y) => -F.rlcont.geo(st, x, y) * F.rlcont.SHAPE;                   // distance around the obstacles
                 let r = -0.01 - (hit ? F.rlcont.COLLIDE : 0) + GAMMA * Phi(ag.x, ag.y) - Phi(ag.px, ag.py), end = false;
+                (st.items || []).forEach(([qx, qy], i) => { if (!(ag.got & (1 << i)) && Math.hypot(ag.x - qx, ag.y - qy) < F.rlcont.ITEM_R + 0.01) { ag.got |= 1 << i; r += F.rlcont.ITEM; } });   // a reward item, once each an episode
                 if (Math.hypot(ag.x - st.goal[0], ag.y - st.goal[1]) < 0.06) { r = 1; end = true; }
                 else if (st.pits.some(([px, py]) => Math.hypot(ag.x - px, ag.y - py) < 0.05)) { r = -1; end = true; }
                 if (learn) ag.traj.push({ o, h, m, a, r }); ag.t = (ag.t || 0) + 1; ag.won = end && r === 1; if (end || ag.t >= MAXT) ag.done = true;
@@ -3705,10 +3720,15 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             st.played = performance.now();   // handled: the agents keep moving for a while
             if (type === 'leave') { if (st.mode === 'train') F.rlcont.mode(st, 'play', true); else st.finishing = true; return; }   // out of the figure: training stops, the episode runs out
             if (type === 'enter' || type === 'down') st.finishing = false;
+            const onBtn = Math.hypot(x - st.btn.x, y - st.btn.y) < st.btn.r + 4;
+            if (type === 'down' && onBtn) { F.rlcont.mode(st, play ? 'train' : 'play'); st.wake = 6; st.row = -1; st.grab = null; st.downAt = null; return; }
             if (type === 'down') {
                 st.moved = false; st.grab = null; st.row = st.rows.slice(0, 4).findIndex((r) => y >= r.y && y < r.y + r.h && x >= pn.x - 10 && x <= pn.x + pn.w + 10);
                 if (st.row < 0 && inA && play) {
+                    const ii = (st.items || []).findIndex(([qx, qy]) => Math.hypot(ux - qx, uy - qy) < 0.04);
                     if (Math.hypot(ux - st.goal[0], uy - st.goal[1]) < 0.08) st.grab = { kind: 'goal' };
+                    else if (Math.hypot(ux - st.start[0], uy - st.start[1]) < F.rlcont.SPREAD) st.grab = { kind: 'start' };
+                    else if (ii >= 0) st.grab = { kind: 'item', i: ii };
                     else { const pi = st.pits.findIndex(([px, py]) => Math.hypot(ux - px, uy - py) < 0.065); if (pi >= 0) st.grab = { kind: 'pit', i: pi }; else { const wi = st.walls.findIndex(([x0, y0, x1, y1]) => ux > x0 - 0.015 && ux < x1 + 0.015 && uy > y0 - 0.015 && uy < y1 + 0.015); if (wi >= 0) st.grab = { kind: 'wall', i: wi }; } }
                     if (st.grab) st.grab.at = [ux, uy];
                 }
@@ -3721,19 +3741,19 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             if (type === 'move' && st.grab) {
                 const g = st.grab, dx = ux - g.at[0], dy = uy - g.at[1], near = (x2, y2, r2) => Math.hypot(x2 - st.goal[0], y2 - st.goal[1]) < r2 || Math.hypot(x2 - st.start[0], y2 - st.start[1]) < r2;
                 if (g.kind === 'goal') { const gx = Math.max(0.04, Math.min(0.96, st.goal[0] + dx)), gy = Math.max(0.04, Math.min(F.rlcont.HT - 0.04, st.goal[1] + dy)); if (!F.rlcont.blocked(st, gx, gy) && !st.pits.some(([px, py]) => Math.hypot(px - gx, py - gy) < 0.1)) st.goal = [gx, gy]; }
+                else if (g.kind === 'start') { const sx = Math.max(0.08, Math.min(0.92, st.start[0] + dx)), sy = Math.max(0.08, Math.min(F.rlcont.HT - 0.08, st.start[1] + dy)); if (!F.rlcont.blocked(st, sx, sy)) st.start = [sx, sy]; }
+                else if (g.kind === 'item') { const [qx, qy] = st.items[g.i], nx = Math.max(0.03, Math.min(0.97, qx + dx)), ny = Math.max(0.03, Math.min(F.rlcont.HT - 0.03, qy + dy)); if (!F.rlcont.blocked(st, nx, ny)) st.items[g.i] = [nx, ny]; }
                 else if (g.kind === 'pit') { const [px, py] = st.pits[g.i], nx = Math.max(0.05, Math.min(0.95, px + dx)), ny = Math.max(0.05, Math.min(F.rlcont.HT - 0.05, py + dy)); if (!near(nx, ny, 0.1)) st.pits[g.i] = [nx, ny]; }
                 else { const [x0, y0, x1, y1] = st.walls[g.i], ddx = Math.max(-x0, Math.min(1 - x1, dx)), ddy = Math.max(-y0, Math.min(F.rlcont.HT - y1, dy)), w = [x0 + ddx, y0 + ddy, x1 + ddx, y1 + ddy], inW = (p2) => p2[0] > w[0] - 0.02 && p2[0] < w[2] + 0.02 && p2[1] > w[1] - 0.02 && p2[1] < w[3] + 0.02; if (!inW(st.goal) && !inW(st.start)) st.walls[g.i] = w; }
                 g.at = [ux, uy]; if (Math.abs(dx) + Math.abs(dy) > 0.002) st.moved = true; st.wake = 4; return;
             }
             if (type !== 'up') return;
             if (st.row >= 0) { st.row = -1; return; }
-            if (st.grab) { const moved = st.moved; st.grab = null; if (moved) { F.rlcont.field(st); st.wake = 6; return; } }   // the agents run on in the changed arena
+            if (st.grab) { const moved = st.moved, kind = st.grab.kind; st.grab = null; if (moved) { F.rlcont.field(st); if (kind === 'start') { F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); } st.wake = 6; return; } }   // the agents run on in the changed arena
             if (!inA || (st.downAt && Math.hypot(x - st.downAt[0], y - st.downAt[1]) > 6)) return;
-            // a click: start or stop training; a double click while trying it: a new arena at this level
+            // a double click while trying it: a new arena at this level
             const now = performance.now(), dbl = st.lastClick && now - st.lastClick < 320; st.lastClick = dbl ? 0 : now;
-            clearTimeout(st.clickT);
-            if (dbl) { if (play) { F.rlcont.generate(st); F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); st.wake = 6; } return; }
-            st.clickT = setTimeout(() => { F.rlcont.mode(st, play ? 'train' : 'play'); st.wake = 6; st.request?.(); }, 330);   // wait out a double click
+            if (dbl && play) { F.rlcont.generate(st); F.rlcont.newBatch(st, F.rlcont.AGENTS); st.agents.forEach((ag) => (ag.trail = [])); st.wake = 6; }
         },
         draw(ctx, R, t, C, st, still) {
             const { TICK } = F.rlcont, A = st.arena, P = (x, y) => [A.x + x * A.s, A.y + y * A.s];
@@ -3749,7 +3769,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             st.walls.forEach(([x0, y0, x1, y1]) => { const [X0, Y0] = P(x0, y0), [X1, Y1] = P(x1, y1); K.line(ctx, C, K.rect(X0, Y0, X1 - X0, Y1 - Y0), -1, 0.5, true); for (let yy = Y0 + 2 * K.U; yy < Y1 - K.U; yy += 2 * K.U) for (let xx = X0 + 2 * K.U; xx < X1 - K.U; xx += 2 * K.U) K.pt(ctx, C, xx, yy, -1, 0.25); });
             st.pits.forEach(([px, py]) => { const [X, Y] = P(px, py); K.dotted(ctx, C, K.circle(X, Y, 0.05 * A.s).concat([K.circle(X, Y, 0.05 * A.s)[0]]), -1, 0.5); });
             { const [X, Y] = P(...st.goal); K.line(ctx, C, K.circle(X, Y, 10 * K.U), 0, 1, true); K.line(ctx, C, K.circle(X, Y, 4 * K.U), 0, 1, true); }
-            { const cx = A.x + A.s - K.LN / 2, cy = A.y + K.LN / 2, u5 = 4 * K.U;
+            (st.items || []).forEach(([qx, qy]) => K.pt(ctx, C, ...P(qx, qy), 1, 0.5));   // reward items
+            { const [X, Y] = P(...st.start), ring = K.circle(X, Y, F.rlcont.SPREAD * A.s); K.dotted(ctx, C, ring.concat([ring[0]]), -1, 0.5); }   // where the agents start
+            { const cx = st.btn.x, cy = st.btn.y, u5 = 4 * K.U;
               if (train) { K.line(ctx, C, [[cx - u5 / 2, cy - u5], [cx - u5 / 2, cy + u5]], 1, 1); K.line(ctx, C, [[cx + u5 / 2, cy - u5], [cx + u5 / 2, cy + u5]], 1, 1); }
               else K.line(ctx, C, [[cx - u5 * 0.8, cy - u5], [cx + u5, cy], [cx - u5 * 0.8, cy + u5]], 0, 1, true); }
             // the agents: data points in focus tone (context once their episode ends), trails as lines at context tone
@@ -3780,9 +3802,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 K.line(ctx, C, [[pn.x, y], [pn.x + pn.w, y]], -1, 0.25); K.line(ctx, C, [[pn.x, y], [xv, y]], 0, 0.5); K.pt(ctx, C, xv, y, 1, 1);
                 label(ctx, C, st, `${name} ${fmt(v)}`, pn.x, st.rows[i].y + st.rows[i].h * 0.3, 'left', true);
             });
-            { const y = st.rows[4].y + st.rows[4].h * 0.55; label(ctx, C, st, train ? 'training · click to stop and try it' : st.batch ? 'trying it · drag things · click to train' : 'click the arena to train', pn.x, y, 'left', true); }
+            { const y = st.rows[4].y + st.rows[4].h * 0.55; label(ctx, C, st, train ? 'training · pause to try it' : st.batch ? 'trying it · drag things · play to train' : 'play to train', pn.x, y, 'left', true); }
             const wins = st.wins || [], lastW = wins.length ? ema(wins)[wins.length - 1] : 0;
-            if (nC) { label(ctx, C, st, `level ${st.level || 0} · batch ${st.batch}`, gx, gy0 - K.LN / 2, 'left', true); label(ctx, C, st, `goal ${Math.round(lastW * 100)}%`, gx + gw, gy0 - K.LN / 2, 'right', true); }
+            if (nC) { label(ctx, C, st, `level ${st.level || 0} · batch ${st.batch}`, gx + K.LN, gy0 - K.LN / 2, 'left', true); label(ctx, C, st, `goal ${Math.round(lastW * 100)}%`, gx + gw, gy0 - K.LN / 2, 'right', true); }
             if (go) st.wake = Math.max(st.wake || 0, 0.3);   // awake while it trains, or for a while after it was handled
         },
     };
