@@ -3755,7 +3755,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             // the agents: data points in focus tone (context once their episode ends), trails as lines at context tone
             st.agents.forEach((ag) => {
                 const tx = ag.px + (ag.x - ag.px) * u, ty = ag.py + (ag.y - ag.py) * u; if (ag.sx == null || still) { ag.sx = tx; ag.sy = ty; } else { ag.sx += (tx - ag.sx) * 0.3; ag.sy += (ty - ag.sy) * 0.3; }
-                const [X, Y] = P(ag.sx, ag.sy); (ag.trail = ag.trail || []).push([X, Y]); if (ag.trail.length > 60) ag.trail.shift();
+                // a trail point only when the agent has moved, so a figure at rest keeps its last trails
+                const [X, Y] = P(ag.sx, ag.sy), tr = (ag.trail = ag.trail || []), last = tr[tr.length - 1];
+                if (!last || Math.hypot(X - last[0], Y - last[1]) > 0.5) { tr.push([X, Y]); if (tr.length > 160) tr.shift(); }
             });
             st.agents.forEach((ag) => { if (ag.trail && ag.trail.length > 1) K.line(ctx, C, ag.trail, -1, 0.25); });
             st.agents.forEach((ag) => { if (ag.sx != null) K.pt(ctx, C, ...P(ag.sx, ag.sy), 0, ag.done ? 0.25 : 1); });
