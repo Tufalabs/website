@@ -322,11 +322,14 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             } else if (type === 'up' && st.drag) { st.drag = null; st.preview = false; st.runAt = -2; }
             else if (type === 'leave') st.hoverWell = null;
             if (type !== 'up' && type !== 'leave') st.hoverWell = st.drag ? st.drag.well || null : grabWell ? well : null;
-            // the run under the pointer (within 7px of its path), named while hovered
+            // the run under the pointer (within 7px of its path: of any segment, not only its iterates, so long steps hover too),
+            // named while hovered; where paths overlap, the nearest
             if (type === 'leave' || st.drag) st.hoverPath = null;
             else if (type === 'move' && st.runs) {
                 let best = null, bd2 = 49;
-                for (const k in st.runs) st.runs[k].path.forEach((th) => { const [px, py] = F.descent.P(st, ...th), d2 = (px - x) ** 2 + (py - y) ** 2; if (d2 < bd2) { bd2 = d2; best = { k, x: px, y: py }; } });
+                for (const k in st.runs) { const pts = st.runs[k].path.map((th) => F.descent.P(st, ...th));
+                    for (let i = 0; i < pts.length; i++) { const [ax, ay] = pts[i], [bx, by] = pts[Math.min(i + 1, pts.length - 1)], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, q = L2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2)) : 0, cx = ax + q * dx, cy = ay + q * dy, d2 = (cx - x) ** 2 + (cy - y) ** 2;
+                        if (d2 < bd2) { bd2 = d2; best = { k, x: cx, y: cy }; } } }
                 if ((best && best.k) !== (st.hoverPath && st.hoverPath.k)) st.wake = 0.3; st.hoverPath = best;
             }
             // elsewhere on the surface: the loss at the point under the pointer
