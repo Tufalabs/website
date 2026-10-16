@@ -2963,26 +2963,19 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             return B.map(([kind, x, y, w, h, d], i) => ({ i, kind, x: kind === 'giga' && d === 1 ? x + 3 : x, y, w: kind === 'giga' ? w - 3 + 3 * 0 : w, h, d }));
         },
         NAMES: {
-            gpc: 'Graphics Processing Cluster: 10 TPCs × 2 SMs (160 SMs, 640 Tensor Cores per GPU)',
-            l2: 'L2 cache: shared by the die’s GPCs, fed by its HBM controllers',
-            hbm: 'HBM3E stack and controller: 8 stacks, 288 GB, up to 8 TB/s',
-            giga: 'GigaThread Engine with MIG control: hands out work to the GPCs',
-            nvdec: 'NVDEC: video decode',
-            hbi: 'NV-HBI: 10 TB/s die-to-die link, the two dies act as one GPU',
-            nvlink: 'NVLink 5: 1,800 GB/s to the NVLink Switch (GPU to GPU)',
-            c2c: 'NVLink-C2C: 900 GB/s coherent link to the Grace CPU',
-            pcie: 'PCIe Gen 6 ×16: 256 GB/s host interface',
+            gpc: 'GPC · 10 TPCs × 2 SMs', l2: 'L2 cache', hbm: 'HBM3E · 8 stacks, 288 GB, 8 TB/s', giga: 'GigaThread · work distribution', nvdec: 'NVDEC · video decode',
+            hbi: 'NV-HBI · 10 TB/s die to die', nvlink: 'NVLink 5 · 1.8 TB/s', c2c: 'NVLink-C2C · 900 GB/s to Grace', pcie: 'PCIe Gen 6 ×16 · 256 GB/s',
         },
         // each component's levels (shown as its frame grows on screen: a level per threshold in screen pixels)
         DEPTH: {
-            hbm: [[140, 'HBM3E stack, from the side: 12 DRAM dies over a base logic die, joined by through-silicon vias'], [1400, 'a DRAM die: bank groups of banks, row decoders between them'], [7000, 'a bank: word lines across, bit lines down, a cell (a transistor and a capacitor) at each crossing, sense amplifiers below']],
-            l2: [[60, 'L2 cache: slices, each an SRAM array under its tags'], [400, 'SRAM: bit-line pairs down, word lines across, a six-transistor cell at each crossing']],
-            giga: [[100, 'GigaThread Engine: thread blocks queued, handed to the GPCs as SMs free up']],
-            hbi: [[40, 'NV-HBI: thousands of short wires across the die edge, the two dies one GPU']],
-            nvlink: [[40, 'NVLink 5: 18 links, each lanes of differential pairs to the NVLink Switch']],
-            pcie: [[40, 'PCIe Gen 6 ×16: sixteen lanes to the host']],
-            c2c: [[40, 'NVLink-C2C: lanes to the Grace CPU, memory-coherent']],
-            nvdec: [[40, 'NVDEC: entropy decode, inverse transform, motion compensation, deblocking']],
+            hbm: [[140, 'HBM3E · 12-high DRAM stack, TSVs'], [1400, 'DRAM die · bank groups'], [7000, 'DRAM bank · 1T1C cells, sense amps']],
+            l2: [[60, 'L2 · slices'], [400, 'SRAM · 6T cells']],
+            giga: [[100, 'GigaThread · block queue']],
+            hbi: [[40, 'NV-HBI · die-to-die wires']],
+            nvlink: [[40, 'NVLink 5 · 18 links']],
+            pcie: [[40, 'PCIe Gen 6 · 16 lanes']],
+            c2c: [[40, 'NVLink-C2C · lanes']],
+            nvdec: [[40, 'NVDEC · entropy, transform, motion, deblock']],
         },
         init(R) {
             // at rest the whole chip fits the visible columns; zoomed in, it spills left into the fade column and up
@@ -3181,7 +3174,6 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                             if (f3 > 0 && tcw * s2 > 50) {
                                 const n = 16, m = 12, mw = tcw / n, mh = tch / m;
                                 cells(tcx, tcy, tcw, tch, n, m, 0.5 * f3);
-                                if (mw * s2 > 36) for (let a = 0; a < n; a++) for (let c2 = 0; c2 < m; c2++) { const x0 = tcx + a * mw, y0 = tcy + c2 * mh; if (!vis(x0, y0, mw, mh)) continue; cells(x0 + mw * 0.2, y0 + mh * 0.2, mw * 0.6, mh * 0.6, 2, 2, 0.25 * f3); }   // multiplier · adder · accumulator · operand latch
                                 if (smBusy) for (let a = 0; a < n; a++) { const u = (t * 1.2 + a * 0.07) % 1, [X, Y] = S(tcx + (a + 0.5) * mw, tcy + u * tch); dot(X, Y, 2, 0.5 * f3, C.ink); }      // B operands down the columns (while its SM works)
                                 if (smBusy) for (let c2 = 0; c2 < m; c2++) { const u = (t * 1.2 + c2 * 0.09) % 1, [X, Y] = S(tcx + u * tcw, tcy + (c2 + 0.5) * mh); dot(X, Y, 2, 0.5 * f3, C.ink); }     // A operands along the rows
                                 if (smBusy) for (let a = 0; a < n; a++) for (let c2 = 0; c2 < m; c2++) { const ph = (t * 1.6 - (a + c2) * 0.08) % 1; if (ph < 0.2) { const [X, Y] = S(tcx + (a + 0.5) * mw, tcy + (c2 + 0.5) * mh); dot(X, Y, 1.2, f3, C.ink); } }   // products accumulating, a wave across the array
@@ -3216,7 +3208,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                     ctx.globalAlpha = 0.5 * f4; ctx.lineWidth = K.U / 2; ctx.beginPath(); ctx.moveTo(ax0 + aw, uy + UH * 0.5); ctx.lineTo(ax0 + aw + UW * 0.03, uy + UH * 0.5); ctx.lineTo(ax0 + aw + UW * 0.03, uy + UH * 0.94); ctx.lineTo(tx0 + tw * 0.75, uy + UH * 0.94); ctx.lineTo(tx0 + tw * 0.75, uy + UH * 0.88); ctx.stroke();   // its loop back into the sum
                     if (!still) { const u = (t * 0.6) % 1; for (let c = 0; c < n; c++) { dot(mx0 + (c + (n - 1) * 0.5) * mw + mw * 0.4, uy + UH * 0.04 + u * UH * 0.08, 1.2, f4, C.ink); dot(ux - UW * 0.02 + u * UW * 0.05, my0 + (c + 0.5) * mh, 1.2, f4, C.ink); }   // operands in
                         dot(tx0 - UW * 0.04 + u * (ax0 - tx0 + UW * 0.04), uy + UH * 0.5, 2.4, f4, C.ink); }                      // the product on its way
-                    label(ctx, C, st, 'multiplier: partial products', mx0, uy + UH * 0.06, 'left'); label(ctx, C, st, 'adder tree', tx0, uy + UH * 0.06, 'left'); label(ctx, C, st, 'accumulator', ax0 + aw, uy - K.LN / 4, 'right');
+                    label(ctx, C, st, 'multiplier', mx0, uy + UH * 0.06, 'left'); label(ctx, C, st, 'adder tree', tx0, uy + UH * 0.06, 'left'); label(ctx, C, st, 'accumulator', ax0 + aw, uy - K.LN / 4, 'right');
                 }
                 // a FinFET, one, in the middle (its neighbours faint): three silicon fins across, the gate wrapped over them (a band,
                 // so one gate controls all three), source and drain on either side with their contacts; switched on, charge
@@ -3240,27 +3232,14 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const A = st.anc || F.chip.atomNear(st, st.cx, st.cy) || st.tgt, [CX, CY] = S(A[0], A[1]), ring = (r, a, n2, X0 = CX, Y0 = CY) => { const n = n2 || Math.max(24, Math.min(240, Math.round((TAU * r) / 4))); for (let q = 0; q < n; q++) dot(X0 + r * Math.cos((q / n) * TAU), Y0 + r * Math.sin((q / n) * TAU), 0.6, a, C.ink); };
                 const zA = Math.max(1, z / 2e6), a0 = (mac / 2500) * st.s0 * 2e6, rOut = 0.5 * a0 * zA ** 0.69, r0 = rOut / 3.8;   // the outer shell, half a lattice spacing at the handover
                 const hsh = (q, k) => { const h = Math.sin(q * 12.9898 + k * 78.233) * 43758.5453; return h - Math.floor(h); };
-                // the atom, quantum mechanically: no orbits, an electron density. Its samples (where an electron would be found)
-                // are drawn once and a few renewed each frame, so the cloud shimmers rather than jumps: a dense core (1s, then
-                // n = 2) and the four valence sp³ hybrids, each ψ ∝ e^(−r/a)(1 + 2.2 (r/a) cos(φ − θ)), pointing along the bonds to
-                // its four neighbours (the tetrahedron seen along [110]), the bonds dotted out to them. Deeper, one hybrid as a
+                // the atom, quantum mechanically: one of its four valence sp³ hybrids, ψ ∝ e^(−r/a)(1 + 2.2 (r/a) cos(φ − θ)), as a
                 // textbook draws it: contour lines of ψ, positive solid, negative dotted, the node (ψ = 0) a line at context tone.
                 // At the end, the nucleus: not marbles but its measured density, flat inside with a soft edge (Woods–Saxon,
                 // radius 3.4 fm, skin 0.55 fm), sampled as points
-                const f7 = band(2e6, 5e6, 5e7, 1.2e8), f8 = band(5e7, 1.2e8, 6e8, 1.2e9), f9 = fadeIn(6e8, 1.2e9);
+                const f7 = 0, f8 = band(2e6, 5e6, 4e8, 7e8), f9 = fadeIn(7e8, 1.1e9);   // the crystal gives way to one atom's bond orbital
                 const TH = [54.7, 125.3, 234.7, 305.3].map((d) => (d * Math.PI) / 180), aV = Math.min(r0 * 1.1, Math.min(v.w, v.h) * 0.11);
-                if (f7 > 0 && aV < v.w * 4) {
-                    if (!st.cloud) { const P2 = [], gam = (k) => { let x = 0; for (let q = 0; q < k; q++) x -= Math.log(1 - Math.random()); return x; };
-                        const draw1 = (kind) => { if (kind < 0.12) { const r = gam(3) * 0.05, an = Math.random() * TAU; return [r, an, 1]; } if (kind < 0.32) { const r = gam(5) * 0.16, an = Math.random() * TAU; return [r, an, 2]; }
-                            const th = TH[Math.floor(Math.random() * 4)]; for (;;) { const r = gam(3) * 0.5, an = th + (Math.random() - 0.5) * 1.4, ps = Math.exp(-r) * (1 + 2.2 * r * Math.cos(an - th)); if (ps > 0 && Math.random() < Math.min(1, (ps * ps * r) / 0.55)) return [r, an, 3]; } };
-                        for (let q = 0; q < 1400; q++) P2.push(draw1(Math.random())); st.cloud = { P: P2, draw1 }; }
-                    const cl = st.cloud; if (!still) for (let q = 0; q < 30; q++) { const k = Math.floor(Math.random() * cl.P.length); cl.P[k] = cl.draw1(Math.random()); }   // a few renewed: the shimmer
-                    TH.forEach((th) => { for (let q = 8; q <= 30; q++) { const rr = aV * 4.2 * (q / 30); dot(CX + rr * Math.cos(th), CY + rr * Math.sin(th), 0.6, 0.25 * f7, C.ink); } dot(CX + aV * 4.2 * Math.cos(th), CY + aV * 4.2 * Math.sin(th), 2.4, 0.5 * f7, C.ink); });   // bonds to the neighbours
-                    cl.P.forEach(([r, an, kind]) => dot(CX + r * aV * Math.cos(an), CY + r * aV * Math.sin(an), kind === 3 ? 1.2 : 0.6, (kind === 3 ? 0.5 : 1) * f7, C.ink));
-                    dot(CX, CY, 2.4, f7, C.ink);
-                }
                 if (f8 > 0) {                                                                                          // one hybrid's ψ as contour lines
-                    const RR = Math.min(v.w, v.h) * 0.42 * (1 + 0.25 * Math.log10(Math.max(1, z / 1.2e8))), th = TH[0], a3 = RR / 4.5, G = 72, X0 = CX - RR, Y0 = CY - RR, cs = (2 * RR) / G;
+                    const RR = Math.max(v.w, v.h) * 0.75, a3 = (Math.min(v.w, v.h) * 0.42 * (1 + 0.25 * Math.log10(Math.max(1, z / 1e7)))) / 4.5, th = TH[0], G = 96, X0 = CX - RR, Y0 = CY - RR, cs = (2 * RR) / G;
                     const psi = (x, y) => { const dx = x - CX, dy = y - CY, r = Math.hypot(dx, dy) / a3, c = r ? (dx * Math.cos(th) + dy * Math.sin(th)) / (r * a3) : 0; return Math.exp(-r) * (1 + 2.2 * r * c); };
                     const V = new Float64Array((G + 1) * (G + 1)); let mx = 0; for (let j = 0; j <= G; j++) for (let i = 0; i <= G; i++) { const val = psi(X0 + i * cs, Y0 + j * cs); V[j * (G + 1) + i] = val; mx = Math.max(mx, Math.abs(val)); }
                     const iso = (lv, solid, tone) => { ctx.globalAlpha = tone * f8; ctx.strokeStyle = C.ink; ctx.lineWidth = solid ? K.U : K.U / 2; ctx.setLineDash(solid ? [] : [K.U, 2 * K.U]); ctx.beginPath();
@@ -3292,7 +3271,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             }
             ctx.restore();
             // labels
-            const level = z < 2.5 ? 'chip' : z < 12 ? 'GPC: 10 TPCs × 2 SMs' : z < 55 ? 'SM: 4 quadrants (scheduler · register file · 32 lanes · tensor core), L1 / shared memory below' : z < 700 ? 'tensor core: a grid of multiply-accumulate units' : z < 6500 ? 'a multiply-accumulate unit: a multiplier (partial products), an adder tree, an accumulator that adds each product to its sum' : z < 90000 ? 'a FinFET transistor: one gate wrapped over three silicon fins, source and drain on either side (a 4 nm-class process)' : z < 3e6 ? 'the silicon crystal: atoms 0.54 nm apart · click an atom' : z < 8e7 ? 'a silicon atom, quantum mechanically: no orbits but an electron density, a dense core and four sp³ lobes along its bonds (dotted) to its neighbours' : z < 8e8 ? 'one bond orbital ψ: contour lines, positive solid, negative dotted; the node, ψ = 0, between' : 'the nucleus: 14 protons and 14 neutrons as one density, flat inside, a soft edge; radius 3.4 fm (ring), 10⁵ times smaller than the atom';
+            const level = z < 2.5 ? 'chip' : z < 12 ? 'GPC · 10 TPCs × 2 SMs' : z < 55 ? 'SM · 4 quadrants, L1 / shared memory' : z < 700 ? 'tensor core · MAC array' : z < 6500 ? 'MAC unit · multiplier, adder tree, accumulator' : z < 90000 ? 'FinFET · gate over 3 fins' : z < 3e6 ? 'Si crystal · 0.54 nm lattice · click an atom' : z < 7e8 ? 'Si atom · sp³ bond orbital ψ' : 'nucleus · Woods–Saxon density, r ≈ 3.4 fm';
             const cb = st.blocks[F.chip.at(st, st.cx, st.cy)], deepIn = cb && cb.kind !== 'gpc' && z >= 2.5 ? (F.chip.DEPTH[cb.kind] || []).filter((d, k) => lvl(cb, k) > 0.5).pop() : null;
             label(ctx, C, st, hb && z < 2.5 ? F.chip.NAMES[hb.kind] : deepIn ? deepIn[1] : `${level} · ${z < 10 ? z.toFixed(1) : z < 10000 ? Math.round(z) : z < 1e6 ? Math.round(z / 1000) + 'k' : '10' + String(Math.floor(Math.log10(z))).split('').map((d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]).join('')}×`, st.fx + K.LN / 4, st.vy0 + K.LN / 4, 'left', true);
             if (!still && (st.fly || st.press || (hb && z < 2.5) || z > 40)) st.wake = Math.max(st.wake || 0, 0.3);
