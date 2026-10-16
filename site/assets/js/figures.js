@@ -3830,7 +3830,8 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             const HT = F.rlcont.HT;
             K.line(ctx, C, K.rect(A.x, A.y, A.s, A.s * HT), -1, 0.5, true);
             const fadeIn = st.hidden ? 0 : Math.min(1, (performance.now() - (st.shownAt || 0)) / (4 * K.TB * 1000));
-            K.fade = K.ease(fadeIn); if (fadeIn < 1 && !st.hidden) st.wake = Math.max(st.wake || 0, 0.1);
+            // the fade runs on frames of its own: an untouched figure is otherwise drawn only when asked
+            K.fade = K.ease(fadeIn); if (fadeIn < 1 && !st.hidden) { st.wake = Math.max(st.wake || 0, 0.1); requestAnimationFrame(() => st.request?.()); }
             st.walls.forEach(([x0, y0, x1, y1]) => { const [X0, Y0] = P(x0, y0), [X1, Y1] = P(x1, y1); K.line(ctx, C, K.rect(X0, Y0, X1 - X0, Y1 - Y0), -1, 0.5, true); });
             st.pits.forEach(([px, py]) => { const [X, Y] = P(px, py); K.line(ctx, C, K.circle(X, Y, 0.05 * A.s), -1, 0.5, true); });
             // the goal and the items drawn at the size they are reached at
