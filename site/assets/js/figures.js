@@ -3175,9 +3175,9 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                             cells(qx + qw * 0.08, qy + qh * 0.42, qw * 0.4, qh * 0.5, 4, 8, 0.5 * f2);                       // 32 FP32 / INT32 lanes: compute, cells
                             const tcx = qx + qw * 0.54, tcy = qy + qh * 0.42, tcw = qw * 0.38, tch = qh * 0.5;
                             rectD(tcx, tcy, tcw, tch, 1 * f2, C.ink, 2, 0.55);                                                // tensor core
-                            if (fadeIn(45, 80) <= 0) cells(tcx, tcy, tcw, tch, 4, 3, 0.5 * f2);                               // its MAC array, coarse until level 3
+                            if (fadeIn(45, 80) <= 0 && z < 900) cells(tcx, tcy, tcw, tch, 4, 3, 0.5 * f2);                               // its MAC array, coarse until level 3
                             // level 3: the tensor core as a grid of multiply-accumulate units, operands flowing in
-                            const f3 = fadeIn(45, 80);
+                            const f3 = fadeIn(45, 80) * (1 - fadeIn(500, 900));   // gone once a single MAC unit is drawn
                             if (f3 > 0 && tcw * s2 > 50) {
                                 const n = 16, m = 12, mw = tcw / n, mh = tch / m;
                                 cells(tcx, tcy, tcw, tch, n, m, 0.5 * f3);
@@ -3198,24 +3198,40 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
                 const hash = (i, j) => { const h = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return h - Math.floor(h); };
                 const grid = (spx, spy, fn) => { const i0 = Math.floor((v.x - OX) / spx) - 1, i1 = Math.ceil((v.x + v.w - OX) / spx) + 1, j0 = Math.floor((v.y - OY) / spy) - 1, j1 = Math.ceil((v.y + v.h - OY) / spy) + 1; const k = Math.max(1, Math.ceil(Math.sqrt(((i1 - i0) * (j1 - j0)) / 1800))); for (let j = j0 - (((j0 % k) + k) % k); j <= j1; j += k) for (let i = i0 - (((i0 % k) + k) % k); i <= i1; i += k) fn(OX + i * spx, OY + j * spy, i, j); };   /* too dense for the view: every k-th cell, never nothing */
                 const lineDots = (x0, y0, x1, y1, step, size, a, col) => { const n = Math.max(2, Math.round(Math.hypot(x1 - x0, y1 - y0) / step)); for (let q = 0; q <= n; q++) dot(x0 + ((x1 - x0) * q) / n, y0 + ((y1 - y0) * q) / n, size, a, col); };
-                // logic cells: rows of standard cells of varying width, metal tracks, vias
-                const f4 = band(500, 1100, 5000, 10000);
-                if (f4 > 0) { const rh = (mac / 10) * s2, cw = (mac / 24) * s2;
-                    grid(cw, rh, (x, y, i, j) => {   // a standard cell: its outline; inside, its gates as lines (2–4 per cell); vias as points; power rails along each row
-                        if (hash(i - 1, j) > 0.6 && hash(i, j) < 0.3) return; const wide = hash(i, j) > 0.6 ? 2 : 1, w2 = cw * wide;
-                        ctx.globalAlpha = 0.5 * f4; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U / 2; ctx.strokeRect(x + 1, y + rh * 0.12, w2 - 2, rh * 0.76);
-                        const ng = 2 + Math.floor(hash(i, j + 5) * 3) * wide; if (w2 / ng > 4) { ctx.globalAlpha = 0.25 * f4; ctx.beginPath(); for (let k = 1; k <= ng; k++) { const gx = x + (w2 * k) / (ng + 1); ctx.moveTo(gx, y + rh * 0.18); ctx.lineTo(gx, y + rh * 0.82); } ctx.stroke(); }
-                        if (i % 2 === 0) { ctx.globalAlpha = 0.5 * f4; ctx.lineWidth = K.U; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 2 * cw, y); ctx.stroke(); }
-                        if (hash(i + 7, j) > 0.7) dot(x + w2 * 0.5, y + rh * (0.3 + 0.4 * hash(i, j + 3)), 1.2, 0.5 * f4, C.ink); });
+                // a multiply-accumulate unit, one, in the middle (its neighbours faint around it): the multiplier's partial
+                // products, a parallelogram of AND gates (each row shifted one, as long multiplication is written); the adder tree
+                // narrowing 8 → 4 → 2 → 1; the accumulator, a column of flip-flops whose output loops back into the sum. Operands
+                // come in at the edges and the product flows right
+                const f4 = band(500, 1100, 4500, 6500);
+                if (f4 > 0) {
+                    const UW = mac * s2, UH = UW * 0.7, ux = OX - UW / 2, uy = OY - UH / 2, box = (x0, y0, w0, h0, tone, lw = K.U / 2) => { ctx.globalAlpha = tone * f4; ctx.strokeStyle = C.ink; ctx.lineWidth = lw; ctx.strokeRect(x0, y0, w0, h0); };
+                    for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) if (di || dj) box(ux + di * UW * 1.08, uy + dj * UH * 1.12, UW, UH, 0.25);   // the neighbours
+                    box(ux, uy, UW, UH, 1, K.U);
+                    const n = 8, mw = (UW * 0.52) / (n * 1.5), mx0 = ux + UW * 0.04, my0 = uy + UH * 0.12, mh = (UH * 0.76) / n;   // the multiplier
+                    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) box(mx0 + (c + (n - 1 - r) * 0.5) * mw, my0 + r * mh + mh * 0.15, mw * 0.8, mh * 0.7, 0.5);
+                    const tx0 = ux + UW * 0.6, tw = UW * 0.22, rowsT = [8, 4, 2, 1];                                       // the adder tree
+                    rowsT.forEach((k, q) => { const ch2 = (UH * 0.76) / 8, colX = tx0 + (q / rowsT.length) * tw; for (let c = 0; c < k; c++) { const yy = uy + UH * 0.12 + ((c + 0.5) * 8 / k - 0.5) * ch2; box(colX, yy + ch2 * 0.1, tw / 5, ch2 * 0.8, 0.5); } });
+                    const ax0 = ux + UW * 0.86, aw = UW * 0.08, ach = (UH * 0.76) / 8;                                      // the accumulator
+                    for (let c = 0; c < 8; c++) box(ax0, uy + UH * 0.12 + c * ach + ach * 0.1, aw, ach * 0.8, 1);
+                    ctx.globalAlpha = 0.5 * f4; ctx.lineWidth = K.U / 2; ctx.beginPath(); ctx.moveTo(ax0 + aw, uy + UH * 0.5); ctx.lineTo(ax0 + aw + UW * 0.03, uy + UH * 0.5); ctx.lineTo(ax0 + aw + UW * 0.03, uy + UH * 0.94); ctx.lineTo(tx0 + tw * 0.75, uy + UH * 0.94); ctx.lineTo(tx0 + tw * 0.75, uy + UH * 0.88); ctx.stroke();   // its loop back into the sum
+                    if (!still) { const u = (t * 0.6) % 1; for (let c = 0; c < n; c++) { dot(mx0 + (c + (n - 1) * 0.5) * mw + mw * 0.4, uy + UH * 0.04 + u * UH * 0.08, 1.2, f4, C.ink); dot(ux - UW * 0.02 + u * UW * 0.05, my0 + (c + 0.5) * mh, 1.2, f4, C.ink); }   // operands in
+                        dot(tx0 - UW * 0.04 + u * (ax0 - tx0 + UW * 0.04), uy + UH * 0.5, 2.4, f4, C.ink); }                      // the product on its way
+                    label(ctx, C, st, 'multiplier: partial products', mx0, uy + UH * 0.06, 'left'); label(ctx, C, st, 'adder tree', tx0, uy + UH * 0.06, 'left'); label(ctx, C, st, 'accumulator', ax0 + aw, uy - K.LN / 4, 'right');
                 }
-                // FinFET transistors seen from above: silicon fins in pairs across (thin lines), gates down across them (lines at
-                // data tone, a pitch apart), and a contact (a point) on each fin between two gates: source and drain
-                const f5 = band(4000, 9000, 50000, 110000);
-                if (f5 > 0) { const gp = (mac / 120) * s2, fp = (mac / 60) * s2;
-                    grid(gp, fp, (x, y, i, j) => {
-                        ctx.globalAlpha = 0.25 * f5; ctx.strokeStyle = C.ink; ctx.lineWidth = K.U / 2; ctx.beginPath(); [0.35, 0.6].forEach((q) => { ctx.moveTo(x, y + fp * q); ctx.lineTo(x + gp, y + fp * q); }); ctx.stroke();   // two fins
-                        ctx.globalAlpha = 0.5 * f5; ctx.lineWidth = K.U; ctx.beginPath(); ctx.moveTo(x, y + fp * 0.18); ctx.lineTo(x, y + fp * 0.78); ctx.stroke();                                                  // the gate across them
-                        if (hash(i, j) > 0.25) { dot(x + gp * 0.5, y + fp * 0.35, 1.2, 0.5 * f5, C.ink); dot(x + gp * 0.5, y + fp * 0.6, 1.2, 0.5 * f5, C.ink); } });   // contacts
+                // a FinFET, one, in the middle (its neighbours faint): three silicon fins across, the gate wrapped over them (a band,
+                // so one gate controls all three), source and drain on either side with their contacts; switched on, charge
+                // flows along the fins under the gate, source to drain
+                const f5 = band(6500, 10000, 50000, 110000);
+                if (f5 > 0) {
+                    const TW = mac * s2 * 0.16, TH = TW * 0.8, tx = OX - TW / 2, ty = OY - TH / 2, box = (x0, y0, w0, h0, tone, lw = K.U / 2) => { ctx.globalAlpha = tone * f5; ctx.strokeStyle = C.ink; ctx.lineWidth = lw; ctx.strokeRect(x0, y0, w0, h0); };
+                    for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) if (di || dj) box(tx + di * TW * 1.25, ty + dj * TH * 1.3, TW, TH, 0.25);   // the neighbours
+                    const finY = [0.3, 0.5, 0.7].map((q) => ty + TH * q);
+                    ctx.globalAlpha = 0.5 * f5; ctx.lineWidth = K.U; ctx.beginPath(); finY.forEach((y0) => { ctx.moveTo(tx - TW * 0.05, y0); ctx.lineTo(tx + TW * 1.05, y0); }); ctx.stroke();   // fins
+                    box(tx + TW * 0.42, ty + TH * 0.12, TW * 0.16, TH * 0.76, 1, K.U * 2);                                // the gate over them
+                    box(tx + TW * 0.06, ty + TH * 0.2, TW * 0.28, TH * 0.6, 0.5); box(tx + TW * 0.66, ty + TH * 0.2, TW * 0.28, TH * 0.6, 0.5);   // source, drain
+                    finY.forEach((y0) => { dot(tx + TW * 0.2, y0, 2.4, f5, C.ink); dot(tx + TW * 0.8, y0, 2.4, f5, C.ink); });   // contacts
+                    if (!still) finY.forEach((y0, k) => { const u = (t * 0.8 + k * 0.3) % 1; dot(tx + TW * (0.2 + 0.6 * u), y0, 1.2, f5, C.ink); });   // charge, source to drain
+                    label(ctx, C, st, 'source', tx + TW * 0.2, ty + TH * 0.12, 'center'); label(ctx, C, st, 'gate', tx + TW * 0.5, ty + TH * 0.05, 'center', true); label(ctx, C, st, 'drain', tx + TW * 0.8, ty + TH * 0.12, 'center'); label(ctx, C, st, 'fins', tx + TW * 1.06, finY[0], 'left');
                 }
                 // the silicon lattice: atoms in pairs (the diamond structure seen along [110]) and their bonds
                 const f6 = band(60000, 140000, 2e6, 5e6);
@@ -3276,7 +3292,7 @@ var tauMs = (v) => { v = String(v).trim(); const n = parseFloat(v); return isNaN
             }
             ctx.restore();
             // labels
-            const level = z < 2.5 ? 'chip' : z < 12 ? 'GPC: 10 TPCs × 2 SMs' : z < 55 ? 'SM: 4 quadrants (scheduler · register file · 32 lanes · tensor core), L1 / shared memory below' : z < 700 ? 'tensor core: a grid of multiply-accumulate units' : z < 7000 ? 'a multiply-accumulate unit: rows of logic cells, metal tracks, vias' : z < 90000 ? 'FinFET transistors: gates across silicon fins (a 4 nm-class process)' : z < 3e6 ? 'the silicon crystal: atoms 0.54 nm apart · click an atom' : z < 8e7 ? 'a silicon atom, quantum mechanically: no orbits but an electron density, a dense core and four sp³ lobes along its bonds (dotted) to its neighbours' : z < 8e8 ? 'one bond orbital ψ: contour lines, positive solid, negative dotted; the node, ψ = 0, between' : 'the nucleus: 14 protons and 14 neutrons as one density, flat inside, a soft edge; radius 3.4 fm (ring), 10⁵ times smaller than the atom';
+            const level = z < 2.5 ? 'chip' : z < 12 ? 'GPC: 10 TPCs × 2 SMs' : z < 55 ? 'SM: 4 quadrants (scheduler · register file · 32 lanes · tensor core), L1 / shared memory below' : z < 700 ? 'tensor core: a grid of multiply-accumulate units' : z < 6500 ? 'a multiply-accumulate unit: a multiplier (partial products), an adder tree, an accumulator that adds each product to its sum' : z < 90000 ? 'a FinFET transistor: one gate wrapped over three silicon fins, source and drain on either side (a 4 nm-class process)' : z < 3e6 ? 'the silicon crystal: atoms 0.54 nm apart · click an atom' : z < 8e7 ? 'a silicon atom, quantum mechanically: no orbits but an electron density, a dense core and four sp³ lobes along its bonds (dotted) to its neighbours' : z < 8e8 ? 'one bond orbital ψ: contour lines, positive solid, negative dotted; the node, ψ = 0, between' : 'the nucleus: 14 protons and 14 neutrons as one density, flat inside, a soft edge; radius 3.4 fm (ring), 10⁵ times smaller than the atom';
             const cb = st.blocks[F.chip.at(st, st.cx, st.cy)], deepIn = cb && cb.kind !== 'gpc' && z >= 2.5 ? (F.chip.DEPTH[cb.kind] || []).filter((d, k) => lvl(cb, k) > 0.5).pop() : null;
             label(ctx, C, st, hb && z < 2.5 ? F.chip.NAMES[hb.kind] : deepIn ? deepIn[1] : `${level} · ${z < 10 ? z.toFixed(1) : z < 10000 ? Math.round(z) : z < 1e6 ? Math.round(z / 1000) + 'k' : '10' + String(Math.floor(Math.log10(z))).split('').map((d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]).join('')}×`, st.fx + K.LN / 4, st.vy0 + K.LN / 4, 'left', true);
             if (!still && (st.fly || st.press || (hb && z < 2.5) || z > 40)) st.wake = Math.max(st.wake || 0, 0.3);
